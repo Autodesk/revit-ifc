@@ -386,6 +386,16 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Converts SectionModulus in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The SectionModulus in Revit internal units.</param>
+      /// <returns>The SectionModulus in Revit display units.</returns>
+      static public double ScaleSectionModulus(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.SectionModulus, unscaledValue);
+      }
+
+      /// <summary>
       /// Converts ThermalConductivity in Revit internal units to Revit display units.
       /// </summary>
       /// <param name="unscaledValue">The ThermalConductivity in Revit internal units.</param>

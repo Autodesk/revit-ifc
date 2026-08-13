@@ -281,7 +281,7 @@ namespace Revit.IFC.Export.Utility
          
          ElementId elementTypeId = element.GetTypeId();
          Element elementType = null;
-         if (elementTypeId != ElementId.InvalidElementId)
+         if (!MathUtil.IsInvalidElementId(elementTypeId))
          {
             if (ExporterCacheManager.IsExternalParameterValueCache.TryGetValue(elementTypeId, out isExternal))
             {
@@ -292,16 +292,19 @@ namespace Revit.IFC.Export.Utility
          }
 
          // Many element types have the FUNCTION_PARAM parameter.  If this is set, use its value.
-         int elementFunction;
-         if ((elementType != null) && ParameterUtil.GetIntValueFromElement(elementType, BuiltInParameter.FUNCTION_PARAM, out elementFunction) != null)
+         if (elementType != null)
          {
-            // Note that the WallFunction enum value is the same for many different kinds of objects.
-            // Note: it is unclear whether Soffit walls should be considered exterior, but won't change
-            // existing functionality for now.
-            isExternal = (elementFunction != ((int)WallFunction.Interior));
-            if (elementId != elementTypeId && elementTypeId != ElementId.InvalidElementId)
-               ExporterCacheManager.IsExternalParameterValueCache[elementTypeId] = isExternal;
-            return CacheIsElementExternal(elementId, isExternal);
+            (Parameter parameter, int elementFunction) = ParameterUtil.GetIntValueFromElement(elementType, BuiltInParameter.FUNCTION_PARAM);
+            if (parameter != null)
+            {
+               // Note that the WallFunction enum value is the same for many different kinds of objects.
+               // Note: it is unclear whether Soffit walls should be considered exterior, but won't change
+               // existing functionality for now.
+               isExternal = (elementFunction != ((int)WallFunction.Interior));
+               if (elementId != elementTypeId && !MathUtil.IsInvalidElementId(elementTypeId))
+                  ExporterCacheManager.IsExternalParameterValueCache[elementTypeId] = isExternal;
+               return CacheIsElementExternal(elementId, isExternal);
+            }
          }
 
          // Specific element types that know if they are external or not if the built-in parameter isn't set.
@@ -380,7 +383,7 @@ namespace Revit.IFC.Export.Utility
       public static void CreateMaterialAssociation(ExporterIFC exporterIFC, IFCAnyHandle instanceHandle, ElementId materialId)
       {
          // Create material association if any.
-         if (materialId != ElementId.InvalidElementId)
+         if (!MathUtil.IsInvalidElementId(materialId))
          {
             IFCAnyHandle materialNameHandle = GetOrCreateMaterialHandle(exporterIFC, materialId);
 
@@ -462,7 +465,7 @@ namespace Revit.IFC.Export.Utility
             foreach (ElementId materialId in alreadySeenIds)
             {
                double currVolume = 0.0;
-               if (materialId != ElementId.InvalidElementId)
+               if (!MathUtil.IsInvalidElementId(materialId))
                {
                   if (useVolumeMap)
                      materialToVolumeMap.TryGetValue(materialId, out currVolume);
@@ -610,7 +613,7 @@ namespace Revit.IFC.Export.Utility
             foreach (KeyValuePair<MaterialConstituentInfo, HashSet<IFCAnyHandle>> repItemInfoSet in repItemInfoGroup)
             {
                ElementId materialId = repItemInfoSet.Key.MaterialId;
-               double currVolume = (materialId != ElementId.InvalidElementId) ? element.GetMaterialVolume(materialId) : 0.0;
+               double currVolume = (!MathUtil.IsInvalidElementId(materialId)) ? element.GetMaterialVolume(materialId) : 0.0;
                volumeMaterialIdDict[materialId] = currVolume;
                totalVolume += currVolume;
             }
@@ -646,7 +649,7 @@ namespace Revit.IFC.Export.Utility
       }
 
       public static void TryToCreateMaterialAssocation(ExporterIFC exporterIFC, BodyData bodyData,
-         Element elementType, Element element, GeometryElement exportGeometry, IFCAnyHandle typeStyle,
+         ElementType elementType, Element element, GeometryElement exportGeometry, IFCAnyHandle typeStyle,
          FamilyTypeInfo typeInfo)
       {
          if (bodyData != null && bodyData.RepresentationItemInfo != null &&
@@ -783,7 +786,7 @@ namespace Revit.IFC.Export.Utility
             string materialName = "<Unnamed>";
             string description = null;
             string category = null;
-            if (materialId != ElementId.InvalidElementId)
+            if (!MathUtil.IsInvalidElementId(materialId))
             {
                Material material = document.GetElement(materialId) as Material;
                if (material != null)
@@ -804,7 +807,7 @@ namespace Revit.IFC.Export.Utility
             ExporterCacheManager.MaterialHandleCache.Register(materialId, materialNameHandle);
 
             // associate Material with SurfaceStyle if necessary.
-            if (materialId != ElementId.InvalidElementId && !ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && materialNameHandle.HasValue)
+            if (!MathUtil.IsInvalidElementId(materialId) && !ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && materialNameHandle.HasValue)
             {
                HashSet<IFCAnyHandle> matRepHandles = IFCAnyHandleUtil.GetHasRepresentation(materialNameHandle);
                if (matRepHandles.Count == 0)
@@ -823,11 +826,11 @@ namespace Revit.IFC.Export.Utility
 
                   IFCAnyHandle styledRepItem = null;
                   IFCAnyHandle matStyleHnd = GetOrCreateMaterialStyle(document, file, materialId);
-                  if (!ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView &&
+                  if (!ExporterCacheManager.ExportOptionsCache.ExportAsReferenceView &&
                      styles.AddIfNotNull(matStyleHnd))
                   {
                      bool supportCutStyles = !ExporterCacheManager.ExportOptionsCache.ExportAsCoordinationView2;
-                     if (fillPatternId != ElementId.InvalidElementId && supportCutStyles)
+                     if (!MathUtil.IsInvalidElementId(fillPatternId) && supportCutStyles)
                      {
                         IFCAnyHandle cutStyleHnd = exporterIFC.GetOrCreateFillPattern(fillPatternId, color, planScale);
                         if (cutStyleHnd.HasValue)
@@ -884,7 +887,7 @@ namespace Revit.IFC.Export.Utility
             foreach (KeyValuePair<ElementId, IFCAnyHandle> MnP in materialAndProfile.GetKeyValuePairs())
             {
                IFCAnyHandle materialHnd = CategoryUtil.GetOrCreateMaterialHandle(exporterIFC, MnP.Key);
-               if (materialHnd != null && !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+               if (materialHnd != null && !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 && !ExporterCacheManager.ExportOptionsCache.ExportAsReferenceView)
                   matProf.Add(IFCInstanceExporter.CreateMaterialProfile(file, MnP.Value, Material: materialHnd, name: familySymbol.Name));
             }
 

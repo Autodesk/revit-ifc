@@ -208,7 +208,7 @@ namespace Revit.IFC.Import.Utility
          // sphere of equivalence.  In the case of AnyGeometry, we resort to the Solid tolerance as we are
          // generally trying to create Solids over Meshes.
          return (TargetGeometry == TessellatedShapeBuilderTarget.Mesh) ?
-            MathUtil.Eps() : IFCImportFile.TheFile.ShortCurveTolerance;
+            MathUtil.Eps : IFCImportFile.TheFile.ShortCurveTolerance;
       }
 
       /// <summary>
@@ -368,7 +368,7 @@ namespace Revit.IFC.Import.Utility
 
                   // If we have a real self-intersection, mark the loop created by the intersection
                   // for removal later.
-                  if (loopVertex.DistanceTo(loopVertices[createdVertexIndex]) < MathUtil.SmallGap())
+                  if (loopVertex.DistanceTo(loopVertices[createdVertexIndex]) < MathUtil.SmallGap)
                   {
                      if (lastInteriorLoopIndex > createdVertexIndex)
                      {

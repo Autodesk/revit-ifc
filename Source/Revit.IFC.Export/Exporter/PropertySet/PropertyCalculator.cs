@@ -32,30 +32,22 @@ namespace Revit.IFC.Export.Exporter.PropertySet
     /// </summary>
     abstract public class PropertyCalculator
     {
-        /// <summary>
-        /// Performs the calculation. 
-        /// NOTE: the general rule to follow when overriding Calculate method in order of priority:
-        ///       1. If it the property is dependent on the object or the geometry, such as dimension of a door, the first priority is to be given to the values provided by Revit
-        ///       2. If it does not give any appropriate value, look at the override parameters. It is generally the name of the IFC property, or prefixed with Ifc (for Pset property) or IfcQty (for quantity)
-        ///       3. If still does not give the appropriate value, and it has an Extrusion data, calculte the appropriate dimension from the extrusion data
-        ///       4. If everything fails, return false
-        /// </summary>
-        /// <param name="exporterIFC">
-        /// The ExporterIFC object.
-        /// </param>
-        /// <param name="extrusionCreationData">
-        /// The IFCExportBodyParams.
-        /// </param>
-        /// <param name="element">
-        /// The element to calculate the value.
-        /// </param>
-        /// <param name="elementType">
-        /// The element type.
-        /// </param>
-        /// <returns>
-        /// True if the operation succeed, false otherwise.
-        /// </returns>
-        abstract public bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, 
+      /// <summary>
+      /// Performs the calculation. 
+      /// NOTE: the general rule to follow when overriding Calculate method in order of priority:
+      ///       1. If it the property is dependent on the object or the geometry, such as dimension of a door, the first priority is to be given to the values provided by Revit
+      ///       2. If it does not give any appropriate value, look at the override parameters. It is generally the name of the IFC property, or prefixed with Ifc (for Pset property) or IfcQty (for quantity)
+      ///       3. If still does not give the appropriate value, and it has an Extrusion data, calculte the appropriate dimension from the extrusion data
+      ///       4. If everything fails, return false
+      /// </summary>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="handle">The created IFC handle.</param>
+      /// <param name="extrusionCreationData">Extra quantity information calculated when creating the instance.</param>
+      /// <param name="element">The element to calculate the value.</param>
+      /// <param name="elementType">The element type.</param>
+      /// <param name="psetOrQtoEntryMap">The corresponding property set or quantity set entry map.</param>
+      /// <returns>True if the operation succeed, false otherwise.</returns>
+      abstract public bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, 
            Element element, ElementType elementType, EntryMap psetOrQtoEntryMap);
 
       /// <summary>

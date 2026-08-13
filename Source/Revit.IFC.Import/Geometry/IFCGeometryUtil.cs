@@ -80,7 +80,7 @@ namespace Revit.IFC.Import.Geometry
 
       private static bool IsNonNegativeLength(double val)
       {
-         return val > -MathUtil.Eps() && val < 30000 + MathUtil.Eps();
+         return val > -MathUtil.Eps && val < 30000 + MathUtil.Eps;
       }
 
       /// <summary>
@@ -274,7 +274,7 @@ namespace Revit.IFC.Import.Geometry
       public static bool LineSegmentIsTooShort(XYZ pt1, XYZ pt2)
       {
          double dist = pt1.DistanceTo(pt2);
-         return (dist < IFCImportFile.TheFile.ShortCurveTolerance + MathUtil.Eps());
+         return (dist < IFCImportFile.TheFile.ShortCurveTolerance + MathUtil.Eps);
       }
 
       /// <summary>
@@ -538,7 +538,7 @@ namespace Revit.IFC.Import.Geometry
          if (MathUtil.IsAlmostEqual(curveParamLength, totalParamLength))
             return false;
 
-         if (MathUtil.IsAlmostZero(startVal) && totalParamLength < curveParamLength - MathUtil.Eps())
+         if (MathUtil.IsAlmostZero(startVal) && totalParamLength < curveParamLength - MathUtil.Eps)
             return false;
 
          if (!(ifcCurve is IFCCompositeCurve))
@@ -767,7 +767,7 @@ namespace Revit.IFC.Import.Geometry
          }
 
          double endVal = origEndVal.HasValue ? origEndVal.Value : totalParamLength;
-         double eps = MathUtil.Eps();
+         double eps = MathUtil.Eps;
 
          if (!CheckIfTrimParametersAreNeeded(id, ifcCurve, startVal, endVal, totalParamLength))
             return origCurveLoop;
@@ -787,7 +787,7 @@ namespace Revit.IFC.Import.Geometry
 
          IList<Curve> newLoopCurves = new List<Curve>();
 
-         if (startVal > MathUtil.Eps())
+         if (startVal > MathUtil.Eps)
          {
             for (; currCurve < numCurves; currCurve++)
             {
@@ -1185,8 +1185,8 @@ namespace Revit.IFC.Import.Geometry
 
                // Do not add current point if prev point lays on the next segment
                // or next point is on the prev segment
-               if (prevPt.DistanceTo(currPt) + prevPt.DistanceTo(nextPt) > currPt.DistanceTo(nextPt) + MathUtil.Eps() &&
-                   nextPt.DistanceTo(currPt) + nextPt.DistanceTo(prevPt) > currPt.DistanceTo(prevPt) + MathUtil.Eps())
+               if (prevPt.DistanceTo(currPt) + prevPt.DistanceTo(nextPt) > currPt.DistanceTo(nextPt) + MathUtil.Eps &&
+                   nextPt.DistanceTo(currPt) + nextPt.DistanceTo(prevPt) > currPt.DistanceTo(prevPt) + MathUtil.Eps)
                   vertList.Add(currPt);
             }
       }

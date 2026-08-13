@@ -276,7 +276,7 @@ namespace Revit.IFC.Export.Exporter
 
                if (useIFCCADLayer)
                {
-                  shapeRepresentation = RepresentationUtil.CreateShapeRepresentation(exporterIFC, contextOfItemsFootPrint,
+                  shapeRepresentation = RepresentationUtil.CreateShapeRepresentation(file, contextOfItemsFootPrint,
                      identifierOpt, representationTypeOpt, allCurves, gridRepresentationData.m_IFCCADLayer);
                }
                else
@@ -358,7 +358,7 @@ namespace Revit.IFC.Export.Exporter
             }
 
             // NOTE: This code only properly deals with the case where the grid axis is a Line or an Arc.
-            Curve currentGridAxis = grid.Curve;
+            Curve currentGridAxis = RepresentationUtil.DocumentMirrorStateManager.GetCurve(grid.Curve);
             bool sameSense = true;
             if (baseGridAxisAsLine != null)
             {
@@ -377,7 +377,7 @@ namespace Revit.IFC.Export.Exporter
 
             // Get the handle of curve.
             IFCAnyHandle axisCurve;
-            if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+            if (ExporterCacheManager.ExportOptionsCache.ExportAsReferenceView)
             {
                axisCurve = GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, currentGridAxis, lcs, projectionDirection);
             }
@@ -404,17 +404,15 @@ namespace Revit.IFC.Export.Exporter
             IFCData curveWidth = null;
             if (ExporterCacheManager.ExportOptionsCache.ExportAnnotations)
             {
-               int outWidth;
-               double width =
-                   (ParameterUtil.GetIntValueFromElement(gridType, BuiltInParameter.GRID_END_SEGMENT_WEIGHT, out outWidth) != null) ? outWidth : 1;
+               (Parameter parameter, int outWidth) = ParameterUtil.GetIntValueFromElement(gridType, BuiltInParameter.GRID_END_SEGMENT_WEIGHT);
+               double width = (parameter != null) ? outWidth : 1;
                curveWidth = IFCDataUtil.CreateAsPositiveLengthMeasure(width);
             }
 
-            if (!ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+            if (!ExporterCacheManager.ExportOptionsCache.ExportAsReferenceView)
             {
-               int outColor;
-               int color =
-                   (ParameterUtil.GetIntValueFromElement(gridType, BuiltInParameter.GRID_END_SEGMENT_COLOR, out outColor) != null) ? outColor : 0;
+               (Parameter parameter, int outColor) = ParameterUtil.GetIntValueFromElement(gridType, BuiltInParameter.GRID_END_SEGMENT_COLOR);
+               int color = (parameter != null) ? outColor : 0;
                double blueVal = 0.0;
                double greenVal = 0.0;
                double redVal = 0.0;
@@ -463,7 +461,7 @@ namespace Revit.IFC.Export.Exporter
             }
          }
 
-         double eps = MathUtil.Eps();
+         double eps = MathUtil.Eps;
          // The Dictionary key is a tuple of the containing level id, and the elevation of the Grid
          IDictionary<Tuple<ElementId,string>, List<Grid>> levelGrids = new Dictionary<Tuple<ElementId, string>, List<Grid>>(new TupleGridAndNameComparer());
 

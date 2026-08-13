@@ -372,7 +372,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          PropertyType = propertyType;
       }
 
-      private string GetPartialParameterValueOnePass(Element element, ElementId paramId)
+      private static string GetPartialParameterValueOnePass(Element element, ElementId paramId)
       {
          if (element == null)
          {
@@ -386,8 +386,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          }
          else
          {
-            ParameterElement parameterElem = element.Document.GetElement(paramId) as ParameterElement;
-            if (parameterElem != null)
+            if (element.Document.GetElement(paramId) is ParameterElement parameterElem)
             {
                parameter = element.get_Parameter(parameterElem.GetDefinition());
             }
@@ -396,11 +395,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          return parameter?.AsValueString();
       }
     
-      private string GetPartialParameterValueById(Element element, ProjectInfo projectInformation, ElementId paramId)
+      private static string GetPartialParameterValueById(Element element, ProjectInfo projectInformation, ElementId paramId)
       {
          // We need to look in (up to) 3 places: the Element, the ElementType, and ProjectInformation, in that order.
          string value = GetPartialParameterValueOnePass(element, paramId);
-         if (value == null && element != null && !(element is ElementType))
+         if (value == null && element != null && element is not ElementType)
          {
             Element elementType = element.Document.GetElement(element.GetTypeId());
             value = GetPartialParameterValueOnePass(elementType, paramId);
@@ -449,7 +448,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <returns>The created property handle.</returns>
       public IFCAnyHandle ProcessEntry(IFCFile file, ExporterIFC exporterIFC, string owningPsetName, 
          IFCExportBodyParams extrusionCreationData, ElementOrConnector elementOrConnector,
-         ElementType elementType, IFCAnyHandle handle, bool lookInType = false, bool addTypePropertiesToInstance = false)
+         ElementType elementType, IFCAnyHandle handle, IDictionary<string, string> description, bool lookInType, 
+         bool addTypePropertiesToInstance)
       {
          // if CombinedParameterData, then we have to recreate the parameter value, since there is no
          // API for this.
@@ -469,7 +469,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             IFCAnyHandle propHnd = map.ProcessEntry(file, exporterIFC, owningPsetName,
                extrusionCreationData, elementOrConnector, elementType, handle, PropertyType,
                PropertyArgumentType, PropertyValueType, PropertyEnumerationType, PropertyName,
-               lookInType, addTypePropertiesToInstance);
+               lookInType, addTypePropertiesToInstance, description);
             if (propHnd != null)
                return propHnd;
          }
@@ -1037,10 +1037,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   }
                   else if (type == SpecTypeId.PipingVolume ||
                      type == SpecTypeId.ReinforcementVolume ||
-                     type == SpecTypeId.SectionModulus ||
                      type == SpecTypeId.Volume)
                   {
                      propertyType = PropertyType.Volume;
+                  }
+                  else if (type == SpecTypeId.SectionModulus)
+                  {
+                     propertyType = PropertyType.SectionModulus;
                   }
                   else if (type == SpecTypeId.PipingMassPerTime ||
                      type == SpecTypeId.HvacMassPerTime)

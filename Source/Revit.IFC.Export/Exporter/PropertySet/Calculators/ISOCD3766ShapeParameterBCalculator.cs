@@ -62,7 +62,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>       
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          if (element is Rebar)
          {
@@ -71,10 +71,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
                return false; // In case of the Bent free form the parameter should be obtain from subelement. (It can have value for another bar in set and we don't want that value). 
          }
 
-         bool ret = ParameterUtil.GetDoubleValueFromElement(element, GroupTypeId.Geometry, "B", out m_ShapeParameterB) != null;
-         if (ret)
-            m_ShapeParameterB = UnitUtil.ScaleLength(m_ShapeParameterB);
-         return ret;
+         double? bVal = ParameterUtil.GetDoubleValueFromElement(element, GroupTypeId.Geometry, "B");
+         if (!bVal.HasValue)
+            return false;
+
+         m_ShapeParameterB = UnitUtil.ScaleLength(bVal.Value);
+         return true;
       }
 
       /// <summary>

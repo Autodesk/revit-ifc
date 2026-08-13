@@ -127,34 +127,29 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The map of classification names to the IfcClassification handles.
       /// </summary>
-      public IDictionary<string, IFCAnyHandle> ClassificationHandles { get; } = 
-         new SortedDictionary<string, IFCAnyHandle>();
+      public SortedDictionary<string, IFCAnyHandle> ClassificationHandles { get; } = [];
 
       /// <summary>
       /// The map of classification references to the related objects.
       /// </summary>
-      public IDictionary<IFCAnyHandle, ClassificationCacheInfo> ClassificationRelations { get; } =
-         new Dictionary<IFCAnyHandle, ClassificationCacheInfo>();
+      public Dictionary<IFCAnyHandle, ClassificationCacheInfo> ClassificationRelations { get; } = [];
 
-      public IDictionary<ClassificationReferenceKey, IFCAnyHandle> ClassificationReferenceHandles { get; } =
-         new SortedDictionary<ClassificationReferenceKey, IFCAnyHandle>();
+      public SortedDictionary<ClassificationReferenceKey, IFCAnyHandle> ClassificationReferenceHandles { get; } = [];
 
       /// <summary>
       /// The list of defined classifications, sorted by name.
       /// </summary>
-      public IDictionary<string, IFCClassification> ClassificationsByName { get; } = 
-         new Dictionary<string, IFCClassification>();
+      public Dictionary<string, IFCClassification> ClassificationsByName { get; } = [];
 
       /// <summary>
       /// The names of the shared parameters used to defined custom classifications.
       /// </summary>
-      public IList<string> CustomClassificationCodeNames { get; } = new List<string>();
+      public List<string> CustomClassificationCodeNames { get; } = [];
 
       /// <summary>
       /// The map of shared parameter field name to the corresponding classification name.
       /// </summary>
-      public IDictionary<string, string> FieldNameToClassificationNames { get; } = 
-         new Dictionary<string, string>();
+      public Dictionary<string, string> FieldNameToClassificationNames { get; } = [];
 
       public IFCAnyHandle FindOrCreateClassificationReference(IFCFile file, 
          ClassificationReferenceKey key)
@@ -210,8 +205,7 @@ namespace Revit.IFC.Export.Utility
             ProjectInfo projectInfo = element?.Document?.ProjectInformation;
             if (projectInfo != null)
             {
-               ParameterUtil.GetStringValueFromElement(projectInfo, "BIM Standards URL",
-                  out m_BimStandardsCache);
+               (_, m_BimStandardsCache) = ParameterUtil.GetStringValueFromElement(projectInfo, false, "BIM Standards URL");
             }
          }
 

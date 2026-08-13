@@ -1,4 +1,4 @@
-﻿//
+//
 // BIM IFC export alternate UI library: this library works with Autodesk(R) Revit(R) to provide an alternate user interface for the export of IFC files from Revit.
 // Copyright (C) 2012  Autodesk, Inc.
 // 
@@ -16,20 +16,20 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
+using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.IFC;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Revit.IFC.Common.Enums;
+using Revit.IFC.Common.Extensions;
+using Revit.IFC.Common.Utility;
+using Revit.IFC.Export.Properties;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Reflection;
+using System.Configuration;
 using System.Linq;
-
-using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.IFC;
-
-using Revit.IFC.Common.Enums;
-using Revit.IFC.Common.Extensions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Revit.IFC.Export.Properties;
+using System.Reflection;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -45,7 +45,7 @@ namespace Revit.IFC.Export.Utility
             DateFormatHandling = DateFormatHandling.MicrosoftDateFormat
          };
 
-         var obj1Ser =  JsonConvert.SerializeObject(obj1, settings);
+         var obj1Ser = JsonConvert.SerializeObject(obj1, settings);
          var obj2Ser = JsonConvert.SerializeObject(obj2, settings);
          return obj1Ser == obj2Ser;
       }
@@ -72,7 +72,7 @@ namespace Revit.IFC.Export.Utility
          }
          set
          {
-            if (value == KnownERNames.NotDefined || 
+            if (value == KnownERNames.NotDefined ||
                (IFCExchangeRequirements.ExchangeRequirements.TryGetValue(IFCVersion, out IList<KnownERNames> erList) &&
                (erList?.Contains(value) ?? false)))
             {
@@ -440,10 +440,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Properties that should be ignored when updating built-in configurations.
       /// </summary>
-      private static readonly HashSet<string> s_excludedPropertiesForBuiltInUpdate = new HashSet<string>
-      {
-         "ExportUserDefinedPsetsFileName"
-      };
+      private static readonly HashSet<string> s_excludedPropertiesForBuiltInUpdate = [ "ExportUserDefinedPsetsFileName" ];
 
       /// <summary>
       /// Whether the configuration is builtIn or not.
@@ -695,6 +692,20 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Determines if this configuration supports steel elements.
+      /// </summary>
+      /// <returns>True if the version associated with the configuration allows steel elements export.</returns>
+      public bool CanIncludeSteelElements()
+      {
+         // Currently can only include steel elements in IFC2x3.
+         return (IFCVersion == IFCVersion.IFC2x3)
+            || (IFCVersion == IFCVersion.IFCCOBIE)
+            || (IFCVersion == IFCVersion.IFC2x3FM)
+            || (IFCVersion == IFCVersion.IFC2x3BFM)
+            || (IFCVersion == IFCVersion.IFC2x3CV2);
+      }
+
+      /// <summary>
       /// Updates the IFCExportOptions with the settings in this configuration.
       /// </summary>
       /// <param name="document">The Revit document.</param>
@@ -704,7 +715,7 @@ namespace Revit.IFC.Export.Utility
       {
          options.FilterViewId = VisibleElementsOfCurrentView ? filterViewId : ElementId.InvalidElementId;
 
-         (bool useLegacyParameterMappingOptions, IFCParameterTemplate parameterTemplate) = 
+         (bool useLegacyParameterMappingOptions, IFCParameterTemplate parameterTemplate) =
             GetParameterMappingOptionsSource(document, isNewParameterMappingEnabled);
 
          foreach (PropertyInfo prop in GetType().GetProperties())
@@ -718,7 +729,7 @@ namespace Revit.IFC.Export.Utility
                   options.FileVersion = IFCVersion;
                   break;
                case "ActivePhaseId":
-                  if (options.FilterViewId == ElementId.InvalidElementId && IFCPhaseAttributes.Validate(ActivePhaseId, document))
+                  if (MathUtil.IsInvalidElementId(options.FilterViewId) && IFCPhaseAttributes.Validate(ActivePhaseId, document))
                      options.AddOption(prop.Name, ActivePhaseId.ToString());
                   break;
                case "SpaceBoundaries":
@@ -758,10 +769,19 @@ namespace Revit.IFC.Export.Utility
                         options.AddOption(prop.Name, val.ToString());
                   }
                   break;
-               default: 
-                  var propVal = prop.GetValue(this, null);
-                  if (propVal != null)
-                     options.AddOption(prop.Name, propVal.ToString());
+               case "IncludeSteelElements":
+                  {
+                     var propVal = CanIncludeSteelElements() ? prop.GetValue(this, null) : "false";
+                     if (propVal != null)
+                        options.AddOption(prop.Name, propVal.ToString());
+                  }
+                  break;
+               default:
+                  {
+                     var propVal = prop.GetValue(this, null);
+                     if (propVal != null)
+                        options.AddOption(prop.Name, propVal.ToString());
+                  }
                   break;
             }
          }
@@ -826,10 +846,25 @@ namespace Revit.IFC.Export.Utility
                {
                   propInfo.SetValue(this, propValue.ToObject(propInfo.PropertyType, serializer));
                }
-               catch (Exception)
+               catch (JsonException ex)
                {
-                  // Handle exceptions that may occur during property deserialization to continue loading user configuration.
-                  // The default value should be set.
+                  ExporterCacheManager.Document?.Application?.WriteJournalComment("IFC warning: Configuration property deserialization failed for '" + propInfo.Name + "' - " + ex.Message, true);
+               }
+               catch (ArgumentException ex)
+               {
+                  ExporterCacheManager.Document?.Application?.WriteJournalComment("IFC warning: Configuration property deserialization failed for '" + propInfo.Name + "' - " + ex.Message, true);
+               }
+               catch (TargetInvocationException ex)
+               {
+                  ExporterCacheManager.Document?.Application?.WriteJournalComment("IFC warning: Configuration property deserialization failed for '" + propInfo.Name + "' - " + ex.Message, true);
+               }
+               catch (FormatException ex)
+               {
+                  ExporterCacheManager.Document?.Application?.WriteJournalComment("IFC warning: Configuration property deserialization failed for '" + propInfo.Name + "' - " + ex.Message, true);
+               }
+               catch (OverflowException ex)
+               {
+                  ExporterCacheManager.Document?.Application?.WriteJournalComment("IFC warning: Configuration property deserialization failed for '" + propInfo.Name + "' - " + ex.Message, true);
                }
 
                continue;

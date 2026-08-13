@@ -58,7 +58,7 @@ namespace RevitIFCTools.PropertySet
       public string IfdGuid { get; set; }
       public IList<string> ApplicableClasses { get; set; }
       public string ApplicableType { get; set; }
-      public string PredefinedType { get; set; }
+      public IList<string> PredefinedTypes { get; set; } = new List<string>();
       public HashSet<PsetProperty> properties { get; set; }
       public override string ToString()
       {

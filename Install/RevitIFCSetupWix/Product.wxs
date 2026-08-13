@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
 
-   <Product Id="1A9C2C21-2701-42D2-0000-992E73C12700" Name="Revit IFC 2027" Language="1033" Version="27.0.1.1" Manufacturer="Autodesk" UpgradeCode="1A9C2C21-27B8-42D2-0000-992E73C11B3F">
+   <Product Id="1A9C2C21-2730-42D2-0000-992E73C12700" Name="Revit IFC 2027" Language="1033" Version="27.3.0.12" Manufacturer="Autodesk" UpgradeCode="1A9C2C21-27B8-42D2-0000-992E73C11B3F">
       <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="x64" />
 
       <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
@@ -122,7 +122,10 @@
                <File Id ="FILE_Ifc_ExternalUI_DLL" Name="IFCExporterUIOverride.dll" Source="$(var.ProjectDir)..\Program Files to Install\IFCExporterUIOverride.dll" KeyPath="yes" />
             </Component>
             <Component Id = "COMP_IFC_Common_DLL" Guid="C7ED4A2C-DCB1-457E-968F-2DDE9993C1B6">
-               <File Id ="FILE_Ifc_Common_DLL" Name="Revit.IFC.Common.dll" Source="$(var.Revit.IFC.Common.TargetDir)Revit.IFC.Common.dll" KeyPath="yes" />
+               <File Id ="FILE_Ifc_Common_DLL" Name="Revit.IFC.Common.OpenSource.dll" Source="$(var.ProjectDir)..\Program Files to Install\Revit.IFC.Common.OpenSource.dll" KeyPath="yes" />
+            </Component>
+            <Component Id = "COMP_IFC_Common_Sig" Guid="9AC63740-731F-4C28-9975-5C056B6493AE">
+               <File Id ="FILE_Ifc_Common_Sig" Name="Revit.IFC.Common.OpenSource.sig" Source="$(var.ProjectDir)..\Program Files to Install\Revit.IFC.Common.OpenSource.sig" KeyPath="yes" />
             </Component>
             <Component Id = "COMP_IFC_Import_Core_DLL" Guid="33DEBE0A-57D1-4BFC-BC99-FDA776B6224E">
                <File Id ="FILE_Ifc_Import_Core_DLL" Name="Revit.IFC.Import.Core.dll" Source="$(var.Revit.IFC.Import.Core.TargetDir)Revit.IFC.Import.Core.dll" KeyPath="yes" />
@@ -144,7 +147,7 @@
                <File Id ="FILE_Ifc_ExternalUI_DLL" Name="IFCExporterUIOverride.dll" Source="$(var.IFCExporterUIOverride.TargetDir)IFCExporterUIOverride.dll" KeyPath="yes" />
             </Component>
             <Component Id = "COMP_IFC_Common_DLL" Guid="C7ED4A2C-DCB1-457E-968F-2DDE9993C1B6">
-               <File Id ="FILE_Ifc_Common_DLL" Name="Revit.IFC.Common.dll" Source="$(var.Revit.IFC.Common.TargetDir)Revit.IFC.Common.dll" KeyPath="yes" />
+               <File Id ="FILE_Ifc_Common_DLL" Name="Revit.IFC.Common.OpenSource.dll" Source="$(var.Revit.IFC.Common.TargetDir)Revit.IFC.Common.OpenSource.dll" KeyPath="yes" />
             </Component>
             <Component Id = "COMP_IFC_Import_Core_DLL" Guid="33DEBE0A-57D1-4BFC-BC99-FDA776B6224E">
                <File Id ="FILE_Ifc_Import_Core_DLL" Name="Revit.IFC.Import.Core.dll" Source="$(var.Revit.IFC.Import.Core.TargetDir)Revit.IFC.Import.Core.dll" KeyPath="yes" />

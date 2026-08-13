@@ -73,7 +73,7 @@ namespace Revit.IFC.Import.Data
          bool found = false;
          Angle = IFCImportHandleUtil.GetRequiredScaledAngleAttribute(solid, "Angle", out found);
          // TODO: IFCImportFile.TheFile.Document.Application.IsValidAngle(Angle)
-         if (!found || Angle < MathUtil.Eps())
+         if (!found || Angle < MathUtil.Eps)
             Importer.TheLog.LogError(solid.StepId, "revolve angle is invalid, aborting.", true);
       }
 

@@ -16,14 +16,14 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Autodesk.Revit;
+
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
+using Newtonsoft.Json.Linq;
+using Revit.IFC.Common.Utility;
+using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
-
 
 namespace Revit.IFC.Export.Utility
 {
@@ -32,7 +32,7 @@ namespace Revit.IFC.Export.Utility
    /// </summary>
    public class NamingUtil
    {
-      private static IDictionary<string, Tuple<ElementId, int>> m_NameIncrNumberDict = new Dictionary<string, Tuple<ElementId, int>>();
+      private static Dictionary<string, Tuple<ElementId, int>> m_NameIncrNumberDict = [];
 
       public static void InitNameIncrNumberCache()
       {
@@ -40,112 +40,105 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Removes spaces in a string.
+      /// A class to ensure a string meets the requirements for a key for use in IFC export.
       /// </summary>
-      /// <param name="originalString">The original string.</param>
-      /// <returns>The string without spaces.</returns>
-      public static string RemoveSpaces(string originalString)
+      /// <remarks>In particular, the contained string will be uppercase and contain no spaces or underscores.</remarks>
+      public class IFCStringKey(string name) : IEquatable<IFCStringKey>
       {
-         return originalString.Replace(" ", null);
+         public string Key { get; private set; } = CapitalizeAndRemoveSpacesAndUnderscores(name);
+
+         public bool IsEqualTo(string name)
+         {
+            return Key == name;
+         }
+
+         public bool Contains(string subString)
+         {
+            return Key?.Contains(subString) ?? false;
+         }
+
+         public bool Equals(IFCStringKey other)
+         {
+            return (other is null) ? false : (Key == other.Key);
+         }
+
+         public override bool Equals(object other)
+         {
+            return Equals(other as IFCStringKey);
+         }
+
+         // 2. Generate a hash code matching your Equals logic
+         public override int GetHashCode()
+         {
+            return Key?.GetHashCode() ?? 0;
+         }
       }
 
       /// <summary>
-      /// Removes underscores in a string.
+      /// Remove spaces and underscores from a string, and makes it uppercase.
       /// </summary>
-      /// <param name="originalString">The original string.</param>
-      /// <returns>The string without underscores.</returns>
-      public static string RemoveUnderscores(string originalString)
+      /// <param name="name">The original string.</param>
+      /// <returns>The cleaned copy.</returns>
+      static public string CapitalizeAndRemoveSpacesAndUnderscores(string name)
       {
-         return originalString.Replace("_", null);
+         return name?.Replace(" ", "").Replace("_", "").ToUpperInvariant();
+      }
+      
+      /// <summary>
+      /// Remove spaces and underscores from a string.
+      /// </summary>
+      /// <param name="name">The original string.</param>
+      /// <returns>The cleaned copy.</returns>
+      static public string RemoveSpacesAndUnderscores(string name)
+      {
+         return name?.Replace(" ", "").Replace("_", "");
       }
 
-      /// <summary>
-      /// Removes spaces and underscores in a string.
-      /// </summary>
-      /// <param name="originalString">The original string.</param>
-      /// <returns>The string without spaces or underscores.</returns>
-      public static string RemoveSpacesAndUnderscores(string originalString)
+      static public bool IsUserDefined(string name)
       {
-         return originalString.Replace(" ", null).Replace("_", null);
-      }
-
-      /// <summary>
-      /// Checks if two strings are equal ignoring case and spaces.
-      /// </summary>
-      /// <param name="string1">The string to be compared.</param>
-      /// <param name="string2">The other string to be compared.</param>
-      /// <returns>True if they are equal, false otherwise.</returns>
-      public static bool IsEqualIgnoringCaseAndSpaces(string string1, string string2)
-      {
-         if (string1 == null || string2 == null)
-            return (string1 == string2);
-
-         string nospace1 = RemoveSpaces(string1);
-         string nospace2 = RemoveSpaces(string2);
-         return (string.Compare(nospace1, nospace2, true) == 0);
-      }
-
-      /// <summary>
-      /// Checks if two strings are equal ignoring case, spaces and underscores.
-      /// </summary>
-      /// <param name="string1">The string to be compared.</param>
-      /// <param name="string2">The other string to be compared.</param>
-      /// <returns>True if they are equal, false otherwise.</returns>
-      public static bool IsEqualIgnoringCaseSpacesAndUnderscores(string string1, string string2)
-      {
-         string nospaceOrUnderscore1 = RemoveSpacesAndUnderscores(string1);
-         string nospaceOrUnderscore2 = RemoveSpacesAndUnderscores(string2);
-         return (string.Compare(nospaceOrUnderscore1, nospaceOrUnderscore2, true) == 0);
-      }
-
-      /// <summary>
-      /// Checks if a string is equal ignoring case, spaces and underscores to one of two possible strings.
-      /// </summary>
-      /// <param name="string1">The string to be compared.</param>
-      /// <param name="string2a">Option 1 to be compared.</param>
-      /// <param name="string2b">Option 2 to be compared.</param>
-      /// <returns>True if string1 matches string2a or string2b, false otherwise.</returns>
-      public static bool IsEqualIgnoringCaseSpacesAndUnderscores(string string1, 
-         string string2a, string string2b)
-      {
-         string nospaceOrUnderscore1 = RemoveSpacesAndUnderscores(string1);
-         string nospaceOrUnderscore2a = RemoveSpacesAndUnderscores(string2a);
-         if (string.Compare(nospaceOrUnderscore1, nospaceOrUnderscore2a, true) == 0)
-            return true;
-
-         string nospaceOrUnderscore2b = RemoveSpacesAndUnderscores(string2b);
-         return (string.Compare(nospaceOrUnderscore1, nospaceOrUnderscore2b, true) == 0);
+         NamingUtil.IFCStringKey key = new(name);
+         return key.IsEqualTo("USERDEFINED");
       }
 
       /// <summary>
       /// Gets override string value from element parameter.
       /// </summary>
       /// <param name="element">The element.</param>
-      /// <param name="paramName">The parameter name.</param>
+      /// <param name="paramNames">An ordered list of parameter names to check.</param>
+      /// <param name="originalValue">The original value.</param>
+      /// <param name="continueOnEqual">If set to true, if the override value is the same as the original, keep looking.</param>
+      /// <returns>The string contains the string value.</returns>
+      public static string GetOverrideStringValue(Element element, string[] paramNames, string originalValue, bool continueOnEqual)
+      {
+         if (element == null)
+            return originalValue;
+
+         foreach (string paramName in paramNames)
+         {
+            (_, string paramValue) = ParameterUtil.GetStringValueFromElement(element, false, paramName);
+            if (string.IsNullOrEmpty(paramValue))
+               continue;
+
+            string propertyValue = ParamExprResolver.EvaluateStringParameterExpr(element, paramValue, paramName);
+            if (continueOnEqual && propertyValue.Equals(originalValue))
+               continue;
+
+            return propertyValue;
+         }
+
+         return originalValue;
+      }
+
+      /// <summary>
+      /// Gets override string value from element parameter.
+      /// </summary>
+      /// <param name="element">The element.</param>
+      /// <param name="paramName">The parameter name to check.</param>
       /// <param name="originalValue">The original value.</param>
       /// <returns>The string contains the string value.</returns>
       public static string GetOverrideStringValue(Element element, string paramName, string originalValue)
       {
-         //string strValue;
-         string paramValue;
-
-         if (element != null)
-         {
-            if (ParameterUtil.GetStringValueFromElement(element, paramName, out paramValue) != null && !string.IsNullOrEmpty(paramValue))
-            {
-               string propertyValue = null;
-               object strValue = null;
-               ParamExprResolver.CheckForParameterExpr(paramValue, element, paramName, ParamExprResolver.ExpectedValueEnum.STRINGVALUE, out strValue);
-               if (strValue != null && strValue is string)
-                  propertyValue = strValue as string;
-               else
-                  propertyValue = paramValue;   // return the original paramValue
-
-               return propertyValue;
-            }
-         }
-
-         return originalValue;
+         return GetOverrideStringValue(element, [paramName], originalValue, false);
       }
 
       /// <summary>
@@ -169,16 +162,15 @@ namespace Revit.IFC.Export.Utility
          if (material == null)
             return null;
 
-         return GetOverrideStringValue(material, "IfcCategory",
-            GetOverrideStringValue(material, "Category", material.MaterialCategory));
+         return GetOverrideStringValue(material, ["IfcCategory", "Category"], material.MaterialCategory, false);
       }
-      
+
       /// <summary>
-       /// Gets the IFC name for a material, taking into account shared parameter overrides.
-       /// </summary>
-       /// <param name="material">The material.</param>
-       /// <returns>The IFC name of the material.</returns>
-       /// <remarks>This is a convenience function for Materials only.</remarks>
+      /// Gets the IFC name for a material, taking into account shared parameter overrides.
+      /// </summary>
+      /// <param name="material">The material.</param>
+      /// <returns>The IFC name of the material.</returns>
+      /// <remarks>This is a convenience function for Materials only.</remarks>
       public static string GetMaterialName(Material material)
       {
          if (material == null)
@@ -211,29 +203,17 @@ namespace Revit.IFC.Export.Utility
          if (element == null)
             return originalValue;
 
-         // CQ_TODO: Understand the naming here and possible use GetCleanName - have it as UI option?
-
-         string overrideValue = GetOverrideStringValue(element, "IfcName", originalValue);
-
-         // For backward compatibility where the old parameter name may still be use (NameOverride), handle it also if the above returns nothing
-         if (string.IsNullOrEmpty(overrideValue)
-            || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
-         { 
-            overrideValue = GetOverrideStringValue(element, "NameOverride", originalValue);
-         }
+         string overrideValue = GetOverrideStringValue(element, ["IfcName", "NameOverride"], originalValue, true);
 
          if (element is ElementType || element is FamilySymbol)
          {
             if (string.IsNullOrEmpty(overrideValue)
                || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
-         {
-            overrideValue = GetOverrideStringValue(element, "IfcName[Type]", originalValue);
+            {
+               overrideValue = GetOverrideStringValue(element, "IfcName[Type]", originalValue);
+            }
          }
-      }
 
-         // CQ_TODO: Understand the naming here and possible use GetCleanName - have it as UI option?
-         //overrideValue = GetCleanName(overrideValue);
-         //GetOverrideStringValue will return the override value from the parameter specified, otherwise it will return the originalValue
          return overrideValue;
       }
       public static string GetNameOverride(IFCAnyHandle handle, Element element, string originalValue)
@@ -254,27 +234,13 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Gets override long name from element.
       /// </summary>
-      /// <param name="element">
-      /// The element.
-      /// </param>
-      /// <param name="originalValue">
-      /// The original value.
-      /// </param>
-      /// <returns>
-      /// The string contains the long name string value.
-      /// </returns>
+      /// <param name="element">The element.</param>
+      /// <param name="originalValue">The original value.</param>
+      /// <returns>The string contains the long name string value.</returns>
       public static string GetLongNameOverride(Element element, string originalValue)
       {
-         string longNameOverride = "IfcLongName";
-         string overrideValue = GetOverrideStringValue(element, longNameOverride, originalValue);
+         string overrideValue = GetOverrideStringValue(element, ["IfcLongName", "LongNameOverride"], originalValue, true);
 
-         // For backward compatibility where the old parameter name may still be use (LongNameOverride), handle it also if the above returns nothing
-         if (string.IsNullOrEmpty(overrideValue)
-            || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
-         {
-            longNameOverride = "LongNameOverride";
-            overrideValue = GetOverrideStringValue(element, longNameOverride, originalValue);
-         }
          //GetOverrideStringValue will return the override value from the parameter specified, otherwise it will return the originalValue
          return overrideValue;
       }
@@ -307,23 +273,14 @@ namespace Revit.IFC.Export.Utility
       /// </returns>
       public static string GetDescriptionOverride(Element element, string originalValue)
       {
-         string nameOverride = "IfcDescription";
-         string overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
-
-         // For backward compatibility where the old parameter name may still be use (DescriptionOverride), handle it also if the above returns nothing
-         if (string.IsNullOrEmpty(overrideValue)
-            || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
-         {
-            overrideValue = GetOverrideStringValue(element, "DescriptionOverride", originalValue);
-         }
+         string overrideValue = GetOverrideStringValue(element, ["IfcDescription", "DescriptionOverride"], originalValue, true);
 
          if (element is ElementType || element is FamilySymbol)
          {
             if (string.IsNullOrEmpty(overrideValue)
                || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
             {
-               nameOverride = "IfcDescription[Type]";
-               overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
+               overrideValue = GetOverrideStringValue(element, "IfcDescription[Type]", originalValue);
             }
          }
          //GetOverrideStringValue will return the override value from the parameter specified, otherwise it will return the originalValue
@@ -356,14 +313,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The string contains the object type string value.</returns>
       public static string GetObjectTypeOverride(Element element, string originalValue)
       {
-         string objectTypeOverride = "IfcObjectType";
-         string overrideValue = GetOverrideStringValue(element, objectTypeOverride, null);
-
-         // For backward compatibility where the old parameter name may still be use (ObjectTypeOverride), handle it also if the above returns nothing
-         if (string.IsNullOrEmpty(overrideValue))
-         {
-            overrideValue = GetOverrideStringValue(element, "ObjectTypeOverride", null);
-         }
+         string overrideValue = GetOverrideStringValue(element, ["IfcObjectType", "ObjectTypeOverride"], null, false);
 
          // The following is a special treatment for ObjectType. If IfcObjectType is not set, or carrying the original value, 
          //   check the existence of IfcObjectType[Type] parameter for the ElementType or the FamilySymbol. If it is set, the 
@@ -383,8 +333,7 @@ namespace Revit.IFC.Export.Utility
 
             if (typeOrSymbol != null)
             {
-               objectTypeOverride = "IfcObjectType[Type]";
-               overrideValue = GetOverrideStringValue(typeOrSymbol, objectTypeOverride, null);
+               overrideValue = GetOverrideStringValue(typeOrSymbol, "IfcObjectType[Type]", null);
             }
          }
 
@@ -392,7 +341,7 @@ namespace Revit.IFC.Export.Utility
          {
             Document document = element.Document;
             ElementId categoryId = element?.Category?.Id ?? ElementId.InvalidElementId;
-            CustomSubCategoryId customSubCategoryId = 
+            CustomSubCategoryId customSubCategoryId =
                ExporterUtil.WallFunctionToCustomSubCategoryId((typeOrSymbol as WallType)?.Function);
             ExportIFCCategoryInfo info = ExporterCacheManager.CategoryMappingTemplate.GetMappingInfoById(document, categoryId, customSubCategoryId);
             if (string.Compare(info?.IFCPredefinedType ?? string.Empty, "USERDEFINED", true) == 0)
@@ -419,7 +368,7 @@ namespace Revit.IFC.Export.Utility
 
          return GetFamilyAndTypeName(element);
       }
-      
+
       /// <summary>
       /// Get ObjectType override
       /// </summary>
@@ -450,23 +399,16 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The string contains the object type string value.</returns>
       public static string GetTagOverride(Element element)
       {
-         string originalValue = NamingUtil.CreateIFCElementId(element);
+         string originalValue = CreateIFCElementId(element);
 
-         string nameOverride = "IfcTag";
-         string overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
-         if (string.IsNullOrEmpty(overrideValue)
-            || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
-         {
-            overrideValue = GetOverrideStringValue(element, "TagOverride", originalValue);
-         }
+         string overrideValue = GetOverrideStringValue(element, ["IfcTag", "TagOverride"], originalValue, true);
 
          if (element is ElementType || element is FamilySymbol)
          {
             if (string.IsNullOrEmpty(overrideValue)
                || (!string.IsNullOrEmpty(overrideValue) && overrideValue.Equals(originalValue)))
             {
-               nameOverride = "IfcTag[Type]";
-               overrideValue = GetOverrideStringValue(element, nameOverride, originalValue);
+               overrideValue = GetOverrideStringValue(element, "IfcTag[Type]", originalValue);
             }
          }
 
@@ -511,7 +453,7 @@ namespace Revit.IFC.Export.Utility
          {
             return overrideValue;
          }
-         
+
          return GetElementTypeOverrideBase(element, "IfcObjectType", originalValue);
       }
 
@@ -548,10 +490,10 @@ namespace Revit.IFC.Export.Utility
                fullName = elementName;
             else
             {
-            if (fullName != "")
-               fullName = fullName + ":" + elementName;
-            else
-               fullName = elementName;
+               if (fullName != "")
+                  fullName = fullName + ":" + elementName;
+               else
+                  fullName = elementName;
             }
          }
 
@@ -641,6 +583,13 @@ namespace Revit.IFC.Export.Utility
          else
             fullName = typeMarkValue + "-" + instanceMarkValue;
 
+         // If the fullName is empty or whitespace, return empty string immediately.
+         // This prevents the duplicate name handling logic from appending suffixes like " (2)"
+         // to empty names, which would result in incorrect exports like "' (2)'" instead of "''".
+         // This is particularly important for COBie exports where empty names should remain empty.
+         if (string.IsNullOrWhiteSpace(fullName))
+            return "";
+
          Tuple<ElementId, int> tupNameDupl;
          if (!m_NameIncrNumberDict.TryGetValue(fullName, out tupNameDupl))
             m_NameIncrNumberDict.Add(fullName, new Tuple<ElementId, int>(element.Id, 1));
@@ -725,12 +674,12 @@ namespace Revit.IFC.Export.Utility
          if (familySymbol != null)
             return familySymbol.Name;
 
-         ElementType elementType = (element as ElementType) ?? 
+         ElementType elementType = (element as ElementType) ??
             (element.Document.GetElement(element.GetTypeId()) as ElementType);
 
          string typeName = elementType?.Name ?? string.Empty;
          string familyName = elementType?.FamilyName ?? string.Empty;
-         
+
          // set famSym name.
          if (familyName != string.Empty && familyName != "???")
          {
@@ -756,11 +705,11 @@ namespace Revit.IFC.Export.Utility
          FamilySymbol familySymbol = (element as FamilyInstance)?.Symbol;
          if (familySymbol != null)
             return familySymbol.Name;
-         
+
          ElementId typeId = element?.GetTypeId() ?? ElementId.InvalidElementId;
 
          string objectName = GetFamilyAndTypeName(element);
-         if (typeId != ElementId.InvalidElementId)
+         if (!MathUtil.IsInvalidElementId(typeId))
          {
             if (objectName == "")
                return typeId.ToString();
@@ -935,8 +884,7 @@ namespace Revit.IFC.Export.Utility
 
          // Get a profile name. It is by default set to the type (familySymbol) name, but can be overridden by IfcProfileName[Type] shared parameter
          string profileName = fSymb.Name;
-         string profile;
-         ParameterUtil.GetStringValueFromElement(fSymb, "IfcProfileName[Type]", out profile);
+         (_, string profile) = ParameterUtil.GetStringValueFromElement(fSymb, false, "IfcProfileName[Type]");
          if (!string.IsNullOrEmpty(profile))
             profileName = profile;
 
@@ -1012,6 +960,24 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
+      /// Get the label associated for a built-in parameter id if it exists, and null if it does not.
+      /// </summary>
+      /// <param name="parameterId"></param>
+      /// <returns>The label for the built-in parameter id.</returns>
+      /// <remarks>Built-in parameters should always exist, but it is possible for older models that some don't.</remarks>
+      public static string GetSafeLabel(BuiltInParameter parameterId)
+      {
+         try
+         {
+            return LabelUtils.GetLabelFor(parameterId);
+         }
+         catch (Autodesk.Revit.Exceptions.InvalidOperationException)
+         {
+            return null;
+         }
+      }
+
+      /// <summary>
       /// Check unique name within the given Set. If the name is unique add the name and return it,
       /// If it is not unique, it will call GetUniqueNameByIncrement() and check the new name for its existence in the Set, until it finds the unique name
       /// </summary>
@@ -1021,20 +987,10 @@ namespace Revit.IFC.Export.Utility
       public static string GetUniqueNameWithinSet(string inputName, HashSet<string> theNameSet)
       {
          string uniqueName = inputName;
-         if (!theNameSet.Contains(uniqueName))
-         {
-            theNameSet.Add(uniqueName);
-            return uniqueName;
-         }
-
-         while (true)
+         
+         while (!theNameSet.Add(uniqueName))
          {
             uniqueName = GetUniqueNameByIncrement(uniqueName);
-            if (!theNameSet.Contains(uniqueName))
-            {
-               theNameSet.Add(uniqueName);
-               break;
-            }
          }
 
          return uniqueName;

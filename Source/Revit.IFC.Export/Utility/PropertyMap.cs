@@ -1,4 +1,4 @@
-﻿//
+//
 // BIM IFC library: this library works with Autodesk(R) Revit(R) to export IFC files containing model geometry.
 // Copyright (C) 2013  Autodesk, Inc.
 // 
@@ -32,9 +32,9 @@ namespace Revit.IFC.Export.Utility
    /// <summary>
    /// Validates user-defined property sets to ensure correct creation and modification.
    /// It is considered invalid for the following changes:
-   /// 1. Any property set starting with "PSet_" that is not a standard property set.  For instance:
-   ///   Invalid:   PropertySet:   PSet_MyPropertySet   T  IfcElementType
-   ///   Valid:     PropertySet:   PSet_WallCommon      T  IfcElementType
+   /// 1. Any property set starting with "Pset_" that is not a standard property set.  For instance:
+   ///   Invalid:   PropertySet:   Pset_MyPropertySet   T  IfcElementType
+   ///   Valid:     PropertySet:   Pset_WallCommon      T  IfcElementType
    ///   
    /// 2. Any change to a valid property set other than a remap of an existing property.  For instance:
    ///   Invalid:    MyNewIFCProperty  Text  MyRevitParameter
@@ -53,7 +53,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// String to identify reserved property set names.
       /// </summary>
-      public static string ReservedString => "PSet_";
+      public static string ReservedString => "Pset_";
 
       /// <summary>
       /// Returns PropertySetDescription is property set identifies a property set.
@@ -88,11 +88,11 @@ namespace Revit.IFC.Export.Utility
 
       /// <summary>
       /// Indicates if user-defined property set resembles a standard property set.
-      /// That is, if it starts with "PSet_".
+      /// That is, if it starts with "Pset_".
       /// </summary>
       /// <param name="propertySet">Property Set name to check.</param>
       /// <returns>True if the property set name resembles a standard property set, false otherwise.</returns>
-      public bool ResemblesStandardPropertySet (string propertySet)
+      public bool ResemblesStandardPropertySet(string propertySet)
       {
          if (string.IsNullOrWhiteSpace(propertySet) || string.IsNullOrWhiteSpace(ReservedString))
             return false;
@@ -131,7 +131,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="description">Description of the Property Set.</param>
       /// <param name="property">Name of the property to check.</param>
       /// <returns>True if the property is in the Property Set, false otherwise.</returns>
-      public bool IsPropertyInPropertySetDescription (PropertySetDescription description, string property)
+      public bool IsPropertyInPropertySetDescription(PropertySetDescription description, string property)
       {
          if ((description == null) || string.IsNullOrWhiteSpace(property))
             return false;
@@ -240,12 +240,12 @@ namespace Revit.IFC.Export.Utility
          // format: <PropertyVaueType>.<ValueType>/<ValueType>/...
          IfcPropertyTypes.Clear();
          string dataTypePartToParse = string.Empty;
-         string[] split = rawIfcPropertyTypes.Split('.') ?? new string[] {};
+         string[] split = rawIfcPropertyTypes.Split('.') ?? new string[] { };
          if (split.Length == 1)
          {
             IfcPropertyValueType = PropertyValueType.SingleValue;
             dataTypePartToParse = split[0];
-         } 
+         }
          else if (split.Length >= 2)
          {
             const string prefix = "Property";
@@ -261,7 +261,7 @@ namespace Revit.IFC.Export.Utility
          }
 
          string[] rawPropertyTypes = dataTypePartToParse.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-         foreach(string rawPropertyType in rawPropertyTypes)
+         foreach (string rawPropertyType in rawPropertyTypes)
          {
             const string prefix = "Ifc";
             bool withPrefix = rawPropertyType.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase);
@@ -330,7 +330,7 @@ namespace Revit.IFC.Export.Utility
          if ((IfcPropertyTypes?.Count ?? 0) == 0)
             return defaultValue;
 
-         if(Enum.TryParse(IfcPropertyTypes[0], true, out TEnum t))
+         if (Enum.TryParse(IfcPropertyTypes[0], true, out TEnum t))
             return t;
 
          return defaultValue;
@@ -415,10 +415,9 @@ namespace Revit.IFC.Export.Utility
                }
             }
          }
-         catch (Exception e)
+         catch (IOException e)
          {
-            Console.WriteLine("The file could not be read:");
-            Console.WriteLine(e.Message);
+            ExporterCacheManager.Document?.Application?.WriteJournalComment("IFC warning: Property map file could not be read - " + e.Message, true);
          }
 
          return parameterMap;
@@ -486,7 +485,7 @@ namespace Revit.IFC.Export.Utility
                      continue;
 
                   string[] split = line.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                  if (split.Length >=4 && string.Compare(split[0], "PropertySet:", true) == 0) // Any entry with less than 3 parameters is malformed.
+                  if (split.Length >= 4 && string.Compare(split[0], "PropertySet:", true) == 0) // Any entry with less than 3 parameters is malformed.
                   {
                      (string propertySetName, _) = validator.ExtendPropertySetNameIfNeeded(split[1]);
                      userDefinedPropertySet = new UserDefinedPropertySet()
@@ -525,10 +524,9 @@ namespace Revit.IFC.Export.Utility
                }
             }
          }
-         catch (Exception e)
+         catch (IOException e)
          {
-            Console.WriteLine("The file could not be read:");
-            Console.WriteLine(e.Message);
+            ExporterCacheManager.Document?.Application?.WriteJournalComment("IFC warning: User-defined property set file could not be read - " + e.Message, true);
          }
 
          return userDefinedPropertySets;

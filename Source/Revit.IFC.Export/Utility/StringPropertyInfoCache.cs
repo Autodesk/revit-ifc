@@ -23,6 +23,7 @@ using System.Linq;
 using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
+using Revit.IFC.Common.Utility;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -45,7 +46,7 @@ namespace Revit.IFC.Export.Utility
       public IFCAnyHandle Find(ElementId parameterId, string propertyName, string value)
       {
          IFCAnyHandle propertyHandle = null;
-         if ((parameterId != null) && (parameterId != ElementId.InvalidElementId))
+         if (!MathUtil.IsInvalidElementId(parameterId))
          {
             ElementId parameterIdToUse = ParameterUtil.MapParameterId(parameterId);
             if (m_PropertiesByIdCache.TryGetValue(new KeyValuePair<ElementId, string>(parameterIdToUse, value), out propertyHandle))
@@ -69,7 +70,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="propertyHandle">The property handle.</param>
       public void Add(ElementId parameterId, string propertyName, string value, IFCAnyHandle propertyHandle)
       {
-         if ((parameterId != null) && (parameterId != ElementId.InvalidElementId))
+         if (!MathUtil.IsInvalidElementId(parameterId))
          {
             ElementId parameterIdToUse = ParameterUtil.MapParameterId(parameterId);
             m_PropertiesByIdCache[new KeyValuePair<ElementId, string>(parameterIdToUse, value)] = propertyHandle;

@@ -18,12 +18,8 @@
 //
 
 using System;
-using System.Collections.Generic;
-using System.Text;
-using Autodesk.Revit;
 using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.IFC;
-
+using System.Runtime.CompilerServices;
 
 namespace Revit.IFC.Common.Utility
 {
@@ -52,12 +48,9 @@ namespace Revit.IFC.Common.Utility
       /// Returns a small value for use in comparing doubles.
       /// </summary>
       /// <returns>The value.</returns>
-      public static double Eps() => 1.0e-9;
+      public const double Eps = 1.0e-9;
 
-      public static double SmallGap()
-      {
-         return Eps() * 10;
-      }
+      public const double SmallGap = Eps * 10.0;
 
       /// <summary>
       /// Check if two double variables are almost equal.
@@ -69,7 +62,7 @@ namespace Revit.IFC.Common.Utility
       /// </returns>
       public static bool IsAlmostEqual(double d1, double d2)
       {
-         return IsAlmostEqual(d1, d2, Eps());
+         return IsAlmostEqual(d1, d2, Eps);
       }
 
       /// <summary>
@@ -128,7 +121,7 @@ namespace Revit.IFC.Common.Utility
       /// </returns>
       public static bool IsAlmostZero(double dd)
       {
-         return Math.Abs(dd) <= Eps();
+         return Math.Abs(dd) <= Eps;
       }
 
       /// <summary>
@@ -148,7 +141,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>True if the value is almost zero, false otherwise.</returns>
       public static bool AreaIsAlmostZero(double area)
       {
-         return Math.Abs(area) < Eps() * Eps();
+         return Math.Abs(area) < Eps * Eps;
       }
 
       /// <summary>
@@ -158,7 +151,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>True if the value is almost zero, false otherwise.</returns>
       public static bool VolumeIsAlmostZero(double volume)
       {
-         return Math.Abs(volume) < Eps() * Eps() * Eps();
+         return Math.Abs(volume) < Eps * Eps * Eps;
       }
 
       /// <summary>
@@ -170,7 +163,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The number in range.</returns>
       public static double PutInRange(double number, double midRange, double period)
       {
-         if (period < Eps())
+         if (period < Eps)
             return number;
 
          double halfPeriod = 0.5 * period;
@@ -190,7 +183,7 @@ namespace Revit.IFC.Common.Utility
 
          number += period * shiftCountAsDouble;
 
-         if (number > (range[1] + Eps()) || number < (range[0] - Eps()))
+         if (number > (range[1] + Eps) || number < (range[0] - Eps))
             throw new InvalidOperationException("Failed to put number into range.");
 
          return number;
@@ -221,7 +214,7 @@ namespace Revit.IFC.Common.Utility
             return 0;
 
          double aa, bb, ab;
-         double epsSq = Eps() * Eps();
+         double epsSq = Eps * Eps;
          double angleEps = Math.PI / 1800.0;
 
          aa = a.DotProduct(a);
@@ -279,13 +272,13 @@ namespace Revit.IFC.Common.Utility
       /// </summary>
       /// <param name="val">The value.</param>
       /// <returns>The arccosine of the value.</returns>
-      /// <remarks>If the input number is outside the range of -1.0 - Eps() to 1.0 + Eps(), it will still return NaN.</remarks>
+      /// <remarks>If the input number is outside the range of -1.0 - Eps to 1.0 + Eps, it will still return NaN.</remarks>
       public static double SafeAcos(double val)
       {
          // We only want to change values outside of the range, not valid values close to but not equal to -1 or 1.
-         if (val >= 1.0 && (val - 1.0) < Eps())
+         if (val >= 1.0 && (val - 1.0) < Eps)
             return 0.0;
-         if (val <= -1.0 && (-val - 1.0) < Eps())
+         if (val <= -1.0 && (-val - 1.0) < Eps)
             return Math.PI;
          return Math.Acos(val);
       }
@@ -295,15 +288,27 @@ namespace Revit.IFC.Common.Utility
       /// </summary>
       /// <param name="val">The value.</param>
       /// <returns>The arcsine of the value.</returns>
-      /// <remarks>If the input number is outside the range of -1.0 - Eps() to 1.0 + Eps(), it will still return NaN.</remarks>
+      /// <remarks>If the input number is outside the range of -1.0 - Eps to 1.0 + Eps, it will still return NaN.</remarks>
       public static double SafeAsin(double val)
       {
          // We only want to change values outside of the range, not valid values close to but not equal to -1 or 1.
-         if (val >= 1.0 && (val - 1.0) < Eps())
+         if (val >= 1.0 && (val - 1.0) < Eps)
             return Math.PI / 2.0;
-         if (val <= -1.0 && (-val - 1.0) < Eps())
+         if (val <= -1.0 && (-val - 1.0) < Eps)
             return -Math.PI / 2.0;
          return Math.Asin(val);
+      }
+
+      /// <summary>
+      /// Checks if the given ElementId is null or invalid.
+      /// </summary>
+      /// <param name="id">The ElementId to check.</param>
+      /// <returns>True if the ElementId is null or invalid, false otherwise.</returns>
+      /// <remarks>ElementId.InvalidElementId is somewhat slow; it is more performant to check the value.</remarks>
+      [MethodImpl(MethodImplOptions.AggressiveInlining)]
+      public static bool IsInvalidElementId(ElementId id)
+      {
+         return (id?.Value ?? -1) == -1;
       }
    }
 }

@@ -17,14 +17,16 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Enums;
+using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Exporter;
 using Revit.IFC.Export.Toolkit;
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Text;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -165,10 +167,10 @@ namespace Revit.IFC.Export.Utility
       private static GUIDString CreateGUIDString(Element element, string parameterName, BuiltInParameter parameterId)
       {
          string paramValue = null;
-         if (parameterName != null)
-            ParameterUtil.GetStringValueFromElement(element, parameterName, out paramValue);
+         if (!string.IsNullOrEmpty(parameterName))
+            (_, paramValue) = ParameterUtil.GetStringValueFromElement(element, false, parameterName);
          if (!IsValidIFCGUID(paramValue) && parameterId != BuiltInParameter.INVALID)
-            ParameterUtil.GetStringValueFromElement(element, parameterId, out paramValue);
+            (_, paramValue) = ParameterUtil.GetStringValueFromElement(element, parameterId);
          if (!IsValidIFCGUID(paramValue) || ExporterCacheManager.GUIDCache.Contains(paramValue))
             return new GUIDString(string.Empty, GUIDString.KeyType.Unknown);
          return new GUIDString(paramValue, GUIDString.KeyType.IFCGUID);
@@ -261,8 +263,8 @@ namespace Revit.IFC.Export.Utility
       ElementId levelId, int? index, bool useEntityType, ElementId materialId, bool inAssembly)
       {
          int subElementIndex = ExporterStateManager.GetCurrentRangeIndex();
-         bool hasLevelId = (levelId != ElementId.InvalidElementId);
-         bool hasMaterialId = (materialId != ElementId.InvalidElementId);
+         bool hasLevelId = !MathUtil.IsInvalidElementId(levelId);
+         bool hasMaterialId = !MathUtil.IsInvalidElementId(materialId);
 
          // Legacy GUIDs.
          if (useInstanceGeometry && !useEntityType && !hasLevelId && !hasMaterialId)
@@ -295,7 +297,7 @@ namespace Revit.IFC.Export.Utility
                IFCEntityType entityType =
                   useInstanceGeometry ? exportInfoPair.ExportInstance : exportInfoPair.ExportType;
                string predefinedType = exportInfoPair.PredefinedType ?? string.Empty;
-               hash += " Entity: " + entityType.ToString() + ":" + predefinedType;
+               hash += " Entity: " + IFCAnyHandleUtil.GetIFCEntityTypeName(entityType) + ":" + predefinedType;
             }
 
             if (hasLevelId)

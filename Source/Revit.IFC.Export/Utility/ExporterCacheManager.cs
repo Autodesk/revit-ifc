@@ -64,9 +64,9 @@ namespace Revit.IFC.Export.Utility
       public static string BaseLinkedDocumentGUID { get; set; } = null;
 
       /// <summary>
-      /// Cache for Base Quantities that require separate calculation.
+      /// Cache for total material layer Width quantities, keyed by product handle.
       /// </summary>
-      public static Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>> BaseQuantitiesCache { get; private set; } = new();
+      public static Dictionary<IFCAnyHandle, HashSet<IFCAnyHandle>> TotalLayerWidthCache { get; private set; } = new();
 
       /// <summary>
       /// A mapping of element ids to a material id determined by looking at element parameters.
@@ -99,8 +99,6 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public static IFCCertifiedEntitiesAndPSets CertifiedEntitiesAndPsetsCache { get; private set; } = new();
 
-      private static ClassificationCache m_ClassificationCache = null;
-
       public static ClassificationLocationCache ClassificationLocationCache { get; private set; } = new();
 
       /// <summary>
@@ -130,6 +128,19 @@ namespace Revit.IFC.Export.Utility
       public static PropertySetCache CreatedSpecialPropertySets { get; private set; } = new();
 
       public static PropertySetCache CreatedInternalPropertySets { get; private set; } = new();
+
+      /// <summary>
+      /// The current IfcSchemaEntityTree related to the current IFC version.
+      /// </summary>
+      public static IfcSchemaEntityTree IFCSchemaEntityTree 
+      {
+         get 
+         {
+            field ??= IfcSchemaEntityTree.GetEntityDictFor(ExportOptionsCache.FileVersion, null);
+            return field;
+         } 
+         private set; 
+      } = null;
 
       /// <summary>
       /// The CurveAnnotationCache object.
@@ -229,11 +240,6 @@ namespace Revit.IFC.Export.Utility
       public static Dictionary<ElementId, FabricParams> FabricParamsCache { get; private set; } = new();
 
       /// <summary>
-      /// Keeps track of the active IFC parameter mapping template.
-      /// </summary>
-      static IFCParameterTemplate m_ParameterMappingTemplate = null;
-
-      /// <summary>
       /// The FamilySymbolToTypeInfoCache object.  This maps a FamilySymbol id to the related created IFC information (the TypeObjectsCache).
       /// </summary>
       public static TypeObjectsCache FamilySymbolToTypeInfoCache { get; private set; } = new();
@@ -255,7 +261,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The GUIDCache object.
       /// </summary>
-      public static HashSet<string> GUIDCache { get; } = new();
+      public static HashSet<string> GUIDCache { get; } = [];
 
       /// <summary>
       /// The GUIDs to store in elements at the end of export, if the option to store GUIDs has been selected.
@@ -278,6 +284,25 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public static Dictionary<ElementId, int> HostObjectsLevelIndex { get; private set; } = new();
 
+      /// <summary>
+      /// The ParameterAccess object associated with the HostDocument handle.
+      /// </summary>
+      public static ParameterAccess HostParameterAccess
+      {
+         get
+         {
+            if (ExportOptionsCache.HostDocument == null)
+               return null;
+            
+            field ??= new(ExportOptionsCache.HostDocument);
+            return field;
+         }
+         set
+         {
+            field = value;
+         }
+      }
+      
       /// <summary>
       /// The HostPartsCache object.
       /// </summary>
@@ -302,7 +327,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// The precision used in the IfcRepresentationContext in Revit units.
       /// </summary>
-      public static double LengthPrecision { get; set; } = MathUtil.Eps();
+      public static double LengthPrecision { get; set; } = MathUtil.Eps;
 
       /// <summary>
       /// The LevelInfoCache object.  This contains extra information on top of
@@ -366,11 +391,34 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public static IFCAnyHandle OwnerHistoryHandle { get; set; } = null;
 
-      
+      /// <summary>
+      /// The ParameterAccess object associated with the Document handle.
+      /// </summary>
+      public static ParameterAccess ParameterAccess
+      {
+         get
+         {
+            if (Document == null)
+               return null;
+
+            field ??= new(Document);
+            return field;
+         }
+         set
+         {
+            field = value;
+         }
+      }
+
       /// <summary>
       /// The ParameterCache object.
       /// </summary>
       public static ParameterCache ParameterCache { get; private set; } = new();
+
+      /// <summary>
+      /// The ParameterInformationCache object, used to map from parameter ids to parameter information.
+      /// </summary>
+      public static ParameterInformationCache ParameterInformationCache { get; private set; } = new();
 
       /// <summary>
       /// The top level IfcProject handle.
@@ -392,11 +440,23 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public static PresentationStyleAssignmentCache PresentationStyleAssignmentCache { get; private set; } = new();
 
+      /// <summary>
+      /// Preserve the element parameter cache after the element export, as it will be used again.
+      /// </summary>
+      public static HashSet<ElementId> PreservedParameterCacheElementIds = [];
+
+
       private static IDictionary<Tuple<string, string>, string> m_PropertyMapCache = null;
 
       /// Cache for information whether a QuantitySet specified in the Dict. value has been created for the elementHandle
       /// </summary>
       public static HashSet<(IFCAnyHandle, string)> QtoSetCreated { get; private set; } = new();
+
+      /// <summary>
+      /// Property handles pre-created by specific exporters (e.g., door/window panel properties)
+      /// to be merged into the centralized property set pass. Keyed by (psetName, typeElementId).
+      /// </summary>
+      public static Dictionary<(string, ElementId), Dictionary<string, IFCAnyHandle>> PreCreatedPsetProperties { get; private set; } = [];
 
       /// <summary>
       /// The predefined property sets to be exported for an entity type, regardless of Object Type.
@@ -457,7 +517,7 @@ namespace Revit.IFC.Export.Utility
       /// The SpaceTypeCache object.  Used for space elements in Revit with no type.
       /// </summary>
       /// <remarks>The key is the predefined type of the IfcSpaceType.</remarks>
-      public static Dictionary<string, IFCAnyHandle> SpaceTypeCache { get; private set; } = new();
+      public static Dictionary<NamingUtil.IFCStringKey, IFCAnyHandle> SpaceTypeCache { get; private set; } = [];
       
       /// <summary>
       /// The StairRampContainerInfoCache object.
@@ -567,14 +627,16 @@ namespace Revit.IFC.Export.Utility
             return false;
          }
 
-         if (!m_ExportCeilingGrids.HasValue)
-         {
-            m_ExportCeilingGrids = CategoryMappingTemplate?.GetMappingInfoById(Document,
-               new ElementId(BuiltInCategory.OST_CeilingsSurfacePattern), CustomSubCategoryId.None)?.IFCExportFlag ?? false;
-         }
+         m_ExportCeilingGrids ??= CategoryMappingTemplate?.GetMappingInfoById(Document,
+            new ElementId(BuiltInCategory.OST_CeilingsSurfacePattern), CustomSubCategoryId.None)?.IFCExportFlag ?? false;
 
-         return m_ExportCeilingGrids.Value;         
+         return m_ExportCeilingGrids.Value;
       }
+
+      /// <summary>
+      /// Keeps track of the active IFC parameter mapping template.
+      /// </summary>
+      static IFCParameterTemplate m_ParameterMappingTemplate = null;
 
       /// <summary>
       /// Get the current parameter mapping template.
@@ -705,12 +767,12 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            m_ClassificationCache ??= new ClassificationCache(Document);
-            return m_ClassificationCache;
+            field ??= new ClassificationCache(Document);
+            return field;
          }
          set 
          { 
-            m_ClassificationCache = value; 
+            field = value; 
          }
       }
 
@@ -733,7 +795,7 @@ namespace Revit.IFC.Export.Utility
 
          public int CompareTo(PropertySetKey other)
          {
-            if (other == null) 
+            if (other is null) 
                return 1;
 
             if (EntityType < other.EntityType)
@@ -742,10 +804,10 @@ namespace Revit.IFC.Export.Utility
             if (EntityType > other.EntityType)
                return 1;
 
-            if (PredefinedType == null)
-               return other.PredefinedType == null ? 0 : -1;
+            if (PredefinedType is null)
+               return other.PredefinedType is null ? 0 : -1;
             
-            if (other.PredefinedType == null)
+            if (other.PredefinedType is null)
                return 1;
 
             return PredefinedType.CompareTo(other.PredefinedType);
@@ -753,24 +815,14 @@ namespace Revit.IFC.Export.Utility
 
          public static bool operator ==(PropertySetKey first, PropertySetKey second)
          {
-            object lhsObject = first;
-            object rhsObject = second;
-            if (null == lhsObject)
-            {
-               if (null == rhsObject)
-                  return true;
-               return false;
-            }
-            if (null == rhsObject)
+            if (first is null)
+               return second is null;
+            
+            if (second is null)
                return false;
 
-            if (first.EntityType != second.EntityType)
-               return false;
-
-            if (first.PredefinedType != second.PredefinedType)
-               return false;
-
-            return true;
+            return first.EntityType == second.EntityType && 
+               first.PredefinedType == second.PredefinedType;
          }
 
          public static bool operator !=(PropertySetKey first, PropertySetKey second)
@@ -780,7 +832,7 @@ namespace Revit.IFC.Export.Utility
 
          public override bool Equals(object obj)
          {
-            if (obj == null)
+            if (obj is null)
                return false;
 
             PropertySetKey second = obj as PropertySetKey;
@@ -849,13 +901,20 @@ namespace Revit.IFC.Export.Utility
             m_CategoryMappingTemplate = null;
             CertifiedEntitiesAndPsetsCache = new IFCCertifiedEntitiesAndPSets(); // No Clear() for this, just remake.
             ExporterIFC = null;
-            ExportOptionsCache = new();    // This will need to be re-initialized before use.
+            // Preserve the host document across the reset.  In the separate-links export path it is
+            // set (by the UI) on the ExportOptionsCache before the link sub-export begins, and must
+            // survive this clear so that the host document's data (such as the active-view filter and
+            // extended properties) remains available while exporting the linked document.
+            Document priorHostDocument = ExportOptionsCache?.HostDocument;
+            ExportOptionsCache = new() { HostDocument = priorHostDocument };    // This will need to be re-initialized before use.
             m_Global2DOriginHandle = null;
             m_Global3DOriginHandle = null;
             Context2DHandles.Clear();
             Context3DHandles.Clear();
             DelayedWarnings = new();
             GUIDCache.Clear();
+            IFCSchemaEntityTree = null;
+            HostParameterAccess = null;
             OwnerHistoryHandle = null;
             ParameterCache.Clear();
             m_ParameterMappingTemplate = null;
@@ -880,11 +939,11 @@ namespace Revit.IFC.Export.Utility
          BuildingHandle = null;
          CanExportBeamGeometryAsExtrusionCache.Clear();
          CeilingSpaceRelCache.Clear();
-         m_ClassificationCache = null;
+         ClassificationCache = null;
          ClassificationLocationCache.Clear();
          ContainmentCache.Clear();
          ComplexPropertyCache.Clear();
-         BaseQuantitiesCache.Clear();
+         TotalLayerWidthCache.Clear();
          CreatedInternalPropertySets.Clear();
          CreatedSpecialPropertySets.Clear();
          CurveAnnotationCache.Clear();
@@ -911,7 +970,7 @@ namespace Revit.IFC.Export.Utility
          HostPartsCache.Clear();
          InternallyCreatedRootHandles.Clear();
          IsExternalParameterValueCache.Clear();
-         LengthPrecision = MathUtil.Eps();
+         LengthPrecision = MathUtil.Eps;
          LevelInfoCache.Clear();
          MaterialIdToStyleHandleCache.Clear();
          MaterialSetUsageCache.Clear();
@@ -923,9 +982,12 @@ namespace Revit.IFC.Export.Utility
          MEPCache.Clear();
          NonSpatialElements.Clear();
          Object2DCurvesCache.Clear();
+         ParameterAccess = null;
+         ParameterInformationCache.Clear(fullClear);
          PartExportedCache.Clear();
          PresentationLayerSetCache.Clear();
          PresentationStyleAssignmentCache.Clear();
+         PreservedParameterCacheElementIds.Clear();
          PropertyInfoCache.Clear();
          PropertyMappingCache.Clear();
          m_PropertyMapCache = null;
@@ -950,6 +1012,7 @@ namespace Revit.IFC.Export.Utility
          ZoneCache.Clear();
          ZoneInfoCache.Clear();
          QtoSetCreated.Clear();
+         PreCreatedPsetProperties.Clear();
       }
    }
 }

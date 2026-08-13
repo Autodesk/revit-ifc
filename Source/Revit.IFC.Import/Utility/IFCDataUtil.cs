@@ -72,6 +72,7 @@ namespace Revit.IFC.Import.Utility
          m_MeasureCache["IfcMoistureDiffusivityMeasure"] = SpecTypeId.Diffusivity;
          m_MeasureCache["IfcMomentofInertiaMeasure"] = SpecTypeId.MomentOfInertia;
          m_MeasureCache["IfcMonetaryMeasure"] = SpecTypeId.Currency;
+         m_MeasureCache["IfcNonNegativeLengthMeasure"] = SpecTypeId.Length;
          m_MeasureCache["IfcNormalisedRatioMeasure"] = SpecTypeId.Number;
          m_MeasureCache["IfcNumericMeasure"] = SpecTypeId.Number;
          m_MeasureCache["IfcPositiveRatioMeasure"] = SpecTypeId.Number;
@@ -84,6 +85,8 @@ namespace Revit.IFC.Import.Utility
          m_MeasureCache["IfcRatioMeasure"] = SpecTypeId.Number;
          m_MeasureCache["IfcReal"] = SpecTypeId.Number;
          m_MeasureCache["IfcRotationalFrequencyMeasure"] = SpecTypeId.AngularSpeed;
+         m_MeasureCache["IfcSectionModulusMeasure"] = SpecTypeId.SectionModulus;
+         m_MeasureCache["IfcSoundPowerLevelMeasure"] = SpecTypeId.Number;
          m_MeasureCache["IfcSoundPowerMeasure"] = SpecTypeId.Wattage;
          m_MeasureCache["IfcSoundPressureMeasure"] = SpecTypeId.HvacPressure;
          m_MeasureCache["IfcSpecificHeatCapacityMeasure"] = SpecTypeId.SpecificHeat;

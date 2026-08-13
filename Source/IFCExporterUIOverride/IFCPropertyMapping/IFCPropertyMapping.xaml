@@ -415,7 +415,7 @@
                                     <ToolTip Content="{x:Static p:Resources.SelectedPropertySetCheckboxTooltip}" Placement="Bottom"/>
                                  </CheckBox.ToolTip>
                               </CheckBox>
-                              <TextBlock Text="{Binding Name}" Style="{StaticResource TextBlockStyle}"/>
+                              <TextBlock Text="{Binding DisplayName}" Style="{StaticResource TextBlockStyle}"/>
                            </StackPanel>
                         </DataTemplate>
                      </HierarchicalDataTemplate.ItemTemplate>

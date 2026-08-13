@@ -72,15 +72,18 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Area, entryMap.CompatibleRevitParameterName, "IfcQtyNetFloorArea");
-         m_Area = UnitUtil.ScaleArea(m_Area);
-         if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+         (_, m_Area) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, entryMap.CompatibleRevitParameterName,
+            "IfcQtyNetFloorArea");
+         if (m_Area > MathUtil.Eps * MathUtil.Eps)
+         {
+            m_Area = UnitUtil.ScaleArea(m_Area);
             return true;
+         }
 
          m_Area = UnitUtil.ScaleArea(CalculateSpatialElementNetFloorArea(element as SpatialElement));
-         if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+         if (m_Area > MathUtil.Eps * MathUtil.Eps)
             return true;
 
          ElementId categoryId = CategoryUtil.GetSafeCategoryId(element);
@@ -96,14 +99,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
          else
          {
-            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.HOST_AREA_COMPUTED, out m_Area);
+            (_, m_Area) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.HOST_AREA_COMPUTED);
          }
 
          m_Area = UnitUtil.ScaleArea(m_Area);
-         if (m_Area > MathUtil.Eps() * MathUtil.Eps())
-            return true;
-
-         return false;
+         return m_Area > MathUtil.Eps * MathUtil.Eps;
       }
 
       private double CalculateSpatialElementNetFloorArea(SpatialElement spatialElement)

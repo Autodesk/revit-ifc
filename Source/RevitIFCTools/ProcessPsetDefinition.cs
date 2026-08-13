@@ -977,7 +977,9 @@ namespace RevitIFCTools
 
                string[] applTypeStr = applicableType.Split('/', '.', '=');
                pset.ApplicableType = applTypeStr[0];
-               pset.PredefinedType = GetApplicablePredefinedType(applTypeStr);
+               string predefinedType = GetApplicablePredefinedType(applTypeStr);
+               if (predefinedType != null)
+                  pset.PredefinedTypes.Add(predefinedType);
 
                // If the applicable type contains more than 1 entry, add them into the applicable classes
                string[] addClasses = pset.ApplicableType.Split(',');

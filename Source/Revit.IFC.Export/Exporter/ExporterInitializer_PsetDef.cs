@@ -1,4 +1,4 @@
-/********************************************************************************************************************************
+﻿/********************************************************************************************************************************
 ** NOTE: This code is generated from IFC psd files automatically by RevitIFCTools.                                            **
 **       DO NOT change it manually as it will be overwritten the next time this file is re-generated!!                        **
 ********************************************************************************************************************************/
@@ -1395,7 +1395,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetActuatorTypeElectricActuator.EntityTypes.Add(IFCEntityType.IfcActuatorType);
             propertySetActuatorTypeElectricActuator.ObjectType = "IfcActuatorType";
-            propertySetActuatorTypeElectricActuator.PredefinedType = "ELECTRICACTUATOR";
+            propertySetActuatorTypeElectricActuator.PredefinedTypes.Add("ELECTRICACTUATOR");
             ifcPSE = new PropertySetEntry("Pset_ActuatorTypeElectricActuator.ActuatorInputPower", "ActuatorInputPower");
             ifcPSE.PropertyName = "ActuatorInputPower";
             ifcPSE.PropertyType = PropertyType.Power;
@@ -1419,7 +1419,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetActuatorTypeElectricActuator.EntityTypes.Add(IFCEntityType.IfcActuator);
             propertySetActuatorTypeElectricActuator.ObjectType = "IfcActuator";
-            propertySetActuatorTypeElectricActuator.PredefinedType = "ELECTRICACTUATOR";
+            propertySetActuatorTypeElectricActuator.PredefinedTypes.Add("ELECTRICACTUATOR");
             ifcPSE = new PropertySetEntry("Pset_ActuatorTypeElectricActuator.ActuatorInputPower", "ActuatorInputPower");
             ifcPSE.PropertyName = "ActuatorInputPower";
             ifcPSE.PropertyType = PropertyType.Power;
@@ -1450,7 +1450,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetActuatorTypeElectricActuator.EntityTypes.Add(IFCEntityType.IfcActuator);
             propertySetActuatorTypeElectricActuator.EntityTypes.Add(IFCEntityType.IfcActuatorType);
             propertySetActuatorTypeElectricActuator.ObjectType = "IfcActuator";
-            propertySetActuatorTypeElectricActuator.PredefinedType = "ELECTRICACTUATOR";
+            propertySetActuatorTypeElectricActuator.PredefinedTypes.Add("ELECTRICACTUATOR");
             ifcPSE = new PropertySetEntry("Pset_ActuatorTypeElectricActuator.ActuatorInputPower", "ActuatorInputPower");
             ifcPSE.PropertyName = "ActuatorInputPower";
             ifcPSE.PropertyType = PropertyType.Power;
@@ -1516,7 +1516,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetActuatorTypeHydraulicActuator.EntityTypes.Add(IFCEntityType.IfcActuatorType);
             propertySetActuatorTypeHydraulicActuator.ObjectType = "IfcActuatorType";
-            propertySetActuatorTypeHydraulicActuator.PredefinedType = "HYDRAULICACTUATOR";
+            propertySetActuatorTypeHydraulicActuator.PredefinedTypes.Add("HYDRAULICACTUATOR");
             ifcPSE = new PropertySetEntry("Pset_ActuatorTypeHydraulicActuator.InputPressure", "InputPressure");
             ifcPSE.PropertyName = "InputPressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -1538,7 +1538,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetActuatorTypeHydraulicActuator.EntityTypes.Add(IFCEntityType.IfcActuator);
             propertySetActuatorTypeHydraulicActuator.ObjectType = "IfcActuator";
-            propertySetActuatorTypeHydraulicActuator.PredefinedType = "HYDRAULICACTUATOR";
+            propertySetActuatorTypeHydraulicActuator.PredefinedTypes.Add("HYDRAULICACTUATOR");
             ifcPSE = new PropertySetEntry("Pset_ActuatorTypeHydraulicActuator.InputPressure", "InputPressure");
             ifcPSE.PropertyName = "InputPressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -1567,7 +1567,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetActuatorTypeHydraulicActuator.EntityTypes.Add(IFCEntityType.IfcActuator);
             propertySetActuatorTypeHydraulicActuator.EntityTypes.Add(IFCEntityType.IfcActuatorType);
             propertySetActuatorTypeHydraulicActuator.ObjectType = "IfcActuator";
-            propertySetActuatorTypeHydraulicActuator.PredefinedType = "HYDRAULICACTUATOR";
+            propertySetActuatorTypeHydraulicActuator.PredefinedTypes.Add("HYDRAULICACTUATOR");
             ifcPSE = new PropertySetEntry("Pset_ActuatorTypeHydraulicActuator.InputPressure", "InputPressure");
             ifcPSE.PropertyName = "InputPressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -1725,7 +1725,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetActuatorTypePneumaticActuator.EntityTypes.Add(IFCEntityType.IfcActuatorType);
             propertySetActuatorTypePneumaticActuator.ObjectType = "IfcActuatorType";
-            propertySetActuatorTypePneumaticActuator.PredefinedType = "PNEUMATICACTUATOR";
+            propertySetActuatorTypePneumaticActuator.PredefinedTypes.Add("PNEUMATICACTUATOR");
             ifcPSE = new PropertySetEntry("Pset_ActuatorTypePneumaticActuator.InputPressure", "InputPressure");
             ifcPSE.PropertyName = "InputPressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -1747,7 +1747,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetActuatorTypePneumaticActuator.EntityTypes.Add(IFCEntityType.IfcActuator);
             propertySetActuatorTypePneumaticActuator.ObjectType = "IfcActuator";
-            propertySetActuatorTypePneumaticActuator.PredefinedType = "PNEUMATICACTUATOR";
+            propertySetActuatorTypePneumaticActuator.PredefinedTypes.Add("PNEUMATICACTUATOR");
             ifcPSE = new PropertySetEntry("Pset_ActuatorTypePneumaticActuator.InputPressure", "InputPressure");
             ifcPSE.PropertyName = "InputPressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -1776,7 +1776,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetActuatorTypePneumaticActuator.EntityTypes.Add(IFCEntityType.IfcActuator);
             propertySetActuatorTypePneumaticActuator.EntityTypes.Add(IFCEntityType.IfcActuatorType);
             propertySetActuatorTypePneumaticActuator.ObjectType = "IfcActuator";
-            propertySetActuatorTypePneumaticActuator.PredefinedType = "PNEUMATICACTUATOR";
+            propertySetActuatorTypePneumaticActuator.PredefinedTypes.Add("PNEUMATICACTUATOR");
             ifcPSE = new PropertySetEntry("Pset_ActuatorTypePneumaticActuator.InputPressure", "InputPressure");
             ifcPSE.PropertyName = "InputPressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -4828,7 +4828,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAirTerminalTypeRectangular.EntityTypes.Add(IFCEntityType.IfcAirTerminalType);
             propertySetAirTerminalTypeRectangular.ObjectType = "Pset_AirTerminalTypeCommon";
-            propertySetAirTerminalTypeRectangular.PredefinedType = "RECTANGULAR";
+            propertySetAirTerminalTypeRectangular.PredefinedTypes.Add("RECTANGULAR");
             ifcPSE = new PropertySetEntry("Pset_AirTerminalTypeRectangular.FaceType", "FaceType");
             ifcPSE.PropertyName = "FaceType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -4844,7 +4844,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAirTerminalTypeRectangular.EntityTypes.Add(IFCEntityType.IfcAirTerminalType);
             propertySetAirTerminalTypeRectangular.ObjectType = "PSET";
-            propertySetAirTerminalTypeRectangular.PredefinedType = "RECTANGULAR";
+            propertySetAirTerminalTypeRectangular.PredefinedTypes.Add("RECTANGULAR");
             ifcPSE = new PropertySetEntry("Pset_AirTerminalTypeRectangular.FaceType", "FaceType");
             ifcPSE.PropertyName = "FaceType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -4873,7 +4873,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAirTerminalTypeRound.EntityTypes.Add(IFCEntityType.IfcAirTerminalType);
             propertySetAirTerminalTypeRound.ObjectType = "Pset_AirTerminalTypeCommon";
-            propertySetAirTerminalTypeRound.PredefinedType = "ROUND";
+            propertySetAirTerminalTypeRound.PredefinedTypes.Add("ROUND");
             ifcPSE = new PropertySetEntry("Pset_AirTerminalTypeRound.FaceType", "FaceType");
             ifcPSE.PropertyName = "FaceType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -4889,7 +4889,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAirTerminalTypeRound.EntityTypes.Add(IFCEntityType.IfcAirTerminalType);
             propertySetAirTerminalTypeRound.ObjectType = "PSET";
-            propertySetAirTerminalTypeRound.PredefinedType = "ROUND";
+            propertySetAirTerminalTypeRound.PredefinedTypes.Add("ROUND");
             ifcPSE = new PropertySetEntry("Pset_AirTerminalTypeRound.FaceType", "FaceType");
             ifcPSE.PropertyName = "FaceType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -4918,7 +4918,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAirTerminalTypeSlot.EntityTypes.Add(IFCEntityType.IfcAirTerminalType);
             propertySetAirTerminalTypeSlot.ObjectType = "Pset_AirTerminalTypeCommon";
-            propertySetAirTerminalTypeSlot.PredefinedType = "SLOT";
+            propertySetAirTerminalTypeSlot.PredefinedTypes.Add("SLOT");
             ifcPSE = new PropertySetEntry("Pset_AirTerminalTypeSlot.SlotWidth", "SlotWidth");
             ifcPSE.PropertyName = "SlotWidth";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -4948,7 +4948,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAirTerminalTypeSlot.EntityTypes.Add(IFCEntityType.IfcAirTerminalType);
             propertySetAirTerminalTypeSlot.ObjectType = "PSET";
-            propertySetAirTerminalTypeSlot.PredefinedType = "SLOT";
+            propertySetAirTerminalTypeSlot.PredefinedTypes.Add("SLOT");
             ifcPSE = new PropertySetEntry("Pset_AirTerminalTypeSlot.SlotWidth", "SlotWidth");
             ifcPSE.PropertyName = "SlotWidth";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -4991,7 +4991,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAirTerminalTypeSquare.EntityTypes.Add(IFCEntityType.IfcAirTerminalType);
             propertySetAirTerminalTypeSquare.ObjectType = "Pset_AirTerminalTypeCommon";
-            propertySetAirTerminalTypeSquare.PredefinedType = "SQUARE";
+            propertySetAirTerminalTypeSquare.PredefinedTypes.Add("SQUARE");
             ifcPSE = new PropertySetEntry("Pset_AirTerminalTypeSquare.FaceType", "FaceType");
             ifcPSE.PropertyName = "FaceType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -5007,7 +5007,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAirTerminalTypeSquare.EntityTypes.Add(IFCEntityType.IfcAirTerminalType);
             propertySetAirTerminalTypeSquare.ObjectType = "PSET";
-            propertySetAirTerminalTypeSquare.PredefinedType = "SQUARE";
+            propertySetAirTerminalTypeSquare.PredefinedTypes.Add("SQUARE");
             ifcPSE = new PropertySetEntry("Pset_AirTerminalTypeSquare.FaceType", "FaceType");
             ifcPSE.PropertyName = "FaceType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -6339,7 +6339,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAnnotationContourLine.EntityTypes.Add(IFCEntityType.IfcAnnotation);
             propertySetAnnotationContourLine.ObjectType = "IfcAnnotation";
-            propertySetAnnotationContourLine.PredefinedType = "ContourLine";
+            propertySetAnnotationContourLine.PredefinedTypes.Add("ContourLine");
             ifcPSE = new PropertySetEntry("Pset_AnnotationContourLine.ContourValue", "ContourValue");
             ifcPSE.PropertyName = "ContourValue";
             ifcPSE.PropertyType = PropertyType.Length;
@@ -6357,7 +6357,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAnnotationContourLine.EntityTypes.Add(IFCEntityType.IfcAnnotation);
             propertySetAnnotationContourLine.ObjectType = "IfcAnnotation";
-            propertySetAnnotationContourLine.PredefinedType = "CONTOURLINE";
+            propertySetAnnotationContourLine.PredefinedTypes.Add("CONTOURLINE");
             ifcPSE = new PropertySetEntry("Pset_AnnotationContourLine.ContourValue", "ContourValue");
             ifcPSE.PropertyName = "ContourValue";
             ifcPSE.PropertyType = PropertyType.Length;
@@ -6384,7 +6384,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAnnotationLineOfSight.EntityTypes.Add(IFCEntityType.IfcAnnotation);
             propertySetAnnotationLineOfSight.ObjectType = "IfcAnnotation";
-            propertySetAnnotationLineOfSight.PredefinedType = "LineOfSight";
+            propertySetAnnotationLineOfSight.PredefinedTypes.Add("LineOfSight");
             ifcPSE = new PropertySetEntry("Pset_AnnotationLineOfSight.SetbackDistance", "SetbackDistance");
             ifcPSE.PropertyName = "SetbackDistance";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -6503,7 +6503,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAnnotationSurveyArea.EntityTypes.Add(IFCEntityType.IfcAnnotation);
             propertySetAnnotationSurveyArea.ObjectType = "IfcAnnotation";
-            propertySetAnnotationSurveyArea.PredefinedType = "SurveyArea";
+            propertySetAnnotationSurveyArea.PredefinedTypes.Add("SurveyArea");
             ifcPSE = new PropertySetEntry("Pset_AnnotationSurveyArea.AcquisitionMethod", "AcquisitionMethod");
             ifcPSE.PropertyName = "AcquisitionMethod";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -6541,7 +6541,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAnnotationSurveyArea.EntityTypes.Add(IFCEntityType.IfcAnnotation);
             propertySetAnnotationSurveyArea.ObjectType = "IfcAnnotation";
-            propertySetAnnotationSurveyArea.PredefinedType = "SURVEY";
+            propertySetAnnotationSurveyArea.PredefinedTypes.Add("SURVEY");
             ifcPSE = new PropertySetEntry("Pset_AnnotationSurveyArea.AcquisitionMethod", "AcquisitionMethod");
             ifcPSE.PropertyName = "AcquisitionMethod";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -6859,7 +6859,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAudioVisualApplianceTypeAmplifier.EntityTypes.Add(IFCEntityType.IfcAudioVisualAppliance);
             propertySetAudioVisualApplianceTypeAmplifier.ObjectType = "IfcAudioVisualAppliance";
-            propertySetAudioVisualApplianceTypeAmplifier.PredefinedType = "AMPLIFIER";
+            propertySetAudioVisualApplianceTypeAmplifier.PredefinedTypes.Add("AMPLIFIER");
             ifcPSE = new PropertySetEntry("Pset_AudioVisualApplianceTypeAmplifier.AmplifierType", "AmplifierType");
             ifcPSE.PropertyName = "AmplifierType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -6905,7 +6905,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetAudioVisualApplianceTypeAmplifier.EntityTypes.Add(IFCEntityType.IfcAudioVisualAppliance);
             propertySetAudioVisualApplianceTypeAmplifier.EntityTypes.Add(IFCEntityType.IfcAudioVisualApplianceType);
             propertySetAudioVisualApplianceTypeAmplifier.ObjectType = "IfcAudioVisualAppliance";
-            propertySetAudioVisualApplianceTypeAmplifier.PredefinedType = "AMPLIFIER";
+            propertySetAudioVisualApplianceTypeAmplifier.PredefinedTypes.Add("AMPLIFIER");
             ifcPSE = new PropertySetEntry("Pset_AudioVisualApplianceTypeAmplifier.AmplifierType", "AmplifierType");
             ifcPSE.PropertyName = "AmplifierType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -6954,7 +6954,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAudioVisualApplianceTypeCamera.EntityTypes.Add(IFCEntityType.IfcAudioVisualAppliance);
             propertySetAudioVisualApplianceTypeCamera.ObjectType = "IfcAudioVisualAppliance";
-            propertySetAudioVisualApplianceTypeCamera.PredefinedType = "CAMERA";
+            propertySetAudioVisualApplianceTypeCamera.PredefinedTypes.Add("CAMERA");
             ifcPSE = new PropertySetEntry("Pset_AudioVisualApplianceTypeCamera.CameraType", "CameraType");
             ifcPSE.PropertyName = "CameraType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -7099,7 +7099,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetAudioVisualApplianceTypeCamera.EntityTypes.Add(IFCEntityType.IfcAudioVisualAppliance);
             propertySetAudioVisualApplianceTypeCamera.EntityTypes.Add(IFCEntityType.IfcAudioVisualApplianceType);
             propertySetAudioVisualApplianceTypeCamera.ObjectType = "IfcAudioVisualAppliance";
-            propertySetAudioVisualApplianceTypeCamera.PredefinedType = "CAMERA";
+            propertySetAudioVisualApplianceTypeCamera.PredefinedTypes.Add("CAMERA");
             ifcPSE = new PropertySetEntry("Pset_AudioVisualApplianceTypeCamera.CameraType", "CameraType");
             ifcPSE.PropertyName = "CameraType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -7337,7 +7337,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAudioVisualApplianceTypeDisplay.EntityTypes.Add(IFCEntityType.IfcAudioVisualAppliance);
             propertySetAudioVisualApplianceTypeDisplay.ObjectType = "IfcAudioVisualAppliance";
-            propertySetAudioVisualApplianceTypeDisplay.PredefinedType = "DISPLAY";
+            propertySetAudioVisualApplianceTypeDisplay.PredefinedTypes.Add("DISPLAY");
             ifcPSE = new PropertySetEntry("Pset_AudioVisualApplianceTypeDisplay.DisplayType", "DisplayType");
             ifcPSE.PropertyName = "DisplayType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -7510,7 +7510,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetAudioVisualApplianceTypeDisplay.EntityTypes.Add(IFCEntityType.IfcAudioVisualAppliance);
             propertySetAudioVisualApplianceTypeDisplay.EntityTypes.Add(IFCEntityType.IfcAudioVisualApplianceType);
             propertySetAudioVisualApplianceTypeDisplay.ObjectType = "IfcAudioVisualAppliance";
-            propertySetAudioVisualApplianceTypeDisplay.PredefinedType = "DISPLAY";
+            propertySetAudioVisualApplianceTypeDisplay.PredefinedTypes.Add("DISPLAY");
             ifcPSE = new PropertySetEntry("Pset_AudioVisualApplianceTypeDisplay.DisplayType", "DisplayType");
             ifcPSE.PropertyName = "DisplayType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -7653,7 +7653,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAudioVisualApplianceTypePlayer.EntityTypes.Add(IFCEntityType.IfcAudioVisualAppliance);
             propertySetAudioVisualApplianceTypePlayer.ObjectType = "IfcAudioVisualAppliance";
-            propertySetAudioVisualApplianceTypePlayer.PredefinedType = "PLAYER";
+            propertySetAudioVisualApplianceTypePlayer.PredefinedTypes.Add("PLAYER");
             ifcPSE = new PropertySetEntry("Pset_AudioVisualApplianceTypePlayer.PlayerType", "PlayerType");
             ifcPSE.PropertyName = "PlayerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -7697,7 +7697,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetAudioVisualApplianceTypePlayer.EntityTypes.Add(IFCEntityType.IfcAudioVisualAppliance);
             propertySetAudioVisualApplianceTypePlayer.EntityTypes.Add(IFCEntityType.IfcAudioVisualApplianceType);
             propertySetAudioVisualApplianceTypePlayer.ObjectType = "IfcAudioVisualAppliance";
-            propertySetAudioVisualApplianceTypePlayer.PredefinedType = "PLAYER";
+            propertySetAudioVisualApplianceTypePlayer.PredefinedTypes.Add("PLAYER");
             ifcPSE = new PropertySetEntry("Pset_AudioVisualApplianceTypePlayer.PlayerType", "PlayerType");
             ifcPSE.PropertyName = "PlayerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -7744,7 +7744,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAudioVisualApplianceTypeProjector.EntityTypes.Add(IFCEntityType.IfcAudioVisualAppliance);
             propertySetAudioVisualApplianceTypeProjector.ObjectType = "IfcAudioVisualAppliance";
-            propertySetAudioVisualApplianceTypeProjector.PredefinedType = "PROJECTOR";
+            propertySetAudioVisualApplianceTypeProjector.PredefinedTypes.Add("PROJECTOR");
             ifcPSE = new PropertySetEntry("Pset_AudioVisualApplianceTypeProjector.ProjectorType", "ProjectorType");
             ifcPSE.PropertyName = "ProjectorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -7825,7 +7825,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetAudioVisualApplianceTypeProjector.EntityTypes.Add(IFCEntityType.IfcAudioVisualAppliance);
             propertySetAudioVisualApplianceTypeProjector.EntityTypes.Add(IFCEntityType.IfcAudioVisualApplianceType);
             propertySetAudioVisualApplianceTypeProjector.ObjectType = "IfcAudioVisualAppliance";
-            propertySetAudioVisualApplianceTypeProjector.PredefinedType = "PROJECTOR";
+            propertySetAudioVisualApplianceTypeProjector.PredefinedTypes.Add("PROJECTOR");
             ifcPSE = new PropertySetEntry("Pset_AudioVisualApplianceTypeProjector.ProjectorType", "ProjectorType");
             ifcPSE.PropertyName = "ProjectorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -7901,7 +7901,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetAudioVisualApplianceTypeRailwayCommunicationTerminal.EntityTypes.Add(IFCEntityType.IfcAudioVisualAppliance);
             propertySetAudioVisualApplianceTypeRailwayCommunicationTerminal.EntityTypes.Add(IFCEntityType.IfcAudioVisualApplianceType);
             propertySetAudioVisualApplianceTypeRailwayCommunicationTerminal.ObjectType = "IfcAudioVisualAppliance";
-            propertySetAudioVisualApplianceTypeRailwayCommunicationTerminal.PredefinedType = "COMMUNICATIONTERMINAL";
+            propertySetAudioVisualApplianceTypeRailwayCommunicationTerminal.PredefinedTypes.Add("COMMUNICATIONTERMINAL");
             ifcPSE = new PropertySetEntry("Pset_AudioVisualApplianceTypeRailwayCommunicationTerminal.RailwayCommunicationTerminalType", "RailwayCommunicationTerminalType");
             ifcPSE.PropertyName = "RailwayCommunicationTerminalType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -7930,7 +7930,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAudioVisualApplianceTypeReceiver.EntityTypes.Add(IFCEntityType.IfcAudioVisualAppliance);
             propertySetAudioVisualApplianceTypeReceiver.ObjectType = "IfcAudioVisualAppliance";
-            propertySetAudioVisualApplianceTypeReceiver.PredefinedType = "RECEIVER";
+            propertySetAudioVisualApplianceTypeReceiver.PredefinedTypes.Add("RECEIVER");
             ifcPSE = new PropertySetEntry("Pset_AudioVisualApplianceTypeReceiver.ReceiverType", "ReceiverType");
             ifcPSE.PropertyName = "ReceiverType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -7976,7 +7976,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetAudioVisualApplianceTypeReceiver.EntityTypes.Add(IFCEntityType.IfcAudioVisualAppliance);
             propertySetAudioVisualApplianceTypeReceiver.EntityTypes.Add(IFCEntityType.IfcAudioVisualApplianceType);
             propertySetAudioVisualApplianceTypeReceiver.ObjectType = "IfcAudioVisualAppliance";
-            propertySetAudioVisualApplianceTypeReceiver.PredefinedType = "RECEIVER";
+            propertySetAudioVisualApplianceTypeReceiver.PredefinedTypes.Add("RECEIVER");
             ifcPSE = new PropertySetEntry("Pset_AudioVisualApplianceTypeReceiver.ReceiverType", "ReceiverType");
             ifcPSE.PropertyName = "ReceiverType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -8026,7 +8026,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetAudioVisualApplianceTypeRecordingEquipment.EntityTypes.Add(IFCEntityType.IfcAudioVisualAppliance);
             propertySetAudioVisualApplianceTypeRecordingEquipment.EntityTypes.Add(IFCEntityType.IfcAudioVisualApplianceType);
             propertySetAudioVisualApplianceTypeRecordingEquipment.ObjectType = "IfcAudioVisualAppliance";
-            propertySetAudioVisualApplianceTypeRecordingEquipment.PredefinedType = "RECORDINGEQUIPMENT";
+            propertySetAudioVisualApplianceTypeRecordingEquipment.PredefinedTypes.Add("RECORDINGEQUIPMENT");
             ifcPSE = new PropertySetEntry("Pset_AudioVisualApplianceTypeRecordingEquipment.NumberOfInterfaces", "NumberOfInterfaces");
             ifcPSE.PropertyName = "NumberOfInterfaces";
             ifcPSE.PropertyArgumentType = PropertyType.Label;
@@ -8063,7 +8063,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAudioVisualApplianceTypeSpeaker.EntityTypes.Add(IFCEntityType.IfcAudioVisualAppliance);
             propertySetAudioVisualApplianceTypeSpeaker.ObjectType = "IfcAudioVisualAppliance";
-            propertySetAudioVisualApplianceTypeSpeaker.PredefinedType = "SPEAKER";
+            propertySetAudioVisualApplianceTypeSpeaker.PredefinedTypes.Add("SPEAKER");
             ifcPSE = new PropertySetEntry("Pset_AudioVisualApplianceTypeSpeaker.SpeakerType", "SpeakerType");
             ifcPSE.PropertyName = "SpeakerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -8133,7 +8133,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetAudioVisualApplianceTypeSpeaker.EntityTypes.Add(IFCEntityType.IfcAudioVisualAppliance);
             propertySetAudioVisualApplianceTypeSpeaker.EntityTypes.Add(IFCEntityType.IfcAudioVisualApplianceType);
             propertySetAudioVisualApplianceTypeSpeaker.ObjectType = "IfcAudioVisualAppliance";
-            propertySetAudioVisualApplianceTypeSpeaker.PredefinedType = "SPEAKER";
+            propertySetAudioVisualApplianceTypeSpeaker.PredefinedTypes.Add("SPEAKER");
             ifcPSE = new PropertySetEntry("Pset_AudioVisualApplianceTypeSpeaker.SpeakerType", "SpeakerType");
             ifcPSE.PropertyName = "SpeakerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -8200,7 +8200,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetAudioVisualApplianceTypeTuner.EntityTypes.Add(IFCEntityType.IfcAudioVisualAppliance);
             propertySetAudioVisualApplianceTypeTuner.ObjectType = "IfcAudioVisualAppliance";
-            propertySetAudioVisualApplianceTypeTuner.PredefinedType = "TUNER";
+            propertySetAudioVisualApplianceTypeTuner.PredefinedTypes.Add("TUNER");
             ifcPSE = new PropertySetEntry("Pset_AudioVisualApplianceTypeTuner.TunerType", "TunerType");
             ifcPSE.PropertyName = "TunerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -8258,7 +8258,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetAudioVisualApplianceTypeTuner.EntityTypes.Add(IFCEntityType.IfcAudioVisualAppliance);
             propertySetAudioVisualApplianceTypeTuner.EntityTypes.Add(IFCEntityType.IfcAudioVisualApplianceType);
             propertySetAudioVisualApplianceTypeTuner.ObjectType = "IfcAudioVisualAppliance";
-            propertySetAudioVisualApplianceTypeTuner.PredefinedType = "TUNER";
+            propertySetAudioVisualApplianceTypeTuner.PredefinedTypes.Add("TUNER");
             ifcPSE = new PropertySetEntry("Pset_AudioVisualApplianceTypeTuner.TunerType", "TunerType");
             ifcPSE.PropertyName = "TunerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -8317,7 +8317,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetAxleCountingEquipment.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetAxleCountingEquipment.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetAxleCountingEquipment.ObjectType = "IfcSensor";
-            propertySetAxleCountingEquipment.PredefinedType = "WHEELSENSOR";
+            propertySetAxleCountingEquipment.PredefinedTypes.Add("WHEELSENSOR");
             ifcPSE = new PropertySetEntry("Pset_AxleCountingEquipment.FailureInformation", "FailureInformation");
             ifcPSE.PropertyName = "FailureInformation";
             ifcPSE.PropertyType = PropertyType.Text;
@@ -8421,7 +8421,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetBalanceWeightTensionerDesignCriteria.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetBalanceWeightTensionerDesignCriteria.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetBalanceWeightTensionerDesignCriteria.ObjectType = "IfcDiscreteAccessory";
-            propertySetBalanceWeightTensionerDesignCriteria.PredefinedType = "TENSIONINGEQUIPMENT";
+            propertySetBalanceWeightTensionerDesignCriteria.PredefinedTypes.Add("TENSIONINGEQUIPMENT");
             ifcPSE = new PropertySetEntry("Pset_BalanceWeightTensionerDesignCriteria.ReferenceDistanceRopeToPulley", "ReferenceDistanceRopeToPulley");
             ifcPSE.PropertyName = "ReferenceDistanceRopeToPulley";
             ifcPSE.PropertyArgumentType = PropertyType.ThermodynamicTemperature;
@@ -8818,7 +8818,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetBerthCommon.EntityTypes.Add(IFCEntityType.IfcSpace);
             propertySetBerthCommon.EntityTypes.Add(IFCEntityType.IfcSpaceType);
             propertySetBerthCommon.ObjectType = "IfcSpace";
-            propertySetBerthCommon.PredefinedType = "BERTH";
+            propertySetBerthCommon.PredefinedTypes.Add("BERTH");
             ifcPSE = new PropertySetEntry("Pset_BerthCommon.BerthApproach", "BerthApproach");
             ifcPSE.PropertyName = "BerthApproach";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -10072,7 +10072,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetBoilerTypeSteam.EntityTypes.Add(IFCEntityType.IfcBoilerType);
             propertySetBoilerTypeSteam.ObjectType = "IfcBoilerType";
-            propertySetBoilerTypeSteam.PredefinedType = "STEAM";
+            propertySetBoilerTypeSteam.PredefinedTypes.Add("STEAM");
             ifcPSE = new PropertySetEntry("Pset_BoilerTypeSteam.MaximumOutletPressure", "MaximumOutletPressure");
             ifcPSE.PropertyName = "MaximumOutletPressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -10086,7 +10086,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetBoilerTypeSteam.EntityTypes.Add(IFCEntityType.IfcBoilerType);
             propertySetBoilerTypeSteam.ObjectType = "IfcBoilerType";
-            propertySetBoilerTypeSteam.PredefinedType = "STEAM";
+            propertySetBoilerTypeSteam.PredefinedTypes.Add("STEAM");
             ifcPSE = new PropertySetEntry("Pset_BoilerTypeSteam.MaximumOutletPressure", "MaximumOutletPressure");
             ifcPSE.PropertyName = "MaximumOutletPressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -10100,7 +10100,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetBoilerTypeSteam.EntityTypes.Add(IFCEntityType.IfcBoiler);
             propertySetBoilerTypeSteam.ObjectType = "IfcBoiler";
-            propertySetBoilerTypeSteam.PredefinedType = "STEAM";
+            propertySetBoilerTypeSteam.PredefinedTypes.Add("STEAM");
             ifcPSE = new PropertySetEntry("Pset_BoilerTypeSteam.MaximumOutletPressure", "MaximumOutletPressure");
             ifcPSE.PropertyName = "MaximumOutletPressure";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -10142,7 +10142,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetBoilerTypeSteam.EntityTypes.Add(IFCEntityType.IfcBoiler);
             propertySetBoilerTypeSteam.EntityTypes.Add(IFCEntityType.IfcBoilerType);
             propertySetBoilerTypeSteam.ObjectType = "IfcBoiler";
-            propertySetBoilerTypeSteam.PredefinedType = "STEAM";
+            propertySetBoilerTypeSteam.PredefinedTypes.Add("STEAM");
             ifcPSE = new PropertySetEntry("Pset_BoilerTypeSteam.MaximumOutletPressure", "MaximumOutletPressure");
             ifcPSE.PropertyName = "MaximumOutletPressure";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -10189,7 +10189,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetBoilerTypeWater.EntityTypes.Add(IFCEntityType.IfcBoiler);
             propertySetBoilerTypeWater.ObjectType = "IfcBoiler";
-            propertySetBoilerTypeWater.PredefinedType = "WATER";
+            propertySetBoilerTypeWater.PredefinedTypes.Add("WATER");
             ifcPSE = new PropertySetEntry("Pset_BoilerTypeWater.NominalEfficiency", "NominalEfficiency");
             ifcPSE.PropertyName = "NominalEfficiency";
             ifcPSE.PropertyArgumentType = PropertyType.ThermodynamicTemperature;
@@ -10220,7 +10220,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetBoilerTypeWater.EntityTypes.Add(IFCEntityType.IfcBoiler);
             propertySetBoilerTypeWater.EntityTypes.Add(IFCEntityType.IfcBoilerType);
             propertySetBoilerTypeWater.ObjectType = "IfcBoiler";
-            propertySetBoilerTypeWater.PredefinedType = "WATER";
+            propertySetBoilerTypeWater.PredefinedTypes.Add("WATER");
             ifcPSE = new PropertySetEntry("Pset_BoilerTypeWater.NominalEfficiency", "NominalEfficiency");
             ifcPSE.PropertyName = "NominalEfficiency";
             ifcPSE.PropertyArgumentType = PropertyType.ThermodynamicTemperature;
@@ -10370,7 +10370,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetBreakwaterCommon.EntityTypes.Add(IFCEntityType.IfcMarineFacility);
             propertySetBreakwaterCommon.ObjectType = "IfcMarineFacility";
-            propertySetBreakwaterCommon.PredefinedType = "BREAKWATER";
+            propertySetBreakwaterCommon.PredefinedTypes.Add("BREAKWATER");
             ifcPSE = new PropertySetEntry("Pset_BreakwaterCommon.StructuralStyle", "StructuralStyle");
             ifcPSE.PropertyName = "StructuralStyle";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -11072,7 +11072,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetBuildingElementProxyProvisionForVoid.EntityTypes.Add(IFCEntityType.IfcBuildingElementProxy);
             propertySetBuildingElementProxyProvisionForVoid.ObjectType = "IfcBuildingElementProxy";
-            propertySetBuildingElementProxyProvisionForVoid.PredefinedType = "PROVISIONFORVOID";
+            propertySetBuildingElementProxyProvisionForVoid.PredefinedTypes.Add("PROVISIONFORVOID");
             ifcPSE = new PropertySetEntry("Pset_BuildingElementProxyProvisionForVoid.Shape", "Shape");
             ifcPSE.PropertyName = "Shape";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -12244,7 +12244,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetBuiltSystemRailwayLine.EntityTypes.Add(IFCEntityType.IfcBuiltSystem);
             propertySetBuiltSystemRailwayLine.ObjectType = "IfcBuiltSystem";
-            propertySetBuiltSystemRailwayLine.PredefinedType = "RAILWAYLINE";
+            propertySetBuiltSystemRailwayLine.PredefinedTypes.Add("RAILWAYLINE");
             ifcPSE = new PropertySetEntry("Pset_BuiltSystemRailwayLine.LineID", "LineID");
             ifcPSE.PropertyName = "LineID";
             ifcPSE.PropertyType = PropertyType.Identifier;
@@ -12289,7 +12289,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetBuiltSystemRailwayTrack.EntityTypes.Add(IFCEntityType.IfcBuiltSystem);
             propertySetBuiltSystemRailwayTrack.ObjectType = "IfcBuiltSystem";
-            propertySetBuiltSystemRailwayTrack.PredefinedType = "RAILWAYTRACK";
+            propertySetBuiltSystemRailwayTrack.PredefinedTypes.Add("RAILWAYTRACK");
             ifcPSE = new PropertySetEntry("Pset_BuiltSystemRailwayTrack.TrackID", "TrackID");
             ifcPSE.PropertyName = "TrackID";
             ifcPSE.PropertyType = PropertyType.Identifier;
@@ -12535,7 +12535,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCableCarrierSegmentTypeCableLadderSegment.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegmentType);
             propertySetCableCarrierSegmentTypeCableLadderSegment.ObjectType = "IfcCableCarrierSegmentType";
-            propertySetCableCarrierSegmentTypeCableLadderSegment.PredefinedType = "CABLELADDERSEGMENT";
+            propertySetCableCarrierSegmentTypeCableLadderSegment.PredefinedTypes.Add("CABLELADDERSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableCarrierSegmentTypeCableLadderSegment.NominalLength", "NominalLength");
             ifcPSE.PropertyName = "NominalLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -12573,7 +12573,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCableCarrierSegmentTypeCableLadderSegment.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegment);
             propertySetCableCarrierSegmentTypeCableLadderSegment.ObjectType = "IfcCableCarrierSegment";
-            propertySetCableCarrierSegmentTypeCableLadderSegment.PredefinedType = "CABLELADDERSEGMENT";
+            propertySetCableCarrierSegmentTypeCableLadderSegment.PredefinedTypes.Add("CABLELADDERSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableCarrierSegmentTypeCableLadderSegment.NominalWidth", "NominalWidth");
             ifcPSE.PropertyName = "NominalWidth";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -12613,7 +12613,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCableCarrierSegmentTypeCableLadderSegment.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegment);
             propertySetCableCarrierSegmentTypeCableLadderSegment.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegmentType);
             propertySetCableCarrierSegmentTypeCableLadderSegment.ObjectType = "IfcCableCarrierSegment";
-            propertySetCableCarrierSegmentTypeCableLadderSegment.PredefinedType = "CABLELADDERSEGMENT";
+            propertySetCableCarrierSegmentTypeCableLadderSegment.PredefinedTypes.Add("CABLELADDERSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableCarrierSegmentTypeCableLadderSegment.LadderConfiguration", "LadderConfiguration");
             ifcPSE.PropertyName = "LadderConfiguration";
             ifcPSE.PropertyType = PropertyType.Text;
@@ -12677,7 +12677,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCableCarrierSegmentTypeCableTraySegment.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegmentType);
             propertySetCableCarrierSegmentTypeCableTraySegment.ObjectType = "IfcCableCarrierSegmentType";
-            propertySetCableCarrierSegmentTypeCableTraySegment.PredefinedType = "CABLETRAYSEGMENT";
+            propertySetCableCarrierSegmentTypeCableTraySegment.PredefinedTypes.Add("CABLETRAYSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableCarrierSegmentTypeCableTraySegment.NominalLength", "NominalLength");
             ifcPSE.PropertyName = "NominalLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -12715,7 +12715,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCableCarrierSegmentTypeCableTraySegment.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegment);
             propertySetCableCarrierSegmentTypeCableTraySegment.ObjectType = "IfcCableCarrierSegment";
-            propertySetCableCarrierSegmentTypeCableTraySegment.PredefinedType = "CABLETRAYSEGMENT";
+            propertySetCableCarrierSegmentTypeCableTraySegment.PredefinedTypes.Add("CABLETRAYSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableCarrierSegmentTypeCableTraySegment.NominalWidth", "NominalWidth");
             ifcPSE.PropertyName = "NominalWidth";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -12755,7 +12755,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCableCarrierSegmentTypeCableTraySegment.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegment);
             propertySetCableCarrierSegmentTypeCableTraySegment.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegmentType);
             propertySetCableCarrierSegmentTypeCableTraySegment.ObjectType = "IfcCableCarrierSegment";
-            propertySetCableCarrierSegmentTypeCableTraySegment.PredefinedType = "CABLETRAYSEGMENT";
+            propertySetCableCarrierSegmentTypeCableTraySegment.PredefinedTypes.Add("CABLETRAYSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableCarrierSegmentTypeCableTraySegment.HasCover", "HasCover");
             ifcPSE.PropertyName = "HasCover";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -12819,7 +12819,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCableCarrierSegmentTypeCableTrunkingSegment.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegmentType);
             propertySetCableCarrierSegmentTypeCableTrunkingSegment.ObjectType = "IfcCableCarrierSegmentType";
-            propertySetCableCarrierSegmentTypeCableTrunkingSegment.PredefinedType = "CABLETRUNKINGSEGMENT";
+            propertySetCableCarrierSegmentTypeCableTrunkingSegment.PredefinedTypes.Add("CABLETRUNKINGSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableCarrierSegmentTypeCableTrunkingSegment.NominalLength", "NominalLength");
             ifcPSE.PropertyName = "NominalLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -12857,7 +12857,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCableCarrierSegmentTypeCableTrunkingSegment.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegment);
             propertySetCableCarrierSegmentTypeCableTrunkingSegment.ObjectType = "IfcCableCarrierSegment";
-            propertySetCableCarrierSegmentTypeCableTrunkingSegment.PredefinedType = "CABLETRUNKINGSEGMENT";
+            propertySetCableCarrierSegmentTypeCableTrunkingSegment.PredefinedTypes.Add("CABLETRUNKINGSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableCarrierSegmentTypeCableTrunkingSegment.NominalWidth", "NominalWidth");
             ifcPSE.PropertyName = "NominalWidth";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -12897,7 +12897,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCableCarrierSegmentTypeCableTrunkingSegment.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegment);
             propertySetCableCarrierSegmentTypeCableTrunkingSegment.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegmentType);
             propertySetCableCarrierSegmentTypeCableTrunkingSegment.ObjectType = "IfcCableCarrierSegment";
-            propertySetCableCarrierSegmentTypeCableTrunkingSegment.PredefinedType = "CABLETRUNKINGSEGMENT";
+            propertySetCableCarrierSegmentTypeCableTrunkingSegment.PredefinedTypes.Add("CABLETRUNKINGSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableCarrierSegmentTypeCableTrunkingSegment.NumberOfCompartments", "NumberOfCompartments");
             ifcPSE.PropertyName = "NumberOfCompartments";
             ifcPSE.PropertyType = PropertyType.Count;
@@ -12925,7 +12925,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCableCarrierSegmentTypeCatenaryWire.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegment);
             propertySetCableCarrierSegmentTypeCatenaryWire.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegmentType);
             propertySetCableCarrierSegmentTypeCatenaryWire.ObjectType = "IfcCableCarrierSegment";
-            propertySetCableCarrierSegmentTypeCatenaryWire.PredefinedType = "CATENARYWIRE";
+            propertySetCableCarrierSegmentTypeCatenaryWire.PredefinedTypes.Add("CATENARYWIRE");
             ifcPSE = new PropertySetEntry("Pset_CableCarrierSegmentTypeCatenaryWire.ACResistance", "ACResistance");
             ifcPSE.PropertyName = "ACResistance";
             ifcPSE.PropertyType = PropertyType.ElectricResistance;
@@ -13161,7 +13161,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCableCarrierSegmentTypeConduitSegment.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegmentType);
             propertySetCableCarrierSegmentTypeConduitSegment.ObjectType = "IfcCableCarrierSegmentType";
-            propertySetCableCarrierSegmentTypeConduitSegment.PredefinedType = "CONDUITSEGMENT";
+            propertySetCableCarrierSegmentTypeConduitSegment.PredefinedTypes.Add("CONDUITSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableCarrierSegmentTypeConduitSegment.NominalLength", "NominalLength");
             ifcPSE.PropertyName = "NominalLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -13209,7 +13209,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCableCarrierSegmentTypeConduitSegment.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegment);
             propertySetCableCarrierSegmentTypeConduitSegment.ObjectType = "IfcCableCarrierSegment";
-            propertySetCableCarrierSegmentTypeConduitSegment.PredefinedType = "CONDUITSEGMENT";
+            propertySetCableCarrierSegmentTypeConduitSegment.PredefinedTypes.Add("CONDUITSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableCarrierSegmentTypeConduitSegment.NominalWidth", "NominalWidth");
             ifcPSE.PropertyName = "NominalWidth";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -13262,7 +13262,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCableCarrierSegmentTypeConduitSegment.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegment);
             propertySetCableCarrierSegmentTypeConduitSegment.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegmentType);
             propertySetCableCarrierSegmentTypeConduitSegment.ObjectType = "IfcCableCarrierSegment";
-            propertySetCableCarrierSegmentTypeConduitSegment.PredefinedType = "CONDUITSEGMENT";
+            propertySetCableCarrierSegmentTypeConduitSegment.PredefinedTypes.Add("CONDUITSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableCarrierSegmentTypeConduitSegment.NominalWidth", "NominalWidth");
             ifcPSE.PropertyName = "NominalWidth";
             ifcPSE.PropertyType = PropertyType.NonNegativeLength;
@@ -13324,7 +13324,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCableCarrierSegmentTypeDropper.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegment);
             propertySetCableCarrierSegmentTypeDropper.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegmentType);
             propertySetCableCarrierSegmentTypeDropper.ObjectType = "IfcCableCarrierSegment";
-            propertySetCableCarrierSegmentTypeDropper.PredefinedType = "DROPPER";
+            propertySetCableCarrierSegmentTypeDropper.PredefinedTypes.Add("DROPPER");
             ifcPSE = new PropertySetEntry("Pset_CableCarrierSegmentTypeDropper.CurrentCarryingCapacity", "CurrentCarryingCapacity");
             ifcPSE.PropertyName = "CurrentCarryingCapacity";
             ifcPSE.PropertyType = PropertyType.ElectricCurrent;
@@ -13474,7 +13474,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCableFittingTypeExit.EntityTypes.Add(IFCEntityType.IfcCableFitting);
             propertySetCableFittingTypeExit.EntityTypes.Add(IFCEntityType.IfcCableFittingType);
             propertySetCableFittingTypeExit.ObjectType = "IfcCableFitting";
-            propertySetCableFittingTypeExit.PredefinedType = "EXIT";
+            propertySetCableFittingTypeExit.PredefinedTypes.Add("EXIT");
             ifcPSE = new PropertySetEntry("Pset_CableFittingTypeExit.GroundResistance", "GroundResistance");
             ifcPSE.PropertyName = "GroundResistance";
             ifcPSE.PropertyType = PropertyType.ElectricResistance;
@@ -13502,7 +13502,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCableFittingTypeFanout.EntityTypes.Add(IFCEntityType.IfcCableFitting);
             propertySetCableFittingTypeFanout.EntityTypes.Add(IFCEntityType.IfcCableFittingType);
             propertySetCableFittingTypeFanout.ObjectType = "IfcCableFitting";
-            propertySetCableFittingTypeFanout.PredefinedType = "FANOUT";
+            propertySetCableFittingTypeFanout.PredefinedTypes.Add("FANOUT");
             ifcPSE = new PropertySetEntry("Pset_CableFittingTypeFanout.NumberOfTubes", "NumberOfTubes");
             ifcPSE.PropertyName = "NumberOfTubes";
             ifcPSE.PropertyType = PropertyType.Count;
@@ -13608,7 +13608,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCableSegmentOccurenceFiberSegment.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetCableSegmentOccurenceFiberSegment.ObjectType = "IfcCableSegment";
-            propertySetCableSegmentOccurenceFiberSegment.PredefinedType = "FIBERSEGMENT";
+            propertySetCableSegmentOccurenceFiberSegment.PredefinedTypes.Add("FIBERSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableSegmentOccurenceFiberSegment.InUse", "InUse");
             ifcPSE.PropertyName = "InUse";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -13914,7 +13914,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCableSegmentTypeBusBarSegment.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetCableSegmentTypeBusBarSegment.ObjectType = "IfcCableSegment";
-            propertySetCableSegmentTypeBusBarSegment.PredefinedType = "BUSBARSEGMENT";
+            propertySetCableSegmentTypeBusBarSegment.PredefinedTypes.Add("BUSBARSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableSegmentTypeBusBarSegment.IsHorizontalBusbar", "IsHorizontalBusbar");
             ifcPSE.PropertyName = "IsHorizontalBusbar";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -13932,7 +13932,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCableSegmentTypeBusBarSegment.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetCableSegmentTypeBusBarSegment.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
             propertySetCableSegmentTypeBusBarSegment.ObjectType = "IfcCableSegment";
-            propertySetCableSegmentTypeBusBarSegment.PredefinedType = "BUSBARSEGMENT";
+            propertySetCableSegmentTypeBusBarSegment.PredefinedTypes.Add("BUSBARSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableSegmentTypeBusBarSegment.IsHorizontalBusbar", "IsHorizontalBusbar");
             ifcPSE.PropertyName = "IsHorizontalBusbar";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -14145,7 +14145,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCableSegmentTypeCableSegment.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
             propertySetCableSegmentTypeCableSegment.ObjectType = "IfcCableSegmentType";
-            propertySetCableSegmentTypeCableSegment.PredefinedType = "CABLESEGMENT";
+            propertySetCableSegmentTypeCableSegment.PredefinedTypes.Add("CABLESEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableSegmentTypeCableSegment.CrossSectionalArea", "CrossSectionalArea");
             ifcPSE.PropertyName = "CrossSectionalArea";
             ifcPSE.PropertyType = PropertyType.Area;
@@ -14216,7 +14216,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCableSegmentTypeCableSegment.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetCableSegmentTypeCableSegment.ObjectType = "IfcCableSegment";
-            propertySetCableSegmentTypeCableSegment.PredefinedType = "CABLESEGMENT";
+            propertySetCableSegmentTypeCableSegment.PredefinedTypes.Add("CABLESEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableSegmentTypeCableSegment.Standard", "Standard");
             ifcPSE.PropertyName = "Standard";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -14390,7 +14390,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCableSegmentTypeCableSegment.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetCableSegmentTypeCableSegment.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
             propertySetCableSegmentTypeCableSegment.ObjectType = "IfcCableSegment";
-            propertySetCableSegmentTypeCableSegment.PredefinedType = "CABLESEGMENT";
+            propertySetCableSegmentTypeCableSegment.PredefinedTypes.Add("CABLESEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableSegmentTypeCableSegment.Standard", "Standard");
             ifcPSE.PropertyName = "Standard";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -14741,7 +14741,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCableSegmentTypeConductorSegment.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
             propertySetCableSegmentTypeConductorSegment.ObjectType = "IfcCableSegmentType";
-            propertySetCableSegmentTypeConductorSegment.PredefinedType = "CONDUCTORSEGMENT";
+            propertySetCableSegmentTypeConductorSegment.PredefinedTypes.Add("CONDUCTORSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableSegmentTypeConductorSegment.CrossSectionalArea", "CrossSectionalArea");
             ifcPSE.PropertyName = "CrossSectionalArea";
             ifcPSE.PropertyType = PropertyType.Area;
@@ -14823,7 +14823,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCableSegmentTypeConductorSegment.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetCableSegmentTypeConductorSegment.ObjectType = "IfcCableSegment";
-            propertySetCableSegmentTypeConductorSegment.PredefinedType = "CONDUCTORSEGMENT";
+            propertySetCableSegmentTypeConductorSegment.PredefinedTypes.Add("CONDUCTORSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableSegmentTypeConductorSegment.CrossSectionalArea", "CrossSectionalArea");
             ifcPSE.PropertyName = "CrossSectionalArea";
             ifcPSE.PropertyType = PropertyType.Area;
@@ -14893,7 +14893,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCableSegmentTypeConductorSegment.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetCableSegmentTypeConductorSegment.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
             propertySetCableSegmentTypeConductorSegment.ObjectType = "IfcCableSegment";
-            propertySetCableSegmentTypeConductorSegment.PredefinedType = "CONDUCTORSEGMENT";
+            propertySetCableSegmentTypeConductorSegment.PredefinedTypes.Add("CONDUCTORSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableSegmentTypeConductorSegment.CrossSectionalArea", "CrossSectionalArea");
             ifcPSE.PropertyName = "CrossSectionalArea";
             ifcPSE.PropertyType = PropertyType.Area;
@@ -15058,7 +15058,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCableSegmentTypeContactWire.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetCableSegmentTypeContactWire.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
             propertySetCableSegmentTypeContactWire.ObjectType = "IfcCableSegment";
-            propertySetCableSegmentTypeContactWire.PredefinedType = "CONTACTWIRESEGMENT";
+            propertySetCableSegmentTypeContactWire.PredefinedTypes.Add("CONTACTWIRESEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableSegmentTypeContactWire.ACResistance", "ACResistance");
             ifcPSE.PropertyName = "ACResistance";
             ifcPSE.PropertyType = PropertyType.ElectricResistance;
@@ -15149,7 +15149,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCableSegmentTypeCoreSegment.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetCableSegmentTypeCoreSegment.ObjectType = "IfcCableSegment";
-            propertySetCableSegmentTypeCoreSegment.PredefinedType = "CORESEGMENT";
+            propertySetCableSegmentTypeCoreSegment.PredefinedTypes.Add("CORESEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableSegmentTypeCoreSegment.OverallDiameter", "OverallDiameter");
             ifcPSE.PropertyName = "OverallDiameter";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -15292,7 +15292,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCableSegmentTypeCoreSegment.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetCableSegmentTypeCoreSegment.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
             propertySetCableSegmentTypeCoreSegment.ObjectType = "IfcCableSegment";
-            propertySetCableSegmentTypeCoreSegment.PredefinedType = "CORESEGMENT";
+            propertySetCableSegmentTypeCoreSegment.PredefinedTypes.Add("CORESEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableSegmentTypeCoreSegment.OverallDiameter", "OverallDiameter");
             ifcPSE.PropertyName = "OverallDiameter";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -15492,7 +15492,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCableSegmentTypeEarthingConductor.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetCableSegmentTypeEarthingConductor.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
             propertySetCableSegmentTypeEarthingConductor.ObjectType = "IfcCableSegment";
-            propertySetCableSegmentTypeEarthingConductor.PredefinedType = "CONDUCTORSEGMENT";
+            propertySetCableSegmentTypeEarthingConductor.PredefinedTypes.Add("CONDUCTORSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableSegmentTypeEarthingConductor.ResistanceToGround", "ResistanceToGround");
             ifcPSE.PropertyName = "ResistanceToGround";
             ifcPSE.PropertyType = PropertyType.ElectricResistance;
@@ -15520,7 +15520,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCableSegmentTypeFiberSegment.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetCableSegmentTypeFiberSegment.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
             propertySetCableSegmentTypeFiberSegment.ObjectType = "IfcCableSegment";
-            propertySetCableSegmentTypeFiberSegment.PredefinedType = "FIBERSEGMENT";
+            propertySetCableSegmentTypeFiberSegment.PredefinedTypes.Add("FIBERSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableSegmentTypeFiberSegment.FiberColour", "FiberColour");
             ifcPSE.PropertyName = "FiberColour";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -15568,7 +15568,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCableSegmentTypeFiberTubeSegment.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetCableSegmentTypeFiberTubeSegment.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
             propertySetCableSegmentTypeFiberTubeSegment.ObjectType = "IfcCableSegment";
-            propertySetCableSegmentTypeFiberTubeSegment.PredefinedType = "FIBERTUBE";
+            propertySetCableSegmentTypeFiberTubeSegment.PredefinedTypes.Add("FIBERTUBE");
             ifcPSE = new PropertySetEntry("Pset_CableSegmentTypeFiberTubeSegment.FiberTubeColour", "FiberTubeColour");
             ifcPSE.PropertyName = "FiberTubeColour";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -15606,7 +15606,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCableSegmentTypeOpticalCableSegment.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetCableSegmentTypeOpticalCableSegment.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
             propertySetCableSegmentTypeOpticalCableSegment.ObjectType = "IfcCableSegment";
-            propertySetCableSegmentTypeOpticalCableSegment.PredefinedType = "OPTICALCABLESEGMENT";
+            propertySetCableSegmentTypeOpticalCableSegment.PredefinedTypes.Add("OPTICALCABLESEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableSegmentTypeOpticalCableSegment.NumberOfFibers", "NumberOfFibers");
             ifcPSE.PropertyName = "NumberOfFibers";
             ifcPSE.PropertyType = PropertyType.Count;
@@ -15678,7 +15678,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCableSegmentTypeStitchWire.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetCableSegmentTypeStitchWire.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
             propertySetCableSegmentTypeStitchWire.ObjectType = "IfcCableSegment";
-            propertySetCableSegmentTypeStitchWire.PredefinedType = "STITCHWIRE";
+            propertySetCableSegmentTypeStitchWire.PredefinedTypes.Add("STITCHWIRE");
             ifcPSE = new PropertySetEntry("Pset_CableSegmentTypeStitchWire.AssemblyInstruction", "AssemblyInstruction");
             ifcPSE.PropertyName = "AssemblyInstruction";
             ifcPSE.PropertyType = PropertyType.IfcExternalReference;
@@ -15739,7 +15739,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCableSegmentTypeWirePairSegment.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetCableSegmentTypeWirePairSegment.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
             propertySetCableSegmentTypeWirePairSegment.ObjectType = "IfcCableSegment";
-            propertySetCableSegmentTypeWirePairSegment.PredefinedType = "WIREPAIRSEGMENT";
+            propertySetCableSegmentTypeWirePairSegment.PredefinedTypes.Add("WIREPAIRSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CableSegmentTypeWirePairSegment.CharacteristicImpedance", "CharacteristicImpedance");
             ifcPSE.PropertyName = "CharacteristicImpedance";
             ifcPSE.PropertyType = PropertyType.ElectricResistance;
@@ -15809,7 +15809,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCargoCommon.EntityTypes.Add(IFCEntityType.IfcVehicle);
             propertySetCargoCommon.EntityTypes.Add(IFCEntityType.IfcVehicleType);
             propertySetCargoCommon.ObjectType = "IfcVehicle";
-            propertySetCargoCommon.PredefinedType = "CARGO";
+            propertySetCargoCommon.PredefinedTypes.Add("CARGO");
             ifcPSE = new PropertySetEntry("Pset_CargoCommon.ProcessItem", "ProcessItem");
             ifcPSE.PropertyName = "ProcessItem";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -15859,7 +15859,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCessBetweenRails.EntityTypes.Add(IFCEntityType.IfcSlab);
             propertySetCessBetweenRails.EntityTypes.Add(IFCEntityType.IfcSlabType);
             propertySetCessBetweenRails.ObjectType = "IfcSlab";
-            propertySetCessBetweenRails.PredefinedType = "TRACKSLAB";
+            propertySetCessBetweenRails.PredefinedTypes.Add("TRACKSLAB");
             ifcPSE = new PropertySetEntry("Pset_CessBetweenRails.JointRelativePosition", "JointRelativePosition");
             ifcPSE.PropertyName = "JointRelativePosition";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -16669,7 +16669,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCoaxialCable.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetCoaxialCable.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
             propertySetCoaxialCable.ObjectType = "IfcCableSegment";
-            propertySetCoaxialCable.PredefinedType = "CABLESEGMENT";
+            propertySetCoaxialCable.PredefinedTypes.Add("CABLESEGMENT");
             ifcPSE = new PropertySetEntry("Pset_CoaxialCable.CharacteristicImpedance", "CharacteristicImpedance");
             ifcPSE.PropertyName = "CharacteristicImpedance";
             ifcPSE.PropertyType = PropertyType.ElectricResistance;
@@ -18088,7 +18088,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCommunicationsApplianceTypeAntenna.EntityTypes.Add(IFCEntityType.IfcCommunicationsAppliance);
             propertySetCommunicationsApplianceTypeAntenna.EntityTypes.Add(IFCEntityType.IfcCommunicationsApplianceType);
             propertySetCommunicationsApplianceTypeAntenna.ObjectType = "IfcCommunicationsAppliance";
-            propertySetCommunicationsApplianceTypeAntenna.PredefinedType = "ANTENNA";
+            propertySetCommunicationsApplianceTypeAntenna.PredefinedTypes.Add("ANTENNA");
             ifcPSE = new PropertySetEntry("Pset_CommunicationsApplianceTypeAntenna.AntennaGain", "AntennaGain");
             ifcPSE.PropertyName = "AntennaGain";
             ifcPSE.PropertyType = PropertyType.Ratio;
@@ -18146,7 +18146,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCommunicationsApplianceTypeAutomaton.EntityTypes.Add(IFCEntityType.IfcCommunicationsAppliance);
             propertySetCommunicationsApplianceTypeAutomaton.EntityTypes.Add(IFCEntityType.IfcCommunicationsApplianceType);
             propertySetCommunicationsApplianceTypeAutomaton.ObjectType = "IfcCommunicationsAppliance";
-            propertySetCommunicationsApplianceTypeAutomaton.PredefinedType = "AUTOMATON";
+            propertySetCommunicationsApplianceTypeAutomaton.PredefinedTypes.Add("AUTOMATON");
             ifcPSE = new PropertySetEntry("Pset_CommunicationsApplianceTypeAutomaton.InputSignalType", "InputSignalType");
             ifcPSE.PropertyName = "InputSignalType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -18251,7 +18251,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCommunicationsApplianceTypeComputer.EntityTypes.Add(IFCEntityType.IfcCommunicationsAppliance);
             propertySetCommunicationsApplianceTypeComputer.EntityTypes.Add(IFCEntityType.IfcCommunicationsApplianceType);
             propertySetCommunicationsApplianceTypeComputer.ObjectType = "IfcCommunicationsAppliance";
-            propertySetCommunicationsApplianceTypeComputer.PredefinedType = "COMPUTER";
+            propertySetCommunicationsApplianceTypeComputer.PredefinedTypes.Add("COMPUTER");
             ifcPSE = new PropertySetEntry("Pset_CommunicationsApplianceTypeComputer.StorageCapacity", "StorageCapacity");
             ifcPSE.PropertyName = "StorageCapacity";
             ifcPSE.PropertyType = PropertyType.Integer;
@@ -18289,7 +18289,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCommunicationsApplianceTypeGateway.EntityTypes.Add(IFCEntityType.IfcCommunicationsAppliance);
             propertySetCommunicationsApplianceTypeGateway.EntityTypes.Add(IFCEntityType.IfcCommunicationsApplianceType);
             propertySetCommunicationsApplianceTypeGateway.ObjectType = "IfcCommunicationsAppliance";
-            propertySetCommunicationsApplianceTypeGateway.PredefinedType = "GATEWAY";
+            propertySetCommunicationsApplianceTypeGateway.PredefinedTypes.Add("GATEWAY");
             ifcPSE = new PropertySetEntry("Pset_CommunicationsApplianceTypeGateway.NumberOfInterfaces", "NumberOfInterfaces");
             ifcPSE.PropertyName = "NumberOfInterfaces";
             ifcPSE.PropertyArgumentType = PropertyType.Label;
@@ -18319,7 +18319,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCommunicationsApplianceTypeIntelligentPeripheral.EntityTypes.Add(IFCEntityType.IfcCommunicationsAppliance);
             propertySetCommunicationsApplianceTypeIntelligentPeripheral.EntityTypes.Add(IFCEntityType.IfcCommunicationsApplianceType);
             propertySetCommunicationsApplianceTypeIntelligentPeripheral.ObjectType = "IfcCommunicationsAppliance";
-            propertySetCommunicationsApplianceTypeIntelligentPeripheral.PredefinedType = "INTELLIGENTPERIPHERAL";
+            propertySetCommunicationsApplianceTypeIntelligentPeripheral.PredefinedTypes.Add("INTELLIGENTPERIPHERAL");
             ifcPSE = new PropertySetEntry("Pset_CommunicationsApplianceTypeIntelligentPeripheral.UserCapacity", "UserCapacity");
             ifcPSE.PropertyName = "UserCapacity";
             ifcPSE.PropertyType = PropertyType.Integer;
@@ -18347,7 +18347,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCommunicationsApplianceTypeIpNetworkEquipment.EntityTypes.Add(IFCEntityType.IfcCommunicationsAppliance);
             propertySetCommunicationsApplianceTypeIpNetworkEquipment.EntityTypes.Add(IFCEntityType.IfcCommunicationsApplianceType);
             propertySetCommunicationsApplianceTypeIpNetworkEquipment.ObjectType = "IfcCommunicationsAppliance";
-            propertySetCommunicationsApplianceTypeIpNetworkEquipment.PredefinedType = "IPNETWORKEQUIPMENT";
+            propertySetCommunicationsApplianceTypeIpNetworkEquipment.PredefinedTypes.Add("IPNETWORKEQUIPMENT");
             ifcPSE = new PropertySetEntry("Pset_CommunicationsApplianceTypeIpNetworkEquipment.NumberOfSlots", "NumberOfSlots");
             ifcPSE.PropertyName = "NumberOfSlots";
             ifcPSE.PropertyType = PropertyType.Count;
@@ -18417,7 +18417,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCommunicationsApplianceTypeModem.EntityTypes.Add(IFCEntityType.IfcCommunicationsAppliance);
             propertySetCommunicationsApplianceTypeModem.EntityTypes.Add(IFCEntityType.IfcCommunicationsApplianceType);
             propertySetCommunicationsApplianceTypeModem.ObjectType = "IfcCommunicationsAppliance";
-            propertySetCommunicationsApplianceTypeModem.PredefinedType = "MODEM";
+            propertySetCommunicationsApplianceTypeModem.PredefinedTypes.Add("MODEM");
             ifcPSE = new PropertySetEntry("Pset_CommunicationsApplianceTypeModem.NumberOfCommonInterfaces", "NumberOfCommonInterfaces");
             ifcPSE.PropertyName = "NumberOfCommonInterfaces";
             ifcPSE.PropertyArgumentType = PropertyType.Label;
@@ -18477,7 +18477,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCommunicationsApplianceTypeOpticalLineTerminal.EntityTypes.Add(IFCEntityType.IfcCommunicationsAppliance);
             propertySetCommunicationsApplianceTypeOpticalLineTerminal.EntityTypes.Add(IFCEntityType.IfcCommunicationsApplianceType);
             propertySetCommunicationsApplianceTypeOpticalLineTerminal.ObjectType = "IfcCommunicationsAppliance";
-            propertySetCommunicationsApplianceTypeOpticalLineTerminal.PredefinedType = "OPTICALLINETERMINAL";
+            propertySetCommunicationsApplianceTypeOpticalLineTerminal.PredefinedTypes.Add("OPTICALLINETERMINAL");
             ifcPSE = new PropertySetEntry("Pset_CommunicationsApplianceTypeOpticalLineTerminal.NumberOfSlots", "NumberOfSlots");
             ifcPSE.PropertyName = "NumberOfSlots";
             ifcPSE.PropertyType = PropertyType.Count;
@@ -18515,7 +18515,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCommunicationsApplianceTypeOpticalNetworkUnit.EntityTypes.Add(IFCEntityType.IfcCommunicationsAppliance);
             propertySetCommunicationsApplianceTypeOpticalNetworkUnit.EntityTypes.Add(IFCEntityType.IfcCommunicationsApplianceType);
             propertySetCommunicationsApplianceTypeOpticalNetworkUnit.ObjectType = "IfcCommunicationsAppliance";
-            propertySetCommunicationsApplianceTypeOpticalNetworkUnit.PredefinedType = "OPTICALNETWORKUNIT";
+            propertySetCommunicationsApplianceTypeOpticalNetworkUnit.PredefinedTypes.Add("OPTICALNETWORKUNIT");
             ifcPSE = new PropertySetEntry("Pset_CommunicationsApplianceTypeOpticalNetworkUnit.OpticalNetworkUnitType", "OpticalNetworkUnitType");
             ifcPSE.PropertyName = "OpticalNetworkUnitType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -18555,7 +18555,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCommunicationsApplianceTypeTelecommand.EntityTypes.Add(IFCEntityType.IfcCommunicationsAppliance);
             propertySetCommunicationsApplianceTypeTelecommand.EntityTypes.Add(IFCEntityType.IfcCommunicationsApplianceType);
             propertySetCommunicationsApplianceTypeTelecommand.ObjectType = "IfcCommunicationsAppliance";
-            propertySetCommunicationsApplianceTypeTelecommand.PredefinedType = "TELECOMMAND";
+            propertySetCommunicationsApplianceTypeTelecommand.PredefinedTypes.Add("TELECOMMAND");
             ifcPSE = new PropertySetEntry("Pset_CommunicationsApplianceTypeTelecommand.NumberOfWorkstations", "NumberOfWorkstations");
             ifcPSE.PropertyName = "NumberOfWorkstations";
             ifcPSE.PropertyArgumentType = PropertyType.Label;
@@ -18593,7 +18593,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCommunicationsApplianceTypeTelephonyExchange.EntityTypes.Add(IFCEntityType.IfcCommunicationsAppliance);
             propertySetCommunicationsApplianceTypeTelephonyExchange.EntityTypes.Add(IFCEntityType.IfcCommunicationsApplianceType);
             propertySetCommunicationsApplianceTypeTelephonyExchange.ObjectType = "IfcCommunicationsAppliance";
-            propertySetCommunicationsApplianceTypeTelephonyExchange.PredefinedType = "TELEPHONYEXCHANGE";
+            propertySetCommunicationsApplianceTypeTelephonyExchange.PredefinedTypes.Add("TELEPHONYEXCHANGE");
             ifcPSE = new PropertySetEntry("Pset_CommunicationsApplianceTypeTelephonyExchange.UserCapacity", "UserCapacity");
             ifcPSE.PropertyName = "UserCapacity";
             ifcPSE.PropertyType = PropertyType.Integer;
@@ -18621,7 +18621,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCommunicationsApplianceTypeTransportEquipment.EntityTypes.Add(IFCEntityType.IfcCommunicationsAppliance);
             propertySetCommunicationsApplianceTypeTransportEquipment.EntityTypes.Add(IFCEntityType.IfcCommunicationsApplianceType);
             propertySetCommunicationsApplianceTypeTransportEquipment.ObjectType = "IfcCommunicationsAppliance";
-            propertySetCommunicationsApplianceTypeTransportEquipment.PredefinedType = "TRANSPORTEQUIPMENT";
+            propertySetCommunicationsApplianceTypeTransportEquipment.PredefinedTypes.Add("TRANSPORTEQUIPMENT");
             ifcPSE = new PropertySetEntry("Pset_CommunicationsApplianceTypeTransportEquipment.IsUpgradable", "IsUpgradable");
             ifcPSE.PropertyName = "IsUpgradable";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -21846,7 +21846,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetControllerTypeFloating.EntityTypes.Add(IFCEntityType.IfcController);
             propertySetControllerTypeFloating.ObjectType = "IfcController";
-            propertySetControllerTypeFloating.PredefinedType = "FLOATING";
+            propertySetControllerTypeFloating.PredefinedTypes.Add("FLOATING");
             ifcPSE = new PropertySetEntry("Pset_ControllerTypeFloating.ControlType", "ControlType");
             ifcPSE.PropertyName = "ControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -21926,7 +21926,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetControllerTypeFloating.EntityTypes.Add(IFCEntityType.IfcController);
             propertySetControllerTypeFloating.EntityTypes.Add(IFCEntityType.IfcControllerType);
             propertySetControllerTypeFloating.ObjectType = "IfcController";
-            propertySetControllerTypeFloating.PredefinedType = "FLOATING";
+            propertySetControllerTypeFloating.PredefinedTypes.Add("FLOATING");
             ifcPSE = new PropertySetEntry("Pset_ControllerTypeFloating.ControlType", "ControlType");
             ifcPSE.PropertyName = "ControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -22007,7 +22007,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetControllerTypeMultiPosition.EntityTypes.Add(IFCEntityType.IfcController);
             propertySetControllerTypeMultiPosition.ObjectType = "IfcController";
-            propertySetControllerTypeMultiPosition.PredefinedType = "MULTIPOSITION";
+            propertySetControllerTypeMultiPosition.PredefinedTypes.Add("MULTIPOSITION");
             ifcPSE = new PropertySetEntry("Pset_ControllerTypeMultiPosition.ControlType", "ControlType");
             ifcPSE.PropertyName = "ControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -22056,7 +22056,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetControllerTypeMultiPosition.EntityTypes.Add(IFCEntityType.IfcController);
             propertySetControllerTypeMultiPosition.EntityTypes.Add(IFCEntityType.IfcControllerType);
             propertySetControllerTypeMultiPosition.ObjectType = "IfcController";
-            propertySetControllerTypeMultiPosition.PredefinedType = "MULTIPOSITION";
+            propertySetControllerTypeMultiPosition.PredefinedTypes.Add("MULTIPOSITION");
             ifcPSE = new PropertySetEntry("Pset_ControllerTypeMultiPosition.ControlType", "ControlType");
             ifcPSE.PropertyName = "ControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -22113,7 +22113,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetControllerTypeProgrammable.EntityTypes.Add(IFCEntityType.IfcController);
             propertySetControllerTypeProgrammable.ObjectType = "IfcController";
-            propertySetControllerTypeProgrammable.PredefinedType = "PROGRAMMABLE";
+            propertySetControllerTypeProgrammable.PredefinedTypes.Add("PROGRAMMABLE");
             ifcPSE = new PropertySetEntry("Pset_ControllerTypeProgrammable.ControlType", "ControlType");
             ifcPSE.PropertyName = "ControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -22162,7 +22162,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetControllerTypeProgrammable.EntityTypes.Add(IFCEntityType.IfcController);
             propertySetControllerTypeProgrammable.EntityTypes.Add(IFCEntityType.IfcControllerType);
             propertySetControllerTypeProgrammable.ObjectType = "IfcController";
-            propertySetControllerTypeProgrammable.PredefinedType = "PROGRAMMABLE";
+            propertySetControllerTypeProgrammable.PredefinedTypes.Add("PROGRAMMABLE");
             ifcPSE = new PropertySetEntry("Pset_ControllerTypeProgrammable.ControlType", "ControlType");
             ifcPSE.PropertyName = "ControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -22217,7 +22217,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetControllerTypeProportional.EntityTypes.Add(IFCEntityType.IfcControllerType);
             propertySetControllerTypeProportional.ObjectType = "IfcControllerType";
-            propertySetControllerTypeProportional.PredefinedType = "PROPORTIONAL";
+            propertySetControllerTypeProportional.PredefinedTypes.Add("PROPORTIONAL");
             ifcPSE = new PropertySetEntry("Pset_ControllerTypeProportional.ControlType", "ControlType");
             ifcPSE.PropertyName = "ControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -22265,7 +22265,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetControllerTypeProportional.EntityTypes.Add(IFCEntityType.IfcController);
             propertySetControllerTypeProportional.ObjectType = "IfcController";
-            propertySetControllerTypeProportional.PredefinedType = "PROPORTIONAL";
+            propertySetControllerTypeProportional.PredefinedTypes.Add("PROPORTIONAL");
             ifcPSE = new PropertySetEntry("Pset_ControllerTypeProportional.ControlType", "ControlType");
             ifcPSE.PropertyName = "ControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -22365,7 +22365,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetControllerTypeProportional.EntityTypes.Add(IFCEntityType.IfcController);
             propertySetControllerTypeProportional.EntityTypes.Add(IFCEntityType.IfcControllerType);
             propertySetControllerTypeProportional.ObjectType = "IfcController";
-            propertySetControllerTypeProportional.PredefinedType = "PROPORTIONAL";
+            propertySetControllerTypeProportional.PredefinedTypes.Add("PROPORTIONAL");
             ifcPSE = new PropertySetEntry("Pset_ControllerTypeProportional.ControlType", "ControlType");
             ifcPSE.PropertyName = "ControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -22462,7 +22462,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetControllerTypeTwoPosition.EntityTypes.Add(IFCEntityType.IfcControllerType);
             propertySetControllerTypeTwoPosition.ObjectType = "IfcControllerType";
-            propertySetControllerTypeTwoPosition.PredefinedType = "TWOPOSITION";
+            propertySetControllerTypeTwoPosition.PredefinedTypes.Add("TWOPOSITION");
             ifcPSE = new PropertySetEntry("Pset_ControllerTypeTwoPosition.ControlType", "ControlType");
             ifcPSE.PropertyName = "ControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -22486,7 +22486,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetControllerTypeTwoPosition.EntityTypes.Add(IFCEntityType.IfcController);
             propertySetControllerTypeTwoPosition.ObjectType = "IfcController";
-            propertySetControllerTypeTwoPosition.PredefinedType = "TWOPOSITION";
+            propertySetControllerTypeTwoPosition.PredefinedTypes.Add("TWOPOSITION");
             ifcPSE = new PropertySetEntry("Pset_ControllerTypeTwoPosition.ControlType", "ControlType");
             ifcPSE.PropertyName = "ControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -22534,7 +22534,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetControllerTypeTwoPosition.EntityTypes.Add(IFCEntityType.IfcController);
             propertySetControllerTypeTwoPosition.EntityTypes.Add(IFCEntityType.IfcControllerType);
             propertySetControllerTypeTwoPosition.ObjectType = "IfcController";
-            propertySetControllerTypeTwoPosition.PredefinedType = "TWOPOSITION";
+            propertySetControllerTypeTwoPosition.PredefinedTypes.Add("TWOPOSITION");
             ifcPSE = new PropertySetEntry("Pset_ControllerTypeTwoPosition.ControlType", "ControlType");
             ifcPSE.PropertyName = "ControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -23049,7 +23049,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCooledBeamPHistoryActive.EntityTypes.Add(IFCEntityType.IfcPerformanceHistory);
             propertySetCooledBeamPHistoryActive.ObjectType = "The related IfcCooledBeamType";
-            propertySetCooledBeamPHistoryActive.PredefinedType = "ACTIVE";
+            propertySetCooledBeamPHistoryActive.PredefinedTypes.Add("ACTIVE");
             ifcPSE = new PropertySetEntry("Pset_CooledBeamPHistoryActive.AirFlowRate", "AirFlowRate");
             ifcPSE.PropertyName = "AirFlowRate";
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.AirFlowRateCalculator");
@@ -23076,7 +23076,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCooledBeamPHistoryActive.EntityTypes.Add(IFCEntityType.IfcPerformanceHistory);
             propertySetCooledBeamPHistoryActive.ObjectType = "RelatedEntityIs:IfcCooledBeamType";
-            propertySetCooledBeamPHistoryActive.PredefinedType = "ACTIVE";
+            propertySetCooledBeamPHistoryActive.PredefinedTypes.Add("ACTIVE");
             ifcPSE = new PropertySetEntry("Pset_CooledBeamPHistoryActive.AirFlowRate", "AirFlowRate");
             ifcPSE.PropertyName = "AirFlowRate";
             calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.AirFlowRateCalculator");
@@ -23103,7 +23103,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCooledBeamPHistoryActive.EntityTypes.Add(IFCEntityType.IfcCooledBeam);
             propertySetCooledBeamPHistoryActive.ObjectType = "IfcCooledBeam";
-            propertySetCooledBeamPHistoryActive.PredefinedType = "ACTIVE";
+            propertySetCooledBeamPHistoryActive.PredefinedTypes.Add("ACTIVE");
             ifcPSE = new PropertySetEntry("Pset_CooledBeamPHistoryActive.AirFlowRate", "AirFlowRate");
             ifcPSE.PropertyName = "AirFlowRate";
             ifcPSE.PropertyType = PropertyType.IfcTimeSeries;
@@ -23139,7 +23139,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCooledBeamPHistoryActive.EntityTypes.Add(IFCEntityType.IfcCooledBeam);
             propertySetCooledBeamPHistoryActive.ObjectType = "IfcCooledBeam";
-            propertySetCooledBeamPHistoryActive.PredefinedType = "ACTIVE";
+            propertySetCooledBeamPHistoryActive.PredefinedTypes.Add("ACTIVE");
             ifcPSE = new PropertySetEntry("Pset_CooledBeamPHistoryActive.AirFlowRate", "AirFlowRate");
             ifcPSE.PropertyName = "AirFlowRate";
             ifcPSE.PropertyType = PropertyType.IfcTimeSeries;
@@ -23185,7 +23185,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCooledBeamTypeActive.EntityTypes.Add(IFCEntityType.IfcCooledBeamType);
             propertySetCooledBeamTypeActive.ObjectType = "IfcCooledBeamType";
-            propertySetCooledBeamTypeActive.PredefinedType = "ACTIVE";
+            propertySetCooledBeamTypeActive.PredefinedTypes.Add("ACTIVE");
             ifcPSE = new PropertySetEntry("Pset_CooledBeamTypeActive.AirFlowConfiguration", "AirFlowConfiguration");
             ifcPSE.PropertyName = "AirFlowConfiguration";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -23228,7 +23228,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCooledBeamTypeActive.EntityTypes.Add(IFCEntityType.IfcCooledBeamType);
             propertySetCooledBeamTypeActive.ObjectType = "IfcCooledBeamType";
-            propertySetCooledBeamTypeActive.PredefinedType = "ACTIVE";
+            propertySetCooledBeamTypeActive.PredefinedTypes.Add("ACTIVE");
             ifcPSE = new PropertySetEntry("Pset_CooledBeamTypeActive.AirFlowConfiguration", "AirFlowConfiguration");
             ifcPSE.PropertyName = "AirFlowConfiguration";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -23271,7 +23271,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCooledBeamTypeActive.EntityTypes.Add(IFCEntityType.IfcCooledBeam);
             propertySetCooledBeamTypeActive.ObjectType = "IfcCooledBeam";
-            propertySetCooledBeamTypeActive.PredefinedType = "ACTIVE";
+            propertySetCooledBeamTypeActive.PredefinedTypes.Add("ACTIVE");
             ifcPSE = new PropertySetEntry("Pset_CooledBeamTypeActive.AirFlowConfiguration", "AirFlowConfiguration");
             ifcPSE.PropertyName = "AirFlowConfiguration";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -23319,7 +23319,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCooledBeamTypeActive.EntityTypes.Add(IFCEntityType.IfcCooledBeam);
             propertySetCooledBeamTypeActive.EntityTypes.Add(IFCEntityType.IfcCooledBeamType);
             propertySetCooledBeamTypeActive.ObjectType = "IfcCooledBeam";
-            propertySetCooledBeamTypeActive.PredefinedType = "ACTIVE";
+            propertySetCooledBeamTypeActive.PredefinedTypes.Add("ACTIVE");
             ifcPSE = new PropertySetEntry("Pset_CooledBeamTypeActive.AirFlowConfiguration", "AirFlowConfiguration");
             ifcPSE.PropertyName = "AirFlowConfiguration";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -25056,7 +25056,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCoveringCeiling.EntityTypes.Add(IFCEntityType.IfcCovering);
             propertySetCoveringCeiling.ObjectType = "IfcCovering";
-            propertySetCoveringCeiling.PredefinedType = "CEILING";
+            propertySetCoveringCeiling.PredefinedTypes.Add("CEILING");
             ifcPSE = new PropertySetEntry("Pset_CoveringCeiling.FragilityRating", "FragilityRating");
             ifcPSE.PropertyName = "FragilityRating";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -25094,7 +25094,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCoveringCeiling.EntityTypes.Add(IFCEntityType.IfcCovering);
             propertySetCoveringCeiling.ObjectType = "IfcCovering";
-            propertySetCoveringCeiling.PredefinedType = "CEILING";
+            propertySetCoveringCeiling.PredefinedTypes.Add("CEILING");
             ifcPSE = new PropertySetEntry("Pset_CoveringCeiling.Permeability", "Permeability");
             ifcPSE.PropertyName = "Permeability";
             ifcPSE.PropertyType = PropertyType.NormalisedRatio;
@@ -25586,7 +25586,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCoveringFlooring.EntityTypes.Add(IFCEntityType.IfcCovering);
             propertySetCoveringFlooring.ObjectType = "IfcCovering";
-            propertySetCoveringFlooring.PredefinedType = "FLOORING";
+            propertySetCoveringFlooring.PredefinedTypes.Add("FLOORING");
             ifcPSE = new PropertySetEntry("Pset_CoveringFlooring.HasNonSkidSurface", "HasNonSkidSurface");
             ifcPSE.PropertyName = "HasNonSkidSurface";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -25608,7 +25608,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetCoveringFlooring.EntityTypes.Add(IFCEntityType.IfcCovering);
             propertySetCoveringFlooring.ObjectType = "IfcCovering";
-            propertySetCoveringFlooring.PredefinedType = "FLOORING";
+            propertySetCoveringFlooring.PredefinedTypes.Add("FLOORING");
             ifcPSE = new PropertySetEntry("Pset_CoveringFlooring.HasNonSkidSurface", "HasNonSkidSurface");
             ifcPSE.PropertyName = "HasNonSkidSurface";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -25639,7 +25639,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCoveringFlooring.EntityTypes.Add(IFCEntityType.IfcCovering);
             propertySetCoveringFlooring.EntityTypes.Add(IFCEntityType.IfcCoveringType);
             propertySetCoveringFlooring.ObjectType = "IfcCovering";
-            propertySetCoveringFlooring.PredefinedType = "FLOORING";
+            propertySetCoveringFlooring.PredefinedTypes.Add("FLOORING");
             ifcPSE = new PropertySetEntry("Pset_CoveringFlooring.HasNonSkidSurface", "HasNonSkidSurface");
             ifcPSE.PropertyName = "HasNonSkidSurface";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -25675,7 +25675,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetCoveringTypeMembrane.EntityTypes.Add(IFCEntityType.IfcCovering);
             propertySetCoveringTypeMembrane.EntityTypes.Add(IFCEntityType.IfcCoveringType);
             propertySetCoveringTypeMembrane.ObjectType = "IfcCovering";
-            propertySetCoveringTypeMembrane.PredefinedType = "MEMBRANE";
+            propertySetCoveringTypeMembrane.PredefinedTypes.Add("MEMBRANE");
             ifcPSE = new PropertySetEntry("Pset_CoveringTypeMembrane.NominalInstallationDepth", "NominalInstallationDepth");
             ifcPSE.PropertyName = "NominalInstallationDepth";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -25709,11 +25709,10 @@ namespace Revit.IFC.Export.Exporter
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Pset_CurrentInstrumentTransformer"))
          {
             propertySetCurrentInstrumentTransformer.EntityTypes.Add(IFCEntityType.IfcFlowInstrument);
-            propertySetCurrentInstrumentTransformer.EntityTypes.Add(IFCEntityType.IfcFlowInstrument);
-            propertySetCurrentInstrumentTransformer.EntityTypes.Add(IFCEntityType.IfcFlowInstrumentType);
             propertySetCurrentInstrumentTransformer.EntityTypes.Add(IFCEntityType.IfcFlowInstrumentType);
             propertySetCurrentInstrumentTransformer.ObjectType = "IfcFlowInstrument";
-            propertySetCurrentInstrumentTransformer.PredefinedType = "COMBINED";
+            propertySetCurrentInstrumentTransformer.PredefinedTypes.Add("AMMETER");
+            propertySetCurrentInstrumentTransformer.PredefinedTypes.Add("COMBINED");
             ifcPSE = new PropertySetEntry("Pset_CurrentInstrumentTransformer.AccuracyClass", "AccuracyClass");
             ifcPSE.PropertyName = "AccuracyClass";
             ifcPSE.PropertyType = PropertyType.Ratio;
@@ -27338,7 +27337,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDamperTypeControlDamper.EntityTypes.Add(IFCEntityType.IfcDamperType);
             propertySetDamperTypeControlDamper.ObjectType = "IfcDamperType";
-            propertySetDamperTypeControlDamper.PredefinedType = "CONTROLDAMPER";
+            propertySetDamperTypeControlDamper.PredefinedTypes.Add("CONTROLDAMPER");
             ifcPSE = new PropertySetEntry("Pset_DamperTypeControlDamper.TorqueRange", "TorqueRange");
             ifcPSE.PropertyName = "TorqueRange";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -27363,7 +27362,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDamperTypeControlDamper.EntityTypes.Add(IFCEntityType.IfcDamperType);
             propertySetDamperTypeControlDamper.ObjectType = "IfcDamperType";
-            propertySetDamperTypeControlDamper.PredefinedType = "CONTROLDAMPER";
+            propertySetDamperTypeControlDamper.PredefinedTypes.Add("CONTROLDAMPER");
             ifcPSE = new PropertySetEntry("Pset_DamperTypeControlDamper.TorqueRange", "TorqueRange");
             ifcPSE.PropertyName = "TorqueRange";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -27388,7 +27387,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDamperTypeControlDamper.EntityTypes.Add(IFCEntityType.IfcDamper);
             propertySetDamperTypeControlDamper.ObjectType = "IfcDamper";
-            propertySetDamperTypeControlDamper.PredefinedType = "CONTROLDAMPER";
+            propertySetDamperTypeControlDamper.PredefinedTypes.Add("CONTROLDAMPER");
             ifcPSE = new PropertySetEntry("Pset_DamperTypeControlDamper.TorqueRange", "TorqueRange");
             ifcPSE.PropertyName = "TorqueRange";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -27416,7 +27415,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDamperTypeControlDamper.EntityTypes.Add(IFCEntityType.IfcDamper);
             propertySetDamperTypeControlDamper.EntityTypes.Add(IFCEntityType.IfcDamperType);
             propertySetDamperTypeControlDamper.ObjectType = "IfcDamper";
-            propertySetDamperTypeControlDamper.PredefinedType = "CONTROLDAMPER";
+            propertySetDamperTypeControlDamper.PredefinedTypes.Add("CONTROLDAMPER");
             ifcPSE = new PropertySetEntry("Pset_DamperTypeControlDamper.TorqueRange", "TorqueRange");
             ifcPSE.PropertyName = "TorqueRange";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -27454,7 +27453,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDamperTypeFireDamper.EntityTypes.Add(IFCEntityType.IfcDamperType);
             propertySetDamperTypeFireDamper.ObjectType = "IfcDamperType";
-            propertySetDamperTypeFireDamper.PredefinedType = "FIREDAMPER";
+            propertySetDamperTypeFireDamper.PredefinedTypes.Add("FIREDAMPER");
             ifcPSE = new PropertySetEntry("Pset_DamperTypeFireDamper.ActuationType", "ActuationType");
             ifcPSE.PropertyName = "ActuationType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -27496,7 +27495,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDamperTypeFireDamper.EntityTypes.Add(IFCEntityType.IfcDamperType);
             propertySetDamperTypeFireDamper.ObjectType = "IfcDamperType";
-            propertySetDamperTypeFireDamper.PredefinedType = "FIREDAMPER";
+            propertySetDamperTypeFireDamper.PredefinedTypes.Add("FIREDAMPER");
             ifcPSE = new PropertySetEntry("Pset_DamperTypeFireDamper.ActuationType", "ActuationType");
             ifcPSE.PropertyName = "ActuationType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -27538,7 +27537,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDamperTypeFireDamper.EntityTypes.Add(IFCEntityType.IfcDamper);
             propertySetDamperTypeFireDamper.ObjectType = "IfcDamper";
-            propertySetDamperTypeFireDamper.PredefinedType = "FIREDAMPER";
+            propertySetDamperTypeFireDamper.PredefinedTypes.Add("FIREDAMPER");
             ifcPSE = new PropertySetEntry("Pset_DamperTypeFireDamper.ActuationType", "ActuationType");
             ifcPSE.PropertyName = "ActuationType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -27585,7 +27584,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDamperTypeFireDamper.EntityTypes.Add(IFCEntityType.IfcDamper);
             propertySetDamperTypeFireDamper.EntityTypes.Add(IFCEntityType.IfcDamperType);
             propertySetDamperTypeFireDamper.ObjectType = "IfcDamper";
-            propertySetDamperTypeFireDamper.PredefinedType = "FIREDAMPER";
+            propertySetDamperTypeFireDamper.PredefinedTypes.Add("FIREDAMPER");
             ifcPSE = new PropertySetEntry("Pset_DamperTypeFireDamper.ActuationType", "ActuationType");
             ifcPSE.PropertyName = "ActuationType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -27640,7 +27639,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDamperTypeFireSmokeDamper.EntityTypes.Add(IFCEntityType.IfcDamperType);
             propertySetDamperTypeFireSmokeDamper.ObjectType = "IfcDamperType";
-            propertySetDamperTypeFireSmokeDamper.PredefinedType = "FIRESMOKEDAMPER";
+            propertySetDamperTypeFireSmokeDamper.PredefinedTypes.Add("FIRESMOKEDAMPER");
             ifcPSE = new PropertySetEntry("Pset_DamperTypeFireSmokeDamper.ControlType", "ControlType");
             ifcPSE.PropertyName = "ControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -27654,7 +27653,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDamperTypeFireSmokeDamper.EntityTypes.Add(IFCEntityType.IfcDamperType);
             propertySetDamperTypeFireSmokeDamper.ObjectType = "IfcDamperType";
-            propertySetDamperTypeFireSmokeDamper.PredefinedType = "FIRESMOKEDAMPER";
+            propertySetDamperTypeFireSmokeDamper.PredefinedTypes.Add("FIRESMOKEDAMPER");
             ifcPSE = new PropertySetEntry("Pset_DamperTypeFireSmokeDamper.ControlType", "ControlType");
             ifcPSE.PropertyName = "ControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -27668,7 +27667,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDamperTypeFireSmokeDamper.EntityTypes.Add(IFCEntityType.IfcDamper);
             propertySetDamperTypeFireSmokeDamper.ObjectType = "IfcDamper";
-            propertySetDamperTypeFireSmokeDamper.PredefinedType = "FIRESMOKEDAMPER";
+            propertySetDamperTypeFireSmokeDamper.PredefinedTypes.Add("FIRESMOKEDAMPER");
             ifcPSE = new PropertySetEntry("Pset_DamperTypeFireSmokeDamper.ControlType", "ControlType");
             ifcPSE.PropertyName = "ControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -27724,7 +27723,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDamperTypeFireSmokeDamper.EntityTypes.Add(IFCEntityType.IfcDamper);
             propertySetDamperTypeFireSmokeDamper.EntityTypes.Add(IFCEntityType.IfcDamperType);
             propertySetDamperTypeFireSmokeDamper.ObjectType = "IfcDamper";
-            propertySetDamperTypeFireSmokeDamper.PredefinedType = "FIRESMOKEDAMPER";
+            propertySetDamperTypeFireSmokeDamper.PredefinedTypes.Add("FIRESMOKEDAMPER");
             ifcPSE = new PropertySetEntry("Pset_DamperTypeFireSmokeDamper.DamperControlType", "DamperControlType");
             ifcPSE.PropertyName = "DamperControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -27787,7 +27786,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDamperTypeSmokeDamper.EntityTypes.Add(IFCEntityType.IfcDamperType);
             propertySetDamperTypeSmokeDamper.ObjectType = "IfcDamperType";
-            propertySetDamperTypeSmokeDamper.PredefinedType = "SMOKEDAMPER";
+            propertySetDamperTypeSmokeDamper.PredefinedTypes.Add("SMOKEDAMPER");
             ifcPSE = new PropertySetEntry("Pset_DamperTypeSmokeDamper.ControlType", "ControlType");
             ifcPSE.PropertyName = "ControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -27801,7 +27800,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDamperTypeSmokeDamper.EntityTypes.Add(IFCEntityType.IfcDamperType);
             propertySetDamperTypeSmokeDamper.ObjectType = "IfcDamperType";
-            propertySetDamperTypeSmokeDamper.PredefinedType = "SMOKEDAMPER";
+            propertySetDamperTypeSmokeDamper.PredefinedTypes.Add("SMOKEDAMPER");
             ifcPSE = new PropertySetEntry("Pset_DamperTypeSmokeDamper.ControlType", "ControlType");
             ifcPSE.PropertyName = "ControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -27815,7 +27814,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDamperTypeSmokeDamper.EntityTypes.Add(IFCEntityType.IfcDamper);
             propertySetDamperTypeSmokeDamper.ObjectType = "IfcDamper";
-            propertySetDamperTypeSmokeDamper.PredefinedType = "SMOKEDAMPER";
+            propertySetDamperTypeSmokeDamper.PredefinedTypes.Add("SMOKEDAMPER");
             ifcPSE = new PropertySetEntry("Pset_DamperTypeSmokeDamper.ControlType", "ControlType");
             ifcPSE.PropertyName = "ControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -27831,7 +27830,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDamperTypeSmokeDamper.EntityTypes.Add(IFCEntityType.IfcDamper);
             propertySetDamperTypeSmokeDamper.EntityTypes.Add(IFCEntityType.IfcDamperType);
             propertySetDamperTypeSmokeDamper.ObjectType = "IfcDamper";
-            propertySetDamperTypeSmokeDamper.PredefinedType = "SMOKEDAMPER";
+            propertySetDamperTypeSmokeDamper.PredefinedTypes.Add("SMOKEDAMPER");
             ifcPSE = new PropertySetEntry("Pset_DamperTypeSmokeDamper.ControlType", "ControlType");
             ifcPSE.PropertyName = "ControlType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -27859,7 +27858,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDataTransmissionUnit.EntityTypes.Add(IFCEntityType.IfcCommunicationsAppliance);
             propertySetDataTransmissionUnit.EntityTypes.Add(IFCEntityType.IfcCommunicationsApplianceType);
             propertySetDataTransmissionUnit.ObjectType = "IfcCommunicationsAppliance";
-            propertySetDataTransmissionUnit.PredefinedType = "MODEM";
+            propertySetDataTransmissionUnit.PredefinedTypes.Add("MODEM");
             ifcPSE = new PropertySetEntry("Pset_DataTransmissionUnit.WorkingState", "WorkingState");
             ifcPSE.PropertyName = "WorkingState";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -27944,7 +27943,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryAnchorBolt.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryAnchorBolt.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryAnchorBolt.ObjectType = "IfcObject";
-            propertySetDiscreteAccessoryAnchorBolt.PredefinedType = " 'Extension bolt'";
+            propertySetDiscreteAccessoryAnchorBolt.PredefinedTypes.Add(" 'Extension bolt'");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryAnchorBolt.AnchorBoltLength", "AnchorBoltLength");
             ifcPSE.PropertyName = "AnchorBoltLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -27983,7 +27982,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryAnchorBolt.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryAnchorBolt.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryAnchorBolt.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryAnchorBolt.PredefinedType = "Foundation bolt, Ribbed bar bolt, Extension bolt";
+            propertySetDiscreteAccessoryAnchorBolt.PredefinedTypes.Add("Foundation bolt, Ribbed bar bolt, Extension bolt");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryAnchorBolt.AnchorBoltLength", "AnchorBoltLength");
             ifcPSE.PropertyName = "AnchorBoltLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -28035,7 +28034,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryColumnShoe.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryColumnShoe.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryColumnShoe.ObjectType = "IfcObject";
-            propertySetDiscreteAccessoryColumnShoe.PredefinedType = " 'Column shoe'";
+            propertySetDiscreteAccessoryColumnShoe.PredefinedTypes.Add(" 'Column shoe'");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryColumnShoe.ColumnShoeBasePlateThickness", "ColumnShoeBasePlateThickness");
             ifcPSE.PropertyName = "ColumnShoeBasePlateThickness";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -28090,7 +28089,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryColumnShoe.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryColumnShoe.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryColumnShoe.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryColumnShoe.PredefinedType = "Column shoe";
+            propertySetDiscreteAccessoryColumnShoe.PredefinedTypes.Add("Column shoe");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryColumnShoe.ColumnShoeBasePlateThickness", "ColumnShoeBasePlateThickness");
             ifcPSE.PropertyName = "ColumnShoeBasePlateThickness";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -28144,7 +28143,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDiscreteAccessoryColumnShoe.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryColumnShoe.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryColumnShoe.PredefinedType = "SHOE";
+            propertySetDiscreteAccessoryColumnShoe.PredefinedTypes.Add("SHOE");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryColumnShoe.ColumnShoeBasePlateThickness", "ColumnShoeBasePlateThickness");
             ifcPSE.PropertyName = "ColumnShoeBasePlateThickness";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -28217,7 +28216,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryColumnShoe.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryColumnShoe.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryColumnShoe.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryColumnShoe.PredefinedType = "SHOE";
+            propertySetDiscreteAccessoryColumnShoe.PredefinedTypes.Add("SHOE");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryColumnShoe.ColumnShoeBasePlateThickness", "ColumnShoeBasePlateThickness");
             ifcPSE.PropertyName = "ColumnShoeBasePlateThickness";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -28285,7 +28284,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryCornerFixingPlate.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryCornerFixingPlate.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryCornerFixingPlate.ObjectType = "IfcObject";
-            propertySetDiscreteAccessoryCornerFixingPlate.PredefinedType = " 'Corner fixing plate'";
+            propertySetDiscreteAccessoryCornerFixingPlate.PredefinedTypes.Add(" 'Corner fixing plate'");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryCornerFixingPlate.CornerFixingPlateLength", "CornerFixingPlateLength");
             ifcPSE.PropertyName = "CornerFixingPlateLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -28324,7 +28323,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryCornerFixingPlate.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryCornerFixingPlate.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryCornerFixingPlate.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryCornerFixingPlate.PredefinedType = "Corner fixing plate";
+            propertySetDiscreteAccessoryCornerFixingPlate.PredefinedTypes.Add("Corner fixing plate");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryCornerFixingPlate.CornerFixingPlateLength", "CornerFixingPlateLength");
             ifcPSE.PropertyName = "CornerFixingPlateLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -28362,7 +28361,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDiscreteAccessoryCornerFixingPlate.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryCornerFixingPlate.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryCornerFixingPlate.PredefinedType = "Corner fixing plate";
+            propertySetDiscreteAccessoryCornerFixingPlate.PredefinedTypes.Add("Corner fixing plate");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryCornerFixingPlate.CornerFixingPlateLength", "CornerFixingPlateLength");
             ifcPSE.PropertyName = "CornerFixingPlateLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -28464,7 +28463,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryDiagonalTrussConnector.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryDiagonalTrussConnector.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryDiagonalTrussConnector.ObjectType = "IfcObject";
-            propertySetDiscreteAccessoryDiagonalTrussConnector.PredefinedType = " 'Diagonal truss connector'";
+            propertySetDiscreteAccessoryDiagonalTrussConnector.PredefinedTypes.Add(" 'Diagonal truss connector'");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryDiagonalTrussConnector.DiagonalTrussHeight", "DiagonalTrussHeight");
             ifcPSE.PropertyName = "DiagonalTrussHeight";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -28519,7 +28518,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryDiagonalTrussConnector.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryDiagonalTrussConnector.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryDiagonalTrussConnector.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryDiagonalTrussConnector.PredefinedType = "Diagonal truss connector";
+            propertySetDiscreteAccessoryDiagonalTrussConnector.PredefinedTypes.Add("Diagonal truss connector");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryDiagonalTrussConnector.DiagonalTrussHeight", "DiagonalTrussHeight");
             ifcPSE.PropertyName = "DiagonalTrussHeight";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -28573,7 +28572,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDiscreteAccessoryDiagonalTrussConnector.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryDiagonalTrussConnector.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryDiagonalTrussConnector.PredefinedType = "Diagonal truss connector";
+            propertySetDiscreteAccessoryDiagonalTrussConnector.PredefinedTypes.Add("Diagonal truss connector");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryDiagonalTrussConnector.DiagonalTrussHeight", "DiagonalTrussHeight");
             ifcPSE.PropertyName = "DiagonalTrussHeight";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -28713,7 +28712,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryEdgeFixingPlate.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryEdgeFixingPlate.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryEdgeFixingPlate.ObjectType = "IfcObject";
-            propertySetDiscreteAccessoryEdgeFixingPlate.PredefinedType = " 'Edge fixing plate'";
+            propertySetDiscreteAccessoryEdgeFixingPlate.PredefinedTypes.Add(" 'Edge fixing plate'");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryEdgeFixingPlate.EdgeFixingPlateLength", "EdgeFixingPlateLength");
             ifcPSE.PropertyName = "EdgeFixingPlateLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -28752,7 +28751,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryEdgeFixingPlate.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryEdgeFixingPlate.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryEdgeFixingPlate.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryEdgeFixingPlate.PredefinedType = "Edge fixing plate";
+            propertySetDiscreteAccessoryEdgeFixingPlate.PredefinedTypes.Add("Edge fixing plate");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryEdgeFixingPlate.EdgeFixingPlateLength", "EdgeFixingPlateLength");
             ifcPSE.PropertyName = "EdgeFixingPlateLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -28790,7 +28789,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDiscreteAccessoryEdgeFixingPlate.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryEdgeFixingPlate.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryEdgeFixingPlate.PredefinedType = "Edge fixing plate";
+            propertySetDiscreteAccessoryEdgeFixingPlate.PredefinedTypes.Add("Edge fixing plate");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryEdgeFixingPlate.EdgeFixingPlateLength", "EdgeFixingPlateLength");
             ifcPSE.PropertyName = "EdgeFixingPlateLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -28892,7 +28891,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryFixingSocket.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryFixingSocket.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryFixingSocket.ObjectType = "IfcObject";
-            propertySetDiscreteAccessoryFixingSocket.PredefinedType = " 'Fixing socket'";
+            propertySetDiscreteAccessoryFixingSocket.PredefinedTypes.Add(" 'Fixing socket'");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryFixingSocket.FixingSocketTypeReference", "FixingSocketTypeReference");
             ifcPSE.PropertyName = "FixingSocketTypeReference";
             ifcPSE.PropertyType = PropertyType.IfcExternalReference;
@@ -28932,7 +28931,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryFixingSocket.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryFixingSocket.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryFixingSocket.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryFixingSocket.PredefinedType = "Fixing socket";
+            propertySetDiscreteAccessoryFixingSocket.PredefinedTypes.Add("Fixing socket");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryFixingSocket.FixingSocketTypeReference", "FixingSocketTypeReference");
             ifcPSE.PropertyName = "FixingSocketTypeReference";
             ifcPSE.PropertyType = PropertyType.IfcExternalReference;
@@ -28971,7 +28970,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDiscreteAccessoryFixingSocket.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryFixingSocket.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryFixingSocket.PredefinedType = "Fixing socket";
+            propertySetDiscreteAccessoryFixingSocket.PredefinedTypes.Add("Fixing socket");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryFixingSocket.FixingSocketTypeReference", "FixingSocketTypeReference");
             ifcPSE.PropertyName = "FixingSocketTypeReference";
             ifcPSE.PropertyType = PropertyType.IfcExternalReference;
@@ -29075,7 +29074,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryLadderTrussConnector.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryLadderTrussConnector.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryLadderTrussConnector.ObjectType = "IfcObject";
-            propertySetDiscreteAccessoryLadderTrussConnector.PredefinedType = " 'Ladder truss connector'";
+            propertySetDiscreteAccessoryLadderTrussConnector.PredefinedTypes.Add(" 'Ladder truss connector'");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryLadderTrussConnector.LadderTrussHeight", "LadderTrussHeight");
             ifcPSE.PropertyName = "LadderTrussHeight";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -29130,7 +29129,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryLadderTrussConnector.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryLadderTrussConnector.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryLadderTrussConnector.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryLadderTrussConnector.PredefinedType = "Ladder truss connector";
+            propertySetDiscreteAccessoryLadderTrussConnector.PredefinedTypes.Add("Ladder truss connector");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryLadderTrussConnector.LadderTrussHeight", "LadderTrussHeight");
             ifcPSE.PropertyName = "LadderTrussHeight";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -29184,7 +29183,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDiscreteAccessoryLadderTrussConnector.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryLadderTrussConnector.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryLadderTrussConnector.PredefinedType = "Ladder truss connector";
+            propertySetDiscreteAccessoryLadderTrussConnector.PredefinedTypes.Add("Ladder truss connector");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryLadderTrussConnector.LadderTrussHeight", "LadderTrussHeight");
             ifcPSE.PropertyName = "LadderTrussHeight";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -29324,7 +29323,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryStandardFixingPlate.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryStandardFixingPlate.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryStandardFixingPlate.ObjectType = "IfcObject";
-            propertySetDiscreteAccessoryStandardFixingPlate.PredefinedType = " 'Standard fixing plate'";
+            propertySetDiscreteAccessoryStandardFixingPlate.PredefinedTypes.Add(" 'Standard fixing plate'");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryStandardFixingPlate.StandardFixingPlateWidth", "StandardFixingPlateWidth");
             ifcPSE.PropertyName = "StandardFixingPlateWidth";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -29355,7 +29354,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryStandardFixingPlate.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryStandardFixingPlate.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryStandardFixingPlate.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryStandardFixingPlate.PredefinedType = "Standard fixing plate";
+            propertySetDiscreteAccessoryStandardFixingPlate.PredefinedTypes.Add("Standard fixing plate");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryStandardFixingPlate.StandardFixingPlateWidth", "StandardFixingPlateWidth");
             ifcPSE.PropertyName = "StandardFixingPlateWidth";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -29385,7 +29384,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDiscreteAccessoryStandardFixingPlate.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryStandardFixingPlate.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryStandardFixingPlate.PredefinedType = "Standard fixing plate";
+            propertySetDiscreteAccessoryStandardFixingPlate.PredefinedTypes.Add("Standard fixing plate");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryStandardFixingPlate.StandardFixingPlateWidth", "StandardFixingPlateWidth");
             ifcPSE.PropertyName = "StandardFixingPlateWidth";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -29468,7 +29467,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryTypeBracket.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryTypeBracket.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryTypeBracket.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryTypeBracket.PredefinedType = "BRACKET";
+            propertySetDiscreteAccessoryTypeBracket.PredefinedTypes.Add("BRACKET");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryTypeBracket.IsInsulated", "IsInsulated");
             ifcPSE.PropertyName = "IsInsulated";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -29496,7 +29495,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryTypeCableArranger.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryTypeCableArranger.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryTypeCableArranger.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryTypeCableArranger.PredefinedType = "CABLEARRANGER";
+            propertySetDiscreteAccessoryTypeCableArranger.PredefinedTypes.Add("CABLEARRANGER");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryTypeCableArranger.CableArrangerPosition", "CableArrangerPosition");
             ifcPSE.PropertyName = "CableArrangerPosition";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -29526,7 +29525,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryTypeInsulator.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryTypeInsulator.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryTypeInsulator.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryTypeInsulator.PredefinedType = "INSULATOR";
+            propertySetDiscreteAccessoryTypeInsulator.PredefinedTypes.Add("INSULATOR");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryTypeInsulator.RatedCurrent", "RatedCurrent");
             ifcPSE.PropertyName = "RatedCurrent";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -29648,7 +29647,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryTypeLock.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryTypeLock.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryTypeLock.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryTypeLock.PredefinedType = "LOCK";
+            propertySetDiscreteAccessoryTypeLock.PredefinedTypes.Add("LOCK");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryTypeLock.InstallationPlan", "InstallationPlan");
             ifcPSE.PropertyName = "InstallationPlan";
             ifcPSE.PropertyType = PropertyType.IfcExternalReference;
@@ -29685,7 +29684,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryTypeRailBrace.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryTypeRailBrace.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryTypeRailBrace.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryTypeRailBrace.PredefinedType = "RAILBRACE";
+            propertySetDiscreteAccessoryTypeRailBrace.PredefinedTypes.Add("RAILBRACE");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryTypeRailBrace.IsTemporary", "IsTemporary");
             ifcPSE.PropertyName = "IsTemporary";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -29713,7 +29712,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryTypeRailLubrication.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryTypeRailLubrication.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryTypeRailLubrication.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryTypeRailLubrication.PredefinedType = "RAIL_LUBRICATION";
+            propertySetDiscreteAccessoryTypeRailLubrication.PredefinedTypes.Add("RAIL_LUBRICATION");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryTypeRailLubrication.PositionInTrack", "PositionInTrack");
             ifcPSE.PropertyName = "PositionInTrack";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -29771,7 +29770,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryTypeRailPad.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryTypeRailPad.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryTypeRailPad.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryTypeRailPad.PredefinedType = "RAILPAD";
+            propertySetDiscreteAccessoryTypeRailPad.PredefinedTypes.Add("RAILPAD");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryTypeRailPad.RailPadStiffness", "RailPadStiffness");
             ifcPSE.PropertyName = "RailPadStiffness";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -29801,7 +29800,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryTypeSlidingChair.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryTypeSlidingChair.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryTypeSlidingChair.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryTypeSlidingChair.PredefinedType = "SLIDINGCHAIR";
+            propertySetDiscreteAccessoryTypeSlidingChair.PredefinedTypes.Add("SLIDINGCHAIR");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryTypeSlidingChair.IsSelfLubricated", "IsSelfLubricated");
             ifcPSE.PropertyName = "IsSelfLubricated";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -29829,7 +29828,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryTypeSoundAbsorption.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryTypeSoundAbsorption.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryTypeSoundAbsorption.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryTypeSoundAbsorption.PredefinedType = "SOUNDABSORPTION";
+            propertySetDiscreteAccessoryTypeSoundAbsorption.PredefinedTypes.Add("SOUNDABSORPTION");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryTypeSoundAbsorption.SoundAbsorptionLimit", "SoundAbsorptionLimit");
             ifcPSE.PropertyName = "SoundAbsorptionLimit";
             ifcPSE.PropertyType = PropertyType.SoundPowerLevel;
@@ -29857,7 +29856,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryTypeTensioningEquipment.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryTypeTensioningEquipment.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryTypeTensioningEquipment.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryTypeTensioningEquipment.PredefinedType = "TENSIONINGEQUIPMENT";
+            propertySetDiscreteAccessoryTypeTensioningEquipment.PredefinedTypes.Add("TENSIONINGEQUIPMENT");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryTypeTensioningEquipment.ReferenceEnvironmentTemperature", "ReferenceEnvironmentTemperature");
             ifcPSE.PropertyName = "ReferenceEnvironmentTemperature";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -29927,7 +29926,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryWireLoop.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryWireLoop.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryWireLoop.ObjectType = "IfcObject";
-            propertySetDiscreteAccessoryWireLoop.PredefinedType = " 'Wire loop'";
+            propertySetDiscreteAccessoryWireLoop.PredefinedTypes.Add(" 'Wire loop'");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryWireLoop.WireLoopBasePlateThickness", "WireLoopBasePlateThickness");
             ifcPSE.PropertyName = "WireLoopBasePlateThickness";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -29982,7 +29981,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDiscreteAccessoryWireLoop.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryWireLoop.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetDiscreteAccessoryWireLoop.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryWireLoop.PredefinedType = "Wire loop";
+            propertySetDiscreteAccessoryWireLoop.PredefinedTypes.Add("Wire loop");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryWireLoop.WireLoopBasePlateThickness", "WireLoopBasePlateThickness");
             ifcPSE.PropertyName = "WireLoopBasePlateThickness";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -30036,7 +30035,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDiscreteAccessoryWireLoop.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetDiscreteAccessoryWireLoop.ObjectType = "IfcDiscreteAccessory";
-            propertySetDiscreteAccessoryWireLoop.PredefinedType = "Wire loop";
+            propertySetDiscreteAccessoryWireLoop.PredefinedTypes.Add("Wire loop");
             ifcPSE = new PropertySetEntry("Pset_DiscreteAccessoryWireLoop.WireLoopBasePlateThickness", "WireLoopBasePlateThickness");
             ifcPSE.PropertyName = "WireLoopBasePlateThickness";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -30247,7 +30246,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDistributionBoardTypeDispatchingBoard.EntityTypes.Add(IFCEntityType.IfcDistributionBoard);
             propertySetDistributionBoardTypeDispatchingBoard.EntityTypes.Add(IFCEntityType.IfcDistributionBoardType);
             propertySetDistributionBoardTypeDispatchingBoard.ObjectType = "IfcDistributionBoard";
-            propertySetDistributionBoardTypeDispatchingBoard.PredefinedType = "DISPATCHINGBOARD";
+            propertySetDistributionBoardTypeDispatchingBoard.PredefinedTypes.Add("DISPATCHINGBOARD");
             ifcPSE = new PropertySetEntry("Pset_DistributionBoardTypeDispatchingBoard.NumberOfInterfaces", "NumberOfInterfaces");
             ifcPSE.PropertyName = "NumberOfInterfaces";
             ifcPSE.PropertyArgumentType = PropertyType.Label;
@@ -30287,7 +30286,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDistributionBoardTypeDistributionFrame.EntityTypes.Add(IFCEntityType.IfcDistributionBoard);
             propertySetDistributionBoardTypeDistributionFrame.EntityTypes.Add(IFCEntityType.IfcDistributionBoardType);
             propertySetDistributionBoardTypeDistributionFrame.ObjectType = "IfcDistributionBoard";
-            propertySetDistributionBoardTypeDistributionFrame.PredefinedType = "DISTRIBUTIONFRAME";
+            propertySetDistributionBoardTypeDistributionFrame.PredefinedTypes.Add("DISTRIBUTIONFRAME");
             ifcPSE = new PropertySetEntry("Pset_DistributionBoardTypeDistributionFrame.PortCapacity", "PortCapacity");
             ifcPSE.PropertyName = "PortCapacity";
             ifcPSE.PropertyType = PropertyType.Integer;
@@ -30460,7 +30459,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionChamberElementTypeFormedDuct.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElementType);
             propertySetDistributionChamberElementTypeFormedDuct.ObjectType = "IfcDistributionChamberElementType";
-            propertySetDistributionChamberElementTypeFormedDuct.PredefinedType = "FORMEDDUCT";
+            propertySetDistributionChamberElementTypeFormedDuct.PredefinedTypes.Add("FORMEDDUCT");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeFormedDuct.ClearWidth", "ClearWidth");
             ifcPSE.PropertyName = "ClearWidth";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -30542,7 +30541,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionChamberElementTypeFormedDuct.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElement);
             propertySetDistributionChamberElementTypeFormedDuct.ObjectType = "IfcDistributionChamberElement";
-            propertySetDistributionChamberElementTypeFormedDuct.PredefinedType = "FORMEDDUCT";
+            propertySetDistributionChamberElementTypeFormedDuct.PredefinedTypes.Add("FORMEDDUCT");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeFormedDuct.ClearWidth", "ClearWidth");
             ifcPSE.PropertyName = "ClearWidth";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -30604,7 +30603,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDistributionChamberElementTypeFormedDuct.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElement);
             propertySetDistributionChamberElementTypeFormedDuct.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElementType);
             propertySetDistributionChamberElementTypeFormedDuct.ObjectType = "IfcDistributionChamberElement";
-            propertySetDistributionChamberElementTypeFormedDuct.PredefinedType = "FORMEDDUCT";
+            propertySetDistributionChamberElementTypeFormedDuct.PredefinedTypes.Add("FORMEDDUCT");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeFormedDuct.ClearWidth", "ClearWidth");
             ifcPSE.PropertyName = "ClearWidth";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -30783,7 +30782,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionChamberElementTypeInspectionChamber.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElementType);
             propertySetDistributionChamberElementTypeInspectionChamber.ObjectType = "IfcDistributionChamberElementType";
-            propertySetDistributionChamberElementTypeInspectionChamber.PredefinedType = "INSPECTIONCHAMBER";
+            propertySetDistributionChamberElementTypeInspectionChamber.PredefinedTypes.Add("INSPECTIONCHAMBER");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeInspectionChamber.ChamberLengthOrRadius", "ChamberLengthOrRadius");
             ifcPSE.PropertyName = "ChamberLengthOrRadius";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -30896,7 +30895,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionChamberElementTypeInspectionChamber.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElement);
             propertySetDistributionChamberElementTypeInspectionChamber.ObjectType = "IfcDistributionChamberElement";
-            propertySetDistributionChamberElementTypeInspectionChamber.PredefinedType = "INSPECTIONCHAMBER";
+            propertySetDistributionChamberElementTypeInspectionChamber.PredefinedTypes.Add("INSPECTIONCHAMBER");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeInspectionChamber.ChamberLengthOrRadius", "ChamberLengthOrRadius");
             ifcPSE.PropertyName = "ChamberLengthOrRadius";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -31049,7 +31048,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDistributionChamberElementTypeInspectionChamber.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElement);
             propertySetDistributionChamberElementTypeInspectionChamber.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElementType);
             propertySetDistributionChamberElementTypeInspectionChamber.ObjectType = "IfcDistributionChamberElement";
-            propertySetDistributionChamberElementTypeInspectionChamber.PredefinedType = "INSPECTIONCHAMBER";
+            propertySetDistributionChamberElementTypeInspectionChamber.PredefinedTypes.Add("INSPECTIONCHAMBER");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeInspectionChamber.ChamberLengthOrRadius", "ChamberLengthOrRadius");
             ifcPSE.PropertyName = "ChamberLengthOrRadius";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -31204,7 +31203,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionChamberElementTypeInspectionPit.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElementType);
             propertySetDistributionChamberElementTypeInspectionPit.ObjectType = "IfcDistributionChamberElementType";
-            propertySetDistributionChamberElementTypeInspectionPit.PredefinedType = "INSPECTIONPIT";
+            propertySetDistributionChamberElementTypeInspectionPit.PredefinedTypes.Add("INSPECTIONPIT");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeInspectionPit.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -31234,7 +31233,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionChamberElementTypeInspectionPit.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElement);
             propertySetDistributionChamberElementTypeInspectionPit.ObjectType = "IfcDistributionChamberElement";
-            propertySetDistributionChamberElementTypeInspectionPit.PredefinedType = "INSPECTIONPIT";
+            propertySetDistributionChamberElementTypeInspectionPit.PredefinedTypes.Add("INSPECTIONPIT");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeInspectionPit.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -31274,7 +31273,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDistributionChamberElementTypeInspectionPit.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElement);
             propertySetDistributionChamberElementTypeInspectionPit.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElementType);
             propertySetDistributionChamberElementTypeInspectionPit.ObjectType = "IfcDistributionChamberElement";
-            propertySetDistributionChamberElementTypeInspectionPit.PredefinedType = "INSPECTIONPIT";
+            propertySetDistributionChamberElementTypeInspectionPit.PredefinedTypes.Add("INSPECTIONPIT");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeInspectionPit.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -31429,7 +31428,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionChamberElementTypeManhole.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElementType);
             propertySetDistributionChamberElementTypeManhole.ObjectType = "IfcDistributionChamberElementType";
-            propertySetDistributionChamberElementTypeManhole.PredefinedType = "MANHOLE";
+            propertySetDistributionChamberElementTypeManhole.PredefinedTypes.Add("MANHOLE");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeManhole.InvertLevel", "InvertLevel");
             ifcPSE.PropertyName = "InvertLevel";
             ifcPSE.PropertyType = PropertyType.Length;
@@ -31542,7 +31541,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionChamberElementTypeManhole.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElement);
             propertySetDistributionChamberElementTypeManhole.ObjectType = "IfcDistributionChamberElement";
-            propertySetDistributionChamberElementTypeManhole.PredefinedType = "MANHOLE";
+            propertySetDistributionChamberElementTypeManhole.PredefinedTypes.Add("MANHOLE");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeManhole.InvertLevel", "InvertLevel");
             ifcPSE.PropertyName = "InvertLevel";
             ifcPSE.PropertyType = PropertyType.Length;
@@ -31695,7 +31694,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDistributionChamberElementTypeManhole.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElement);
             propertySetDistributionChamberElementTypeManhole.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElementType);
             propertySetDistributionChamberElementTypeManhole.ObjectType = "IfcDistributionChamberElement";
-            propertySetDistributionChamberElementTypeManhole.PredefinedType = "MANHOLE";
+            propertySetDistributionChamberElementTypeManhole.PredefinedTypes.Add("MANHOLE");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeManhole.InvertLevel", "InvertLevel");
             ifcPSE.PropertyName = "InvertLevel";
             ifcPSE.PropertyType = PropertyType.Length;
@@ -31927,7 +31926,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionChamberElementTypeMeterChamber.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElementType);
             propertySetDistributionChamberElementTypeMeterChamber.ObjectType = "IfcDistributionChamberElementType";
-            propertySetDistributionChamberElementTypeMeterChamber.PredefinedType = "METERCHAMBER";
+            propertySetDistributionChamberElementTypeMeterChamber.PredefinedTypes.Add("METERCHAMBER");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeMeterChamber.ChamberLengthOrRadius", "ChamberLengthOrRadius");
             ifcPSE.PropertyName = "ChamberLengthOrRadius";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -31992,7 +31991,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionChamberElementTypeMeterChamber.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElement);
             propertySetDistributionChamberElementTypeMeterChamber.ObjectType = "IfcDistributionChamberElement";
-            propertySetDistributionChamberElementTypeMeterChamber.PredefinedType = "METERCHAMBER";
+            propertySetDistributionChamberElementTypeMeterChamber.PredefinedTypes.Add("METERCHAMBER");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeMeterChamber.ChamberLengthOrRadius", "ChamberLengthOrRadius");
             ifcPSE.PropertyName = "ChamberLengthOrRadius";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -32079,7 +32078,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDistributionChamberElementTypeMeterChamber.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElement);
             propertySetDistributionChamberElementTypeMeterChamber.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElementType);
             propertySetDistributionChamberElementTypeMeterChamber.ObjectType = "IfcDistributionChamberElement";
-            propertySetDistributionChamberElementTypeMeterChamber.PredefinedType = "METERCHAMBER";
+            propertySetDistributionChamberElementTypeMeterChamber.PredefinedTypes.Add("METERCHAMBER");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeMeterChamber.ChamberLengthOrRadius", "ChamberLengthOrRadius");
             ifcPSE.PropertyName = "ChamberLengthOrRadius";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -32186,7 +32185,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionChamberElementTypeSump.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElementType);
             propertySetDistributionChamberElementTypeSump.ObjectType = "IfcDistributionChamberElementType";
-            propertySetDistributionChamberElementTypeSump.PredefinedType = "SUMP";
+            propertySetDistributionChamberElementTypeSump.PredefinedTypes.Add("SUMP");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeSump.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -32216,7 +32215,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionChamberElementTypeSump.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElement);
             propertySetDistributionChamberElementTypeSump.ObjectType = "IfcDistributionChamberElement";
-            propertySetDistributionChamberElementTypeSump.PredefinedType = "SUMP";
+            propertySetDistributionChamberElementTypeSump.PredefinedTypes.Add("SUMP");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeSump.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -32256,7 +32255,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDistributionChamberElementTypeSump.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElement);
             propertySetDistributionChamberElementTypeSump.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElementType);
             propertySetDistributionChamberElementTypeSump.ObjectType = "IfcDistributionChamberElement";
-            propertySetDistributionChamberElementTypeSump.PredefinedType = "SUMP";
+            propertySetDistributionChamberElementTypeSump.PredefinedTypes.Add("SUMP");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeSump.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -32328,7 +32327,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionChamberElementTypeTrench.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElementType);
             propertySetDistributionChamberElementTypeTrench.ObjectType = "IfcDistributionChamberElementType";
-            propertySetDistributionChamberElementTypeTrench.PredefinedType = "TRENCH";
+            propertySetDistributionChamberElementTypeTrench.PredefinedTypes.Add("TRENCH");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeTrench.Width", "Width");
             ifcPSE.PropertyName = "Width";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -32358,7 +32357,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionChamberElementTypeTrench.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElement);
             propertySetDistributionChamberElementTypeTrench.ObjectType = "IfcDistributionChamberElement";
-            propertySetDistributionChamberElementTypeTrench.PredefinedType = "TRENCH";
+            propertySetDistributionChamberElementTypeTrench.PredefinedTypes.Add("TRENCH");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeTrench.Width", "Width");
             ifcPSE.PropertyName = "Width";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -32398,7 +32397,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDistributionChamberElementTypeTrench.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElement);
             propertySetDistributionChamberElementTypeTrench.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElementType);
             propertySetDistributionChamberElementTypeTrench.ObjectType = "IfcDistributionChamberElement";
-            propertySetDistributionChamberElementTypeTrench.PredefinedType = "TRENCH";
+            propertySetDistributionChamberElementTypeTrench.PredefinedTypes.Add("TRENCH");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeTrench.Width", "Width");
             ifcPSE.PropertyName = "Width";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -32505,7 +32504,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionChamberElementTypeValveChamber.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElementType);
             propertySetDistributionChamberElementTypeValveChamber.ObjectType = "IfcDistributionChamberElementType";
-            propertySetDistributionChamberElementTypeValveChamber.PredefinedType = "VALVECHAMBER";
+            propertySetDistributionChamberElementTypeValveChamber.PredefinedTypes.Add("VALVECHAMBER");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeValveChamber.ChamberLengthOrRadius", "ChamberLengthOrRadius");
             ifcPSE.PropertyName = "ChamberLengthOrRadius";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -32570,7 +32569,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionChamberElementTypeValveChamber.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElement);
             propertySetDistributionChamberElementTypeValveChamber.ObjectType = "IfcDistributionChamberElement";
-            propertySetDistributionChamberElementTypeValveChamber.PredefinedType = "VALVECHAMBER";
+            propertySetDistributionChamberElementTypeValveChamber.PredefinedTypes.Add("VALVECHAMBER");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeValveChamber.ChamberLengthOrRadius", "ChamberLengthOrRadius");
             ifcPSE.PropertyName = "ChamberLengthOrRadius";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -32657,7 +32656,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDistributionChamberElementTypeValveChamber.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElement);
             propertySetDistributionChamberElementTypeValveChamber.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElementType);
             propertySetDistributionChamberElementTypeValveChamber.ObjectType = "IfcDistributionChamberElement";
-            propertySetDistributionChamberElementTypeValveChamber.PredefinedType = "VALVECHAMBER";
+            propertySetDistributionChamberElementTypeValveChamber.PredefinedTypes.Add("VALVECHAMBER");
             ifcPSE = new PropertySetEntry("Pset_DistributionChamberElementTypeValveChamber.ChamberLengthOrRadius", "ChamberLengthOrRadius");
             ifcPSE.PropertyName = "ChamberLengthOrRadius";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -32887,7 +32886,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionPortPHistoryCable.EntityTypes.Add(IFCEntityType.IfcDistributionPort);
             propertySetDistributionPortPHistoryCable.ObjectType = "IfcDistributionPort";
-            propertySetDistributionPortPHistoryCable.PredefinedType = "CABLE";
+            propertySetDistributionPortPHistoryCable.PredefinedTypes.Add("CABLE");
             ifcPSE = new PropertySetEntry("Pset_DistributionPortPHistoryCable.Current", "Current");
             ifcPSE.PropertyName = "Current";
             ifcPSE.PropertyType = PropertyType.IfcTimeSeries;
@@ -32981,7 +32980,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionPortPHistoryCable.EntityTypes.Add(IFCEntityType.IfcDistributionPort);
             propertySetDistributionPortPHistoryCable.ObjectType = "IfcDistributionPort";
-            propertySetDistributionPortPHistoryCable.PredefinedType = "CABLE";
+            propertySetDistributionPortPHistoryCable.PredefinedTypes.Add("CABLE");
             ifcPSE = new PropertySetEntry("Pset_DistributionPortPHistoryCable.CurrentHistory", "CurrentHistory");
             ifcPSE.PropertyName = "CurrentHistory";
             ifcPSE.PropertyType = PropertyType.IfcTimeSeries;
@@ -33072,7 +33071,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionPortPHistoryDuct.EntityTypes.Add(IFCEntityType.IfcDistributionPort);
             propertySetDistributionPortPHistoryDuct.ObjectType = "IfcDistributionPort";
-            propertySetDistributionPortPHistoryDuct.PredefinedType = "DUCT";
+            propertySetDistributionPortPHistoryDuct.PredefinedTypes.Add("DUCT");
             ifcPSE = new PropertySetEntry("Pset_DistributionPortPHistoryDuct.Temperature", "Temperature");
             ifcPSE.PropertyName = "Temperature";
             ifcPSE.PropertyType = PropertyType.IfcTimeSeries;
@@ -33148,7 +33147,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionPortPHistoryDuct.EntityTypes.Add(IFCEntityType.IfcDistributionPort);
             propertySetDistributionPortPHistoryDuct.ObjectType = "IfcDistributionPort";
-            propertySetDistributionPortPHistoryDuct.PredefinedType = "DUCT";
+            propertySetDistributionPortPHistoryDuct.PredefinedTypes.Add("DUCT");
             ifcPSE = new PropertySetEntry("Pset_DistributionPortPHistoryDuct.TemperatureHistory", "TemperatureHistory");
             ifcPSE.PropertyName = "TemperatureHistory";
             ifcPSE.PropertyType = PropertyType.IfcTimeSeries;
@@ -33230,7 +33229,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionPortPHistoryPipe.EntityTypes.Add(IFCEntityType.IfcDistributionPort);
             propertySetDistributionPortPHistoryPipe.ObjectType = "IfcDistributionPort";
-            propertySetDistributionPortPHistoryPipe.PredefinedType = "PIPE";
+            propertySetDistributionPortPHistoryPipe.PredefinedTypes.Add("PIPE");
             ifcPSE = new PropertySetEntry("Pset_DistributionPortPHistoryPipe.Temperature", "Temperature");
             ifcPSE.PropertyName = "Temperature";
             ifcPSE.PropertyType = PropertyType.IfcTimeSeries;
@@ -33269,7 +33268,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionPortPHistoryPipe.EntityTypes.Add(IFCEntityType.IfcDistributionPort);
             propertySetDistributionPortPHistoryPipe.ObjectType = "IfcDistributionPort";
-            propertySetDistributionPortPHistoryPipe.PredefinedType = "PIPE";
+            propertySetDistributionPortPHistoryPipe.PredefinedTypes.Add("PIPE");
             ifcPSE = new PropertySetEntry("Pset_DistributionPortPHistoryPipe.Temperature", "Temperature");
             ifcPSE.PropertyName = "Temperature";
             ifcPSE.PropertyType = PropertyType.IfcTimeSeries;
@@ -33372,7 +33371,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionPortTypeCable.EntityTypes.Add(IFCEntityType.IfcDistributionPort);
             propertySetDistributionPortTypeCable.ObjectType = "IfcDistributionPort";
-            propertySetDistributionPortTypeCable.PredefinedType = "CABLE";
+            propertySetDistributionPortTypeCable.PredefinedTypes.Add("CABLE");
             ifcPSE = new PropertySetEntry("Pset_DistributionPortTypeCable.ConnectionType", "ConnectionType");
             ifcPSE.PropertyName = "ConnectionType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -33478,7 +33477,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionPortTypeCable.EntityTypes.Add(IFCEntityType.IfcDistributionPort);
             propertySetDistributionPortTypeCable.ObjectType = "IfcDistributionPort";
-            propertySetDistributionPortTypeCable.PredefinedType = "CABLE";
+            propertySetDistributionPortTypeCable.PredefinedTypes.Add("CABLE");
             ifcPSE = new PropertySetEntry("Pset_DistributionPortTypeCable.ElectricalConnectionType", "ElectricalConnectionType");
             ifcPSE.PropertyName = "ElectricalConnectionType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -33595,7 +33594,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionPortTypeDuct.EntityTypes.Add(IFCEntityType.IfcDistributionPort);
             propertySetDistributionPortTypeDuct.ObjectType = "IfcDistributionPort";
-            propertySetDistributionPortTypeDuct.PredefinedType = "DUCT";
+            propertySetDistributionPortTypeDuct.PredefinedTypes.Add("DUCT");
             ifcPSE = new PropertySetEntry("Pset_DistributionPortTypeDuct.ConnectionType", "ConnectionType");
             ifcPSE.PropertyName = "ConnectionType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -33698,7 +33697,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionPortTypeDuct.EntityTypes.Add(IFCEntityType.IfcDistributionPort);
             propertySetDistributionPortTypeDuct.ObjectType = "IfcDistributionPort";
-            propertySetDistributionPortTypeDuct.PredefinedType = "DUCT";
+            propertySetDistributionPortTypeDuct.PredefinedTypes.Add("DUCT");
             ifcPSE = new PropertySetEntry("Pset_DistributionPortTypeDuct.ConnectionType", "ConnectionType");
             ifcPSE.PropertyName = "ConnectionType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -33804,7 +33803,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionPortTypePipe.EntityTypes.Add(IFCEntityType.IfcDistributionPort);
             propertySetDistributionPortTypePipe.ObjectType = "IfcDistributionPort";
-            propertySetDistributionPortTypePipe.PredefinedType = "PIPE";
+            propertySetDistributionPortTypePipe.PredefinedTypes.Add("PIPE");
             ifcPSE = new PropertySetEntry("Pset_DistributionPortTypePipe.ConnectionType", "ConnectionType");
             ifcPSE.PropertyName = "ConnectionType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -33928,7 +33927,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionPortTypePipe.EntityTypes.Add(IFCEntityType.IfcDistributionPort);
             propertySetDistributionPortTypePipe.ObjectType = "IfcDistributionPort";
-            propertySetDistributionPortTypePipe.PredefinedType = "PIPE";
+            propertySetDistributionPortTypePipe.PredefinedTypes.Add("PIPE");
             ifcPSE = new PropertySetEntry("Pset_DistributionPortTypePipe.ConnectionType", "ConnectionType");
             ifcPSE.PropertyName = "ConnectionType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -34085,7 +34084,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionSystemTypeElectrical.EntityTypes.Add(IFCEntityType.IfcDistributionSystem);
             propertySetDistributionSystemTypeElectrical.ObjectType = "IfcDistributionSystem";
-            propertySetDistributionSystemTypeElectrical.PredefinedType = "ELECTRICAL";
+            propertySetDistributionSystemTypeElectrical.PredefinedTypes.Add("ELECTRICAL");
             ifcPSE = new PropertySetEntry("Pset_DistributionSystemTypeElectrical.ElectricalSystemType", "ElectricalSystemType");
             ifcPSE.PropertyName = "ElectricalSystemType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -34159,7 +34158,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionSystemTypeElectrical.EntityTypes.Add(IFCEntityType.IfcDistributionSystem);
             propertySetDistributionSystemTypeElectrical.ObjectType = "IfcDistributionSystem";
-            propertySetDistributionSystemTypeElectrical.PredefinedType = "ELECTRICAL";
+            propertySetDistributionSystemTypeElectrical.PredefinedTypes.Add("ELECTRICAL");
             ifcPSE = new PropertySetEntry("Pset_DistributionSystemTypeElectrical.ElectricalSystemType", "ElectricalSystemType");
             ifcPSE.PropertyName = "ElectricalSystemType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -34239,7 +34238,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionSystemTypeOverheadContactlineSystem.EntityTypes.Add(IFCEntityType.IfcDistributionSystem);
             propertySetDistributionSystemTypeOverheadContactlineSystem.ObjectType = "IfcDistributionSystem";
-            propertySetDistributionSystemTypeOverheadContactlineSystem.PredefinedType = "OVERHEAD_CONTACTLINE_SYSTEM";
+            propertySetDistributionSystemTypeOverheadContactlineSystem.PredefinedTypes.Add("OVERHEAD_CONTACTLINE_SYSTEM");
             ifcPSE = new PropertySetEntry("Pset_DistributionSystemTypeOverheadContactlineSystem.SpanNominalLength", "SpanNominalLength");
             ifcPSE.PropertyName = "SpanNominalLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -34349,7 +34348,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionSystemTypeVentilation.EntityTypes.Add(IFCEntityType.IfcDistributionSystem);
             propertySetDistributionSystemTypeVentilation.ObjectType = "IfcDistributionSystem";
-            propertySetDistributionSystemTypeVentilation.PredefinedType = "VENTILATION";
+            propertySetDistributionSystemTypeVentilation.PredefinedTypes.Add("VENTILATION");
             ifcPSE = new PropertySetEntry("Pset_DistributionSystemTypeVentilation.DesignName", "DesignName");
             ifcPSE.PropertyName = "DesignName";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -34479,7 +34478,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetDistributionSystemTypeVentilation.EntityTypes.Add(IFCEntityType.IfcDistributionSystem);
             propertySetDistributionSystemTypeVentilation.ObjectType = "IfcDistributionSystem";
-            propertySetDistributionSystemTypeVentilation.PredefinedType = "VENTILATION";
+            propertySetDistributionSystemTypeVentilation.PredefinedTypes.Add("VENTILATION");
             ifcPSE = new PropertySetEntry("Pset_DistributionSystemTypeVentilation.DesignName", "DesignName");
             ifcPSE.PropertyName = "DesignName";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -35362,7 +35361,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetDoorTypeTurnstile.EntityTypes.Add(IFCEntityType.IfcDoor);
             propertySetDoorTypeTurnstile.EntityTypes.Add(IFCEntityType.IfcDoorType);
             propertySetDoorTypeTurnstile.ObjectType = "IfcDoor";
-            propertySetDoorTypeTurnstile.PredefinedType = "TURNSTILE";
+            propertySetDoorTypeTurnstile.PredefinedTypes.Add("TURNSTILE");
             ifcPSE = new PropertySetEntry("Pset_DoorTypeTurnstile.IsBidirectional", "IsBidirectional");
             ifcPSE.PropertyName = "IsBidirectional";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -38944,7 +38943,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElectricalFeederLine.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetElectricalFeederLine.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
             propertySetElectricalFeederLine.ObjectType = "IfcCableSegment";
-            propertySetElectricalFeederLine.PredefinedType = "CONDUCTORSEGMENT";
+            propertySetElectricalFeederLine.PredefinedTypes.Add("CONDUCTORSEGMENT");
             ifcPSE = new PropertySetEntry("Pset_ElectricalFeederLine.CurrentCarryingCapacity", "CurrentCarryingCapacity");
             ifcPSE.PropertyName = "CurrentCarryingCapacity";
             ifcPSE.PropertyType = PropertyType.ElectricCurrent;
@@ -39105,7 +39104,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetElectricApplianceTypeDishwasher.EntityTypes.Add(IFCEntityType.IfcElectricAppliance);
             propertySetElectricApplianceTypeDishwasher.ObjectType = "IfcElectricAppliance";
-            propertySetElectricApplianceTypeDishwasher.PredefinedType = "DISHWASHER";
+            propertySetElectricApplianceTypeDishwasher.PredefinedTypes.Add("DISHWASHER");
             ifcPSE = new PropertySetEntry("Pset_ElectricApplianceTypeDishwasher.DishwasherType", "DishwasherType");
             ifcPSE.PropertyName = "DishwasherType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -39125,7 +39124,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElectricApplianceTypeDishwasher.EntityTypes.Add(IFCEntityType.IfcElectricAppliance);
             propertySetElectricApplianceTypeDishwasher.EntityTypes.Add(IFCEntityType.IfcElectricApplianceType);
             propertySetElectricApplianceTypeDishwasher.ObjectType = "IfcElectricAppliance";
-            propertySetElectricApplianceTypeDishwasher.PredefinedType = "DISHWASHER";
+            propertySetElectricApplianceTypeDishwasher.PredefinedTypes.Add("DISHWASHER");
             ifcPSE = new PropertySetEntry("Pset_ElectricApplianceTypeDishwasher.DishwasherType", "DishwasherType");
             ifcPSE.PropertyName = "DishwasherType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -39154,7 +39153,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetElectricApplianceTypeElectricCooker.EntityTypes.Add(IFCEntityType.IfcElectricAppliance);
             propertySetElectricApplianceTypeElectricCooker.ObjectType = "IfcElectricAppliance";
-            propertySetElectricApplianceTypeElectricCooker.PredefinedType = "ELECTRICCOOKER";
+            propertySetElectricApplianceTypeElectricCooker.PredefinedTypes.Add("ELECTRICCOOKER");
             ifcPSE = new PropertySetEntry("Pset_ElectricApplianceTypeElectricCooker.ElectricCookerType", "ElectricCookerType");
             ifcPSE.PropertyName = "ElectricCookerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -39174,7 +39173,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElectricApplianceTypeElectricCooker.EntityTypes.Add(IFCEntityType.IfcElectricAppliance);
             propertySetElectricApplianceTypeElectricCooker.EntityTypes.Add(IFCEntityType.IfcElectricApplianceType);
             propertySetElectricApplianceTypeElectricCooker.ObjectType = "IfcElectricAppliance";
-            propertySetElectricApplianceTypeElectricCooker.PredefinedType = "ELECTRICCOOKER";
+            propertySetElectricApplianceTypeElectricCooker.PredefinedTypes.Add("ELECTRICCOOKER");
             ifcPSE = new PropertySetEntry("Pset_ElectricApplianceTypeElectricCooker.ElectricCookerType", "ElectricCookerType");
             ifcPSE.PropertyName = "ElectricCookerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -39409,7 +39408,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElectricFlowStorageDeviceTypeBattery.EntityTypes.Add(IFCEntityType.IfcElectricFlowStorageDevice);
             propertySetElectricFlowStorageDeviceTypeBattery.EntityTypes.Add(IFCEntityType.IfcElectricFlowStorageDeviceType);
             propertySetElectricFlowStorageDeviceTypeBattery.ObjectType = "IfcElectricFlowStorageDevice";
-            propertySetElectricFlowStorageDeviceTypeBattery.PredefinedType = "BATTERY";
+            propertySetElectricFlowStorageDeviceTypeBattery.PredefinedTypes.Add("BATTERY");
             ifcPSE = new PropertySetEntry("Pset_ElectricFlowStorageDeviceTypeBattery.CurrentRegulationRate", "CurrentRegulationRate");
             ifcPSE.PropertyName = "CurrentRegulationRate";
             ifcPSE.PropertyType = PropertyType.Ratio;
@@ -39488,7 +39487,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElectricFlowStorageDeviceTypeCapacitor.EntityTypes.Add(IFCEntityType.IfcElectricFlowStorageDevice);
             propertySetElectricFlowStorageDeviceTypeCapacitor.EntityTypes.Add(IFCEntityType.IfcElectricFlowStorageDeviceType);
             propertySetElectricFlowStorageDeviceTypeCapacitor.ObjectType = "IfcElectricFlowStorageDevice";
-            propertySetElectricFlowStorageDeviceTypeCapacitor.PredefinedType = "CAPACITOR";
+            propertySetElectricFlowStorageDeviceTypeCapacitor.PredefinedTypes.Add("CAPACITOR");
             ifcPSE = new PropertySetEntry("Pset_ElectricFlowStorageDeviceTypeCapacitor.NumberOfPhases", "NumberOfPhases");
             ifcPSE.PropertyName = "NumberOfPhases";
             ifcPSE.PropertyType = PropertyType.Count;
@@ -39947,7 +39946,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElectricFlowStorageDeviceTypeInductor.EntityTypes.Add(IFCEntityType.IfcElectricFlowStorageDevice);
             propertySetElectricFlowStorageDeviceTypeInductor.EntityTypes.Add(IFCEntityType.IfcElectricFlowStorageDeviceType);
             propertySetElectricFlowStorageDeviceTypeInductor.ObjectType = "IfcElectricFlowStorageDevice";
-            propertySetElectricFlowStorageDeviceTypeInductor.PredefinedType = "INDUCTOR";
+            propertySetElectricFlowStorageDeviceTypeInductor.PredefinedTypes.Add("INDUCTOR");
             ifcPSE = new PropertySetEntry("Pset_ElectricFlowStorageDeviceTypeInductor.Inductance", "Inductance");
             ifcPSE.PropertyName = "Inductance";
             ifcPSE.PropertyType = PropertyType.Inductance;
@@ -39983,7 +39982,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElectricFlowStorageDeviceTypeRecharger.EntityTypes.Add(IFCEntityType.IfcElectricFlowStorageDevice);
             propertySetElectricFlowStorageDeviceTypeRecharger.EntityTypes.Add(IFCEntityType.IfcElectricFlowStorageDeviceType);
             propertySetElectricFlowStorageDeviceTypeRecharger.ObjectType = "IfcElectricFlowStorageDevice";
-            propertySetElectricFlowStorageDeviceTypeRecharger.PredefinedType = "RECHARGER";
+            propertySetElectricFlowStorageDeviceTypeRecharger.PredefinedTypes.Add("RECHARGER");
             ifcPSE = new PropertySetEntry("Pset_ElectricFlowStorageDeviceTypeRecharger.NominalSupplyCurrent", "NominalSupplyCurrent");
             ifcPSE.PropertyName = "NominalSupplyCurrent";
             ifcPSE.PropertyType = PropertyType.ElectricCurrent;
@@ -40011,7 +40010,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElectricFlowStorageDeviceTypeUPS.EntityTypes.Add(IFCEntityType.IfcElectricFlowStorageDevice);
             propertySetElectricFlowStorageDeviceTypeUPS.EntityTypes.Add(IFCEntityType.IfcElectricFlowStorageDeviceType);
             propertySetElectricFlowStorageDeviceTypeUPS.ObjectType = "IfcElectricFlowStorageDevice";
-            propertySetElectricFlowStorageDeviceTypeUPS.PredefinedType = "UPS";
+            propertySetElectricFlowStorageDeviceTypeUPS.PredefinedTypes.Add("UPS");
             ifcPSE = new PropertySetEntry("Pset_ElectricFlowStorageDeviceTypeUPS.AssemblyInstruction", "AssemblyInstruction");
             ifcPSE.PropertyName = "AssemblyInstruction";
             ifcPSE.PropertyType = PropertyType.IfcExternalReference;
@@ -40064,7 +40063,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElectricFlowTreatmentDeviceTypeElectronicFilter.EntityTypes.Add(IFCEntityType.IfcElectricFlowTreatmentDevice);
             propertySetElectricFlowTreatmentDeviceTypeElectronicFilter.EntityTypes.Add(IFCEntityType.IfcElectricFlowTreatmentDeviceType);
             propertySetElectricFlowTreatmentDeviceTypeElectronicFilter.ObjectType = "IfcElectricFlowTreatmentDevice";
-            propertySetElectricFlowTreatmentDeviceTypeElectronicFilter.PredefinedType = "ELECTRONICFILTER";
+            propertySetElectricFlowTreatmentDeviceTypeElectronicFilter.PredefinedTypes.Add("ELECTRONICFILTER");
             ifcPSE = new PropertySetEntry("Pset_ElectricFlowTreatmentDeviceTypeElectronicFilter.NominalPower", "NominalPower");
             ifcPSE.PropertyName = "NominalPower";
             ifcPSE.PropertyType = PropertyType.Power;
@@ -40325,7 +40324,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetElectricHeaterTypeElectricalCableHeater.EntityTypes.Add(IFCEntityType.IfcElectricHeaterType);
             propertySetElectricHeaterTypeElectricalCableHeater.ObjectType = "IfcElectricHeaterType";
-            propertySetElectricHeaterTypeElectricalCableHeater.PredefinedType = "ELECTRICCABLEHEATER";
+            propertySetElectricHeaterTypeElectricalCableHeater.PredefinedTypes.Add("ELECTRICCABLEHEATER");
             ifcPSE = new PropertySetEntry("Pset_ElectricHeaterTypeElectricalCableHeater.HeatOutputPerUnitLength", "HeatOutputPerUnitLength");
             ifcPSE.PropertyName = "HeatOutputPerUnitLength";
             ifcPSE.PropertyType = PropertyType.Power;
@@ -40365,7 +40364,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetElectricHeaterTypeElectricalMatHeater.EntityTypes.Add(IFCEntityType.IfcElectricHeaterType);
             propertySetElectricHeaterTypeElectricalMatHeater.ObjectType = "IfcElectricHeaterType";
-            propertySetElectricHeaterTypeElectricalMatHeater.PredefinedType = "ELECTRICMATHEATER";
+            propertySetElectricHeaterTypeElectricalMatHeater.PredefinedTypes.Add("ELECTRICMATHEATER");
             ifcPSE = new PropertySetEntry("Pset_ElectricHeaterTypeElectricalMatHeater.HeatOutputPerUnitArea", "HeatOutputPerUnitArea");
             ifcPSE.PropertyName = "HeatOutputPerUnitArea";
             ifcPSE.PropertyType = PropertyType.Power;
@@ -40405,7 +40404,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetElectricHeaterTypeElectricalPointHeater.EntityTypes.Add(IFCEntityType.IfcElectricHeaterType);
             propertySetElectricHeaterTypeElectricalPointHeater.ObjectType = "IfcElectricHeaterType";
-            propertySetElectricHeaterTypeElectricalPointHeater.PredefinedType = "ELECTRICPOINTHEATER";
+            propertySetElectricHeaterTypeElectricalPointHeater.PredefinedTypes.Add("ELECTRICPOINTHEATER");
             ifcPSE = new PropertySetEntry("Pset_ElectricHeaterTypeElectricalPointHeater.HeatOutput", "HeatOutput");
             ifcPSE.PropertyName = "HeatOutput";
             ifcPSE.PropertyType = PropertyType.Power;
@@ -40960,7 +40959,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElementAssemblyTypeCantilever.EntityTypes.Add(IFCEntityType.IfcElementAssembly);
             propertySetElementAssemblyTypeCantilever.EntityTypes.Add(IFCEntityType.IfcElementAssemblyType);
             propertySetElementAssemblyTypeCantilever.ObjectType = "IfcElementAssembly";
-            propertySetElementAssemblyTypeCantilever.PredefinedType = "SUSPENSIONASSEMBLY";
+            propertySetElementAssemblyTypeCantilever.PredefinedTypes.Add("SUSPENSIONASSEMBLY");
             ifcPSE = new PropertySetEntry("Pset_ElementAssemblyTypeCantilever.AssemblyInstruction", "AssemblyInstruction");
             ifcPSE.PropertyName = "AssemblyInstruction";
             ifcPSE.PropertyType = PropertyType.IfcExternalReference;
@@ -41015,7 +41014,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElementAssemblyTypeDilatationPanel.EntityTypes.Add(IFCEntityType.IfcElementAssembly);
             propertySetElementAssemblyTypeDilatationPanel.EntityTypes.Add(IFCEntityType.IfcElementAssemblyType);
             propertySetElementAssemblyTypeDilatationPanel.ObjectType = "IfcElementAssembly";
-            propertySetElementAssemblyTypeDilatationPanel.PredefinedType = "DILATATIONPANEL";
+            propertySetElementAssemblyTypeDilatationPanel.PredefinedTypes.Add("DILATATIONPANEL");
             ifcPSE = new PropertySetEntry("Pset_ElementAssemblyTypeDilatationPanel.TechnicalStandard", "TechnicalStandard");
             ifcPSE.PropertyName = "TechnicalStandard";
             ifcPSE.PropertyType = PropertyType.IfcExternalReference;
@@ -41081,7 +41080,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElementAssemblyTypeHeadSpan.EntityTypes.Add(IFCEntityType.IfcElementAssembly);
             propertySetElementAssemblyTypeHeadSpan.EntityTypes.Add(IFCEntityType.IfcElementAssemblyType);
             propertySetElementAssemblyTypeHeadSpan.ObjectType = "IfcElementAssembly";
-            propertySetElementAssemblyTypeHeadSpan.PredefinedType = "SUPPORTINGASSEMBLY";
+            propertySetElementAssemblyTypeHeadSpan.PredefinedTypes.Add("SUPPORTINGASSEMBLY");
             ifcPSE = new PropertySetEntry("Pset_ElementAssemblyTypeHeadSpan.AssemblyInstruction", "AssemblyInstruction");
             ifcPSE.PropertyName = "AssemblyInstruction";
             ifcPSE.PropertyType = PropertyType.IfcExternalReference;
@@ -41126,7 +41125,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElementAssemblyTypeMast.EntityTypes.Add(IFCEntityType.IfcElementAssembly);
             propertySetElementAssemblyTypeMast.EntityTypes.Add(IFCEntityType.IfcElementAssemblyType);
             propertySetElementAssemblyTypeMast.ObjectType = "IfcElementAssembly";
-            propertySetElementAssemblyTypeMast.PredefinedType = "MAST";
+            propertySetElementAssemblyTypeMast.PredefinedTypes.Add("MAST");
             ifcPSE = new PropertySetEntry("Pset_ElementAssemblyTypeMast.WithLightningRod", "WithLightningRod");
             ifcPSE.PropertyName = "WithLightningRod";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -41154,7 +41153,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElementAssemblyTypeOCSSuspension.EntityTypes.Add(IFCEntityType.IfcElementAssembly);
             propertySetElementAssemblyTypeOCSSuspension.EntityTypes.Add(IFCEntityType.IfcElementAssemblyType);
             propertySetElementAssemblyTypeOCSSuspension.ObjectType = "IfcElementAssembly";
-            propertySetElementAssemblyTypeOCSSuspension.PredefinedType = "SUSPENSIONASSEMBLY";
+            propertySetElementAssemblyTypeOCSSuspension.PredefinedTypes.Add("SUSPENSIONASSEMBLY");
             ifcPSE = new PropertySetEntry("Pset_ElementAssemblyTypeOCSSuspension.ContactWireStagger", "ContactWireStagger");
             ifcPSE.PropertyName = "ContactWireStagger";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -41190,7 +41189,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElementAssemblyTypeRigidFrame.EntityTypes.Add(IFCEntityType.IfcElementAssembly);
             propertySetElementAssemblyTypeRigidFrame.EntityTypes.Add(IFCEntityType.IfcElementAssemblyType);
             propertySetElementAssemblyTypeRigidFrame.ObjectType = "IfcElementAssembly";
-            propertySetElementAssemblyTypeRigidFrame.PredefinedType = "RIGID_FRAME";
+            propertySetElementAssemblyTypeRigidFrame.PredefinedTypes.Add("RIGID_FRAME");
             ifcPSE = new PropertySetEntry("Pset_ElementAssemblyTypeRigidFrame.AssemblyInstruction", "AssemblyInstruction");
             ifcPSE.PropertyName = "AssemblyInstruction";
             ifcPSE.PropertyType = PropertyType.IfcExternalReference;
@@ -41243,7 +41242,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElementAssemblyTypeSteadyDevice.EntityTypes.Add(IFCEntityType.IfcElementAssembly);
             propertySetElementAssemblyTypeSteadyDevice.EntityTypes.Add(IFCEntityType.IfcElementAssemblyType);
             propertySetElementAssemblyTypeSteadyDevice.ObjectType = "IfcElementAssembly";
-            propertySetElementAssemblyTypeSteadyDevice.PredefinedType = "SUSPENSIONASSEMBLY";
+            propertySetElementAssemblyTypeSteadyDevice.PredefinedTypes.Add("SUSPENSIONASSEMBLY");
             ifcPSE = new PropertySetEntry("Pset_ElementAssemblyTypeSteadyDevice.AssemblyInstruction", "AssemblyInstruction");
             ifcPSE.PropertyName = "AssemblyInstruction";
             ifcPSE.PropertyType = PropertyType.IfcExternalReference;
@@ -41298,7 +41297,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElementAssemblyTypeSupportingAssembly.EntityTypes.Add(IFCEntityType.IfcElementAssembly);
             propertySetElementAssemblyTypeSupportingAssembly.EntityTypes.Add(IFCEntityType.IfcElementAssemblyType);
             propertySetElementAssemblyTypeSupportingAssembly.ObjectType = "IfcElementAssembly";
-            propertySetElementAssemblyTypeSupportingAssembly.PredefinedType = "SUPPORTINGASSEMBLY";
+            propertySetElementAssemblyTypeSupportingAssembly.PredefinedTypes.Add("SUPPORTINGASSEMBLY");
             ifcPSE = new PropertySetEntry("Pset_ElementAssemblyTypeSupportingAssembly.NumberOfCantilevers", "NumberOfCantilevers");
             ifcPSE.PropertyName = "NumberOfCantilevers";
             ifcPSE.PropertyType = PropertyType.Count;
@@ -41336,7 +41335,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElementAssemblyTypeTrackPanel.EntityTypes.Add(IFCEntityType.IfcElementAssembly);
             propertySetElementAssemblyTypeTrackPanel.EntityTypes.Add(IFCEntityType.IfcElementAssemblyType);
             propertySetElementAssemblyTypeTrackPanel.ObjectType = "IfcElementAssembly";
-            propertySetElementAssemblyTypeTrackPanel.PredefinedType = "TRACKPANEL";
+            propertySetElementAssemblyTypeTrackPanel.PredefinedTypes.Add("TRACKPANEL");
             ifcPSE = new PropertySetEntry("Pset_ElementAssemblyTypeTrackPanel.IsAccessibleByVehicle", "IsAccessibleByVehicle");
             ifcPSE.PropertyName = "IsAccessibleByVehicle";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -41382,7 +41381,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElementAssemblyTypeTractionSwitchingAssembly.EntityTypes.Add(IFCEntityType.IfcElementAssembly);
             propertySetElementAssemblyTypeTractionSwitchingAssembly.EntityTypes.Add(IFCEntityType.IfcElementAssemblyType);
             propertySetElementAssemblyTypeTractionSwitchingAssembly.ObjectType = "IfcElementAssembly";
-            propertySetElementAssemblyTypeTractionSwitchingAssembly.PredefinedType = "TRACTION_SWITCHING_ASSEMBLY";
+            propertySetElementAssemblyTypeTractionSwitchingAssembly.PredefinedTypes.Add("TRACTION_SWITCHING_ASSEMBLY");
             ifcPSE = new PropertySetEntry("Pset_ElementAssemblyTypeTractionSwitchingAssembly.NominalCurrent", "NominalCurrent");
             ifcPSE.PropertyName = "NominalCurrent";
             ifcPSE.PropertyType = PropertyType.ElectricCurrent;
@@ -41436,7 +41435,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetElementAssemblyTypeTurnoutPanel.EntityTypes.Add(IFCEntityType.IfcElementAssembly);
             propertySetElementAssemblyTypeTurnoutPanel.EntityTypes.Add(IFCEntityType.IfcElementAssemblyType);
             propertySetElementAssemblyTypeTurnoutPanel.ObjectType = "IfcElementAssembly";
-            propertySetElementAssemblyTypeTurnoutPanel.PredefinedType = "TURNOUTPANEL";
+            propertySetElementAssemblyTypeTurnoutPanel.PredefinedTypes.Add("TURNOUTPANEL");
             ifcPSE = new PropertySetEntry("Pset_ElementAssemblyTypeTurnoutPanel.IsAccessibleByVehicle", "IsAccessibleByVehicle");
             ifcPSE.PropertyName = "IsAccessibleByVehicle";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -42011,7 +42010,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetEmbeddedTrack.EntityTypes.Add(IFCEntityType.IfcSlab);
             propertySetEmbeddedTrack.EntityTypes.Add(IFCEntityType.IfcSlabType);
             propertySetEmbeddedTrack.ObjectType = "IfcSlab";
-            propertySetEmbeddedTrack.PredefinedType = "TRACKSLAB";
+            propertySetEmbeddedTrack.PredefinedTypes.Add("TRACKSLAB");
             ifcPSE = new PropertySetEntry("Pset_EmbeddedTrack.IsAccessibleByVehicle", "IsAccessibleByVehicle");
             ifcPSE.PropertyName = "IsAccessibleByVehicle";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -42336,7 +42335,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetEnergyConversionDeviceSpaceHeaterPanel.EntityTypes.Add(IFCEntityType.IfcEnergyConversionDevice);
             propertySetEnergyConversionDeviceSpaceHeaterPanel.ObjectType = "Related IfcSpaceHeaterType";
-            propertySetEnergyConversionDeviceSpaceHeaterPanel.PredefinedType = "PANELRADIATOR";
+            propertySetEnergyConversionDeviceSpaceHeaterPanel.PredefinedTypes.Add("PANELRADIATOR");
             ifcPSE = new PropertySetEntry("Pset_EnergyConversionDeviceSpaceHeaterPanel.NumberOfPanels", "NumberOfPanels");
             ifcPSE.PropertyName = "NumberOfPanels";
             ifcPSE.PropertyType = PropertyType.Integer;
@@ -42350,7 +42349,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetEnergyConversionDeviceSpaceHeaterPanel.EntityTypes.Add(IFCEntityType.IfcEnergyConversionDevice);
             propertySetEnergyConversionDeviceSpaceHeaterPanel.ObjectType = "RelatedEntityIs:IfcSpaceHeaterType";
-            propertySetEnergyConversionDeviceSpaceHeaterPanel.PredefinedType = "PANELRADIATOR";
+            propertySetEnergyConversionDeviceSpaceHeaterPanel.PredefinedTypes.Add("PANELRADIATOR");
             ifcPSE = new PropertySetEntry("Pset_EnergyConversionDeviceSpaceHeaterPanel.NumberOfPanels", "NumberOfPanels");
             ifcPSE.PropertyName = "NumberOfPanels";
             ifcPSE.PropertyType = PropertyType.Integer;
@@ -42377,7 +42376,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetEnergyConversionDeviceSpaceHeaterSectional.EntityTypes.Add(IFCEntityType.IfcEnergyConversionDevice);
             propertySetEnergyConversionDeviceSpaceHeaterSectional.ObjectType = "Related IfcSpaceHeaterType";
-            propertySetEnergyConversionDeviceSpaceHeaterSectional.PredefinedType = "SECTIONALRADIATOR";
+            propertySetEnergyConversionDeviceSpaceHeaterSectional.PredefinedTypes.Add("SECTIONALRADIATOR");
             ifcPSE = new PropertySetEntry("Pset_EnergyConversionDeviceSpaceHeaterSectional.NumberOfSections", "NumberOfSections");
             ifcPSE.PropertyName = "NumberOfSections";
             ifcPSE.PropertyType = PropertyType.Integer;
@@ -42391,7 +42390,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetEnergyConversionDeviceSpaceHeaterSectional.EntityTypes.Add(IFCEntityType.IfcEnergyConversionDevice);
             propertySetEnergyConversionDeviceSpaceHeaterSectional.ObjectType = "RelatedEntityIs:IfcSpaceHeaterType";
-            propertySetEnergyConversionDeviceSpaceHeaterSectional.PredefinedType = "SECTIONALRADIATOR";
+            propertySetEnergyConversionDeviceSpaceHeaterSectional.PredefinedTypes.Add("SECTIONALRADIATOR");
             ifcPSE = new PropertySetEntry("Pset_EnergyConversionDeviceSpaceHeaterSectional.NumberOfSections", "NumberOfSections");
             ifcPSE.PropertyName = "NumberOfSections";
             ifcPSE.PropertyType = PropertyType.Integer;
@@ -44888,7 +44887,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFanCentrifugal.EntityTypes.Add(IFCEntityType.IfcFan);
             propertySetFanCentrifugal.ObjectType = "IfcFan";
-            propertySetFanCentrifugal.PredefinedType = "CENTRIFUGAL";
+            propertySetFanCentrifugal.PredefinedTypes.Add("CENTRIFUGAL");
             ifcPSE = new PropertySetEntry("Pset_FanCentrifugal.DischargePosition", "DischargePosition");
             ifcPSE.PropertyName = "DischargePosition";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -44929,15 +44928,12 @@ namespace Revit.IFC.Export.Exporter
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Pset_FanCentrifugal"))
          {
             propertySetFanCentrifugal.EntityTypes.Add(IFCEntityType.IfcFan);
-            propertySetFanCentrifugal.EntityTypes.Add(IFCEntityType.IfcFan);
-            propertySetFanCentrifugal.EntityTypes.Add(IFCEntityType.IfcFan);
-            propertySetFanCentrifugal.EntityTypes.Add(IFCEntityType.IfcFan);
-            propertySetFanCentrifugal.EntityTypes.Add(IFCEntityType.IfcFanType);
-            propertySetFanCentrifugal.EntityTypes.Add(IFCEntityType.IfcFanType);
-            propertySetFanCentrifugal.EntityTypes.Add(IFCEntityType.IfcFanType);
             propertySetFanCentrifugal.EntityTypes.Add(IFCEntityType.IfcFanType);
             propertySetFanCentrifugal.ObjectType = "IfcFan";
-            propertySetFanCentrifugal.PredefinedType = "CENTRIFUGALRADIAL";
+            propertySetFanCentrifugal.PredefinedTypes.Add("CENTRIFUGALAIRFOIL");
+            propertySetFanCentrifugal.PredefinedTypes.Add("CENTRIFUGALBACKWARDINCLINEDCURVED");
+            propertySetFanCentrifugal.PredefinedTypes.Add("CENTRIFUGALFORWARDCURVED");
+            propertySetFanCentrifugal.PredefinedTypes.Add("CENTRIFUGALRADIAL");
             ifcPSE = new PropertySetEntry("Pset_FanCentrifugal.DischargePosition", "DischargePosition");
             ifcPSE.PropertyName = "DischargePosition";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -46094,7 +46090,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFastenerRailWeld.EntityTypes.Add(IFCEntityType.IfcFastener);
             propertySetFastenerRailWeld.EntityTypes.Add(IFCEntityType.IfcFastenerType);
             propertySetFastenerRailWeld.ObjectType = "IfcFastener";
-            propertySetFastenerRailWeld.PredefinedType = "WELD";
+            propertySetFastenerRailWeld.PredefinedTypes.Add("WELD");
             ifcPSE = new PropertySetEntry("Pset_FastenerRailWeld.IsLiftingBracket", "IsLiftingBracket");
             ifcPSE.PropertyName = "IsLiftingBracket";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -46149,7 +46145,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFastenerWeld.EntityTypes.Add(IFCEntityType.IfcFastener);
             propertySetFastenerWeld.ObjectType = "IfcFastener";
-            propertySetFastenerWeld.PredefinedType = "WELD";
+            propertySetFastenerWeld.PredefinedTypes.Add("WELD");
             ifcPSE = new PropertySetEntry("Pset_FastenerWeld.Type1", "Type1");
             ifcPSE.PropertyName = "Type1";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -46300,7 +46296,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFastenerWeld.EntityTypes.Add(IFCEntityType.IfcFastener);
             propertySetFastenerWeld.EntityTypes.Add(IFCEntityType.IfcFastenerType);
             propertySetFastenerWeld.ObjectType = "IfcFastener";
-            propertySetFastenerWeld.PredefinedType = "WELD";
+            propertySetFastenerWeld.PredefinedTypes.Add("WELD");
             ifcPSE = new PropertySetEntry("Pset_FastenerWeld.Type1", "Type1");
             ifcPSE.PropertyName = "Type1";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -46448,7 +46444,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFenderCommon.EntityTypes.Add(IFCEntityType.IfcImpactProtectionDevice);
             propertySetFenderCommon.EntityTypes.Add(IFCEntityType.IfcImpactProtectionDeviceType);
             propertySetFenderCommon.ObjectType = "IfcImpactProtectionDevice";
-            propertySetFenderCommon.PredefinedType = "FENDER";
+            propertySetFenderCommon.PredefinedTypes.Add("FENDER");
             ifcPSE = new PropertySetEntry("Pset_FenderCommon.FenderType", "FenderType");
             ifcPSE.PropertyName = "FenderType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -46550,7 +46546,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFenderDesignCriteria.EntityTypes.Add(IFCEntityType.IfcSpace);
             propertySetFenderDesignCriteria.EntityTypes.Add(IFCEntityType.IfcSpaceType);
             propertySetFenderDesignCriteria.ObjectType = "IfcSpace";
-            propertySetFenderDesignCriteria.PredefinedType = "BERTH";
+            propertySetFenderDesignCriteria.PredefinedTypes.Add("BERTH");
             ifcPSE = new PropertySetEntry("Pset_FenderDesignCriteria.CoefficientOfFriction", "CoefficientOfFriction");
             ifcPSE.PropertyName = "CoefficientOfFriction";
             ifcPSE.PropertyType = PropertyType.PositiveRatio;
@@ -46789,6 +46785,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFilterTypeAirParticleFilter.EntityTypes.Add(IFCEntityType.IfcFilterType);
             propertySetFilterTypeAirParticleFilter.ObjectType = "IfcFilterType";
+            propertySetFilterTypeAirParticleFilter.PredefinedTypes.Add("");
             ifcPSE = new PropertySetEntry("Pset_FilterTypeAirParticleFilter.AirParticleFilterType", "AirParticleFilterType");
             ifcPSE.PropertyName = "AirParticleFilterType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -46902,7 +46899,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFilterTypeAirParticleFilter.EntityTypes.Add(IFCEntityType.IfcFilterType);
             propertySetFilterTypeAirParticleFilter.ObjectType = "IfcFilterType";
-            propertySetFilterTypeAirParticleFilter.PredefinedType = "AIRPARTICLEFILTER";
+            propertySetFilterTypeAirParticleFilter.PredefinedTypes.Add("AIRPARTICLEFILTER");
             ifcPSE = new PropertySetEntry("Pset_FilterTypeAirParticleFilter.AirParticleFilterType", "AirParticleFilterType");
             ifcPSE.PropertyName = "AirParticleFilterType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -47016,7 +47013,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFilterTypeAirParticleFilter.EntityTypes.Add(IFCEntityType.IfcFilter);
             propertySetFilterTypeAirParticleFilter.ObjectType = "IfcFilter";
-            propertySetFilterTypeAirParticleFilter.PredefinedType = "AIRPARTICLEFILTER";
+            propertySetFilterTypeAirParticleFilter.PredefinedTypes.Add("AIRPARTICLEFILTER");
             ifcPSE = new PropertySetEntry("Pset_FilterTypeAirParticleFilter.AirParticleFilterType", "AirParticleFilterType");
             ifcPSE.PropertyName = "AirParticleFilterType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -47133,7 +47130,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFilterTypeAirParticleFilter.EntityTypes.Add(IFCEntityType.IfcFilter);
             propertySetFilterTypeAirParticleFilter.EntityTypes.Add(IFCEntityType.IfcFilterType);
             propertySetFilterTypeAirParticleFilter.ObjectType = "IfcFilter";
-            propertySetFilterTypeAirParticleFilter.PredefinedType = "AIRPARTICLEFILTER";
+            propertySetFilterTypeAirParticleFilter.PredefinedTypes.Add("AIRPARTICLEFILTER");
             ifcPSE = new PropertySetEntry("Pset_FilterTypeAirParticleFilter.AirParticleFilterType", "AirParticleFilterType");
             ifcPSE.PropertyName = "AirParticleFilterType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -47712,7 +47709,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFilterTypeCompressedAirFilter.EntityTypes.Add(IFCEntityType.IfcFilter);
             propertySetFilterTypeCompressedAirFilter.ObjectType = "IfcFilter";
-            propertySetFilterTypeCompressedAirFilter.PredefinedType = "COMPRESSEDAIRFILTER";
+            propertySetFilterTypeCompressedAirFilter.PredefinedTypes.Add("COMPRESSEDAIRFILTER");
             ifcPSE = new PropertySetEntry("Pset_FilterTypeCompressedAirFilter.CompressedAirFilterType", "CompressedAirFilterType");
             ifcPSE.PropertyName = "CompressedAirFilterType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -47768,7 +47765,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFilterTypeCompressedAirFilter.EntityTypes.Add(IFCEntityType.IfcFilter);
             propertySetFilterTypeCompressedAirFilter.EntityTypes.Add(IFCEntityType.IfcFilterType);
             propertySetFilterTypeCompressedAirFilter.ObjectType = "IfcFilter";
-            propertySetFilterTypeCompressedAirFilter.PredefinedType = "COMPRESSEDAIRFILTER";
+            propertySetFilterTypeCompressedAirFilter.PredefinedTypes.Add("COMPRESSEDAIRFILTER");
             ifcPSE = new PropertySetEntry("Pset_FilterTypeCompressedAirFilter.CompressedAirFilterType", "CompressedAirFilterType");
             ifcPSE.PropertyName = "CompressedAirFilterType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -47831,7 +47828,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFilterTypeWaterFilter.EntityTypes.Add(IFCEntityType.IfcFilter);
             propertySetFilterTypeWaterFilter.ObjectType = "IfcFilter";
-            propertySetFilterTypeWaterFilter.PredefinedType = "WATERFILTER";
+            propertySetFilterTypeWaterFilter.PredefinedTypes.Add("WATERFILTER");
             ifcPSE = new PropertySetEntry("Pset_FilterTypeWaterFilter.WaterFilterType", "WaterFilterType");
             ifcPSE.PropertyName = "WaterFilterType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -47849,7 +47846,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFilterTypeWaterFilter.EntityTypes.Add(IFCEntityType.IfcFilter);
             propertySetFilterTypeWaterFilter.EntityTypes.Add(IFCEntityType.IfcFilterType);
             propertySetFilterTypeWaterFilter.ObjectType = "IfcFilter";
-            propertySetFilterTypeWaterFilter.PredefinedType = "WATERFILTER";
+            propertySetFilterTypeWaterFilter.PredefinedTypes.Add("WATERFILTER");
             ifcPSE = new PropertySetEntry("Pset_FilterTypeWaterFilter.WaterFilterType", "WaterFilterType");
             ifcPSE.PropertyName = "WaterFilterType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -48007,7 +48004,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFireSuppressionTerminalTypeBreechingInlet.EntityTypes.Add(IFCEntityType.IfcFireSuppressionTerminalType);
             propertySetFireSuppressionTerminalTypeBreechingInlet.ObjectType = "IfcFireSuppressionTerminalType";
-            propertySetFireSuppressionTerminalTypeBreechingInlet.PredefinedType = "BREECHINGINLET";
+            propertySetFireSuppressionTerminalTypeBreechingInlet.PredefinedTypes.Add("BREECHINGINLET");
             ifcPSE = new PropertySetEntry("Pset_FireSuppressionTerminalTypeBreechingInlet.BreechingInletType", "BreechingInletType");
             ifcPSE.PropertyName = "BreechingInletType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -48066,7 +48063,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFireSuppressionTerminalTypeBreechingInlet.EntityTypes.Add(IFCEntityType.IfcFireSuppressionTerminal);
             propertySetFireSuppressionTerminalTypeBreechingInlet.ObjectType = "IfcFireSuppressionTerminal";
-            propertySetFireSuppressionTerminalTypeBreechingInlet.PredefinedType = "BREECHINGINLET";
+            propertySetFireSuppressionTerminalTypeBreechingInlet.PredefinedTypes.Add("BREECHINGINLET");
             ifcPSE = new PropertySetEntry("Pset_FireSuppressionTerminalTypeBreechingInlet.BreechingInletType", "BreechingInletType");
             ifcPSE.PropertyName = "BreechingInletType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -48127,7 +48124,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFireSuppressionTerminalTypeBreechingInlet.EntityTypes.Add(IFCEntityType.IfcFireSuppressionTerminal);
             propertySetFireSuppressionTerminalTypeBreechingInlet.EntityTypes.Add(IFCEntityType.IfcFireSuppressionTerminalType);
             propertySetFireSuppressionTerminalTypeBreechingInlet.ObjectType = "IfcFireSuppressionTerminal";
-            propertySetFireSuppressionTerminalTypeBreechingInlet.PredefinedType = "BREECHINGINLET";
+            propertySetFireSuppressionTerminalTypeBreechingInlet.PredefinedTypes.Add("BREECHINGINLET");
             ifcPSE = new PropertySetEntry("Pset_FireSuppressionTerminalTypeBreechingInlet.BreechingInletType", "BreechingInletType");
             ifcPSE.PropertyName = "BreechingInletType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -48341,7 +48338,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFireSuppressionTerminalTypeFireHydrant.EntityTypes.Add(IFCEntityType.IfcFireSuppressionTerminalType);
             propertySetFireSuppressionTerminalTypeFireHydrant.ObjectType = "IfcFireSuppressionTerminalType";
-            propertySetFireSuppressionTerminalTypeFireHydrant.PredefinedType = "FIREHYDRANT";
+            propertySetFireSuppressionTerminalTypeFireHydrant.PredefinedTypes.Add("FIREHYDRANT");
             ifcPSE = new PropertySetEntry("Pset_FireSuppressionTerminalTypeFireHydrant.FireHydrantType", "FireHydrantType");
             ifcPSE.PropertyName = "FireHydrantType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -48429,7 +48426,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFireSuppressionTerminalTypeFireHydrant.EntityTypes.Add(IFCEntityType.IfcFireSuppressionTerminal);
             propertySetFireSuppressionTerminalTypeFireHydrant.ObjectType = "IfcFireSuppressionTerminal";
-            propertySetFireSuppressionTerminalTypeFireHydrant.PredefinedType = "FIREHYDRANT";
+            propertySetFireSuppressionTerminalTypeFireHydrant.PredefinedTypes.Add("FIREHYDRANT");
             ifcPSE = new PropertySetEntry("Pset_FireSuppressionTerminalTypeFireHydrant.FireHydrantType", "FireHydrantType");
             ifcPSE.PropertyName = "FireHydrantType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -48538,7 +48535,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFireSuppressionTerminalTypeFireHydrant.EntityTypes.Add(IFCEntityType.IfcFireSuppressionTerminal);
             propertySetFireSuppressionTerminalTypeFireHydrant.EntityTypes.Add(IFCEntityType.IfcFireSuppressionTerminalType);
             propertySetFireSuppressionTerminalTypeFireHydrant.ObjectType = "IfcFireSuppressionTerminal";
-            propertySetFireSuppressionTerminalTypeFireHydrant.PredefinedType = "FIREHYDRANT";
+            propertySetFireSuppressionTerminalTypeFireHydrant.PredefinedTypes.Add("FIREHYDRANT");
             ifcPSE = new PropertySetEntry("Pset_FireSuppressionTerminalTypeFireHydrant.FireHydrantType", "FireHydrantType");
             ifcPSE.PropertyName = "FireHydrantType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -48714,7 +48711,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFireSuppressionTerminalTypeHoseReel.EntityTypes.Add(IFCEntityType.IfcFireSuppressionTerminalType);
             propertySetFireSuppressionTerminalTypeHoseReel.ObjectType = "IfcFireSuppressionTerminalType";
-            propertySetFireSuppressionTerminalTypeHoseReel.PredefinedType = "HOSEREEL";
+            propertySetFireSuppressionTerminalTypeHoseReel.PredefinedTypes.Add("HOSEREEL");
             ifcPSE = new PropertySetEntry("Pset_FireSuppressionTerminalTypeHoseReel.HoseReelType", "HoseReelType");
             ifcPSE.PropertyName = "HoseReelType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -48790,7 +48787,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFireSuppressionTerminalTypeHoseReel.EntityTypes.Add(IFCEntityType.IfcFireSuppressionTerminal);
             propertySetFireSuppressionTerminalTypeHoseReel.ObjectType = "IfcFireSuppressionTerminal";
-            propertySetFireSuppressionTerminalTypeHoseReel.PredefinedType = "HOSEREEL";
+            propertySetFireSuppressionTerminalTypeHoseReel.PredefinedTypes.Add("HOSEREEL");
             ifcPSE = new PropertySetEntry("Pset_FireSuppressionTerminalTypeHoseReel.HoseReelType", "HoseReelType");
             ifcPSE.PropertyName = "HoseReelType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -48883,7 +48880,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFireSuppressionTerminalTypeHoseReel.EntityTypes.Add(IFCEntityType.IfcFireSuppressionTerminal);
             propertySetFireSuppressionTerminalTypeHoseReel.EntityTypes.Add(IFCEntityType.IfcFireSuppressionTerminalType);
             propertySetFireSuppressionTerminalTypeHoseReel.ObjectType = "IfcFireSuppressionTerminal";
-            propertySetFireSuppressionTerminalTypeHoseReel.PredefinedType = "HOSEREEL";
+            propertySetFireSuppressionTerminalTypeHoseReel.PredefinedTypes.Add("HOSEREEL");
             ifcPSE = new PropertySetEntry("Pset_FireSuppressionTerminalTypeHoseReel.HoseReelType", "HoseReelType");
             ifcPSE.PropertyName = "HoseReelType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -49099,7 +49096,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFireSuppressionTerminalTypeSprinkler.EntityTypes.Add(IFCEntityType.IfcFireSuppressionTerminalType);
             propertySetFireSuppressionTerminalTypeSprinkler.ObjectType = "IfcFireSuppressionTerminalType";
-            propertySetFireSuppressionTerminalTypeSprinkler.PredefinedType = "SPRINKLER";
+            propertySetFireSuppressionTerminalTypeSprinkler.PredefinedTypes.Add("SPRINKLER");
             ifcPSE = new PropertySetEntry("Pset_FireSuppressionTerminalTypeSprinkler.SprinklerType", "SprinklerType");
             ifcPSE.PropertyName = "SprinklerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -49227,7 +49224,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFireSuppressionTerminalTypeSprinkler.EntityTypes.Add(IFCEntityType.IfcFireSuppressionTerminal);
             propertySetFireSuppressionTerminalTypeSprinkler.ObjectType = "IfcFireSuppressionTerminal";
-            propertySetFireSuppressionTerminalTypeSprinkler.PredefinedType = "SPRINKLER";
+            propertySetFireSuppressionTerminalTypeSprinkler.PredefinedTypes.Add("SPRINKLER");
             ifcPSE = new PropertySetEntry("Pset_FireSuppressionTerminalTypeSprinkler.SprinklerType", "SprinklerType");
             ifcPSE.PropertyName = "SprinklerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -49362,7 +49359,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFireSuppressionTerminalTypeSprinkler.EntityTypes.Add(IFCEntityType.IfcFireSuppressionTerminal);
             propertySetFireSuppressionTerminalTypeSprinkler.EntityTypes.Add(IFCEntityType.IfcFireSuppressionTerminalType);
             propertySetFireSuppressionTerminalTypeSprinkler.ObjectType = "IfcFireSuppressionTerminal";
-            propertySetFireSuppressionTerminalTypeSprinkler.PredefinedType = "SPRINKLER";
+            propertySetFireSuppressionTerminalTypeSprinkler.PredefinedTypes.Add("SPRINKLER");
             ifcPSE = new PropertySetEntry("Pset_FireSuppressionTerminalTypeSprinkler.SprinklerType", "SprinklerType");
             ifcPSE.PropertyName = "SprinklerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -49490,7 +49487,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFittingBend.EntityTypes.Add(IFCEntityType.IfcDuctFittingType);
             propertySetFittingBend.EntityTypes.Add(IFCEntityType.IfcPipeFittingType);
             propertySetFittingBend.ObjectType = "IfcCableCarrierFitting";
-            propertySetFittingBend.PredefinedType = "BEND";
+            propertySetFittingBend.PredefinedTypes.Add("BEND");
             ifcPSE = new PropertySetEntry("Pset_FittingBend.BendAngle", "BendAngle");
             ifcPSE.PropertyName = "BendAngle";
             ifcPSE.PropertyType = PropertyType.PositivePlaneAngle;
@@ -49532,7 +49529,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFittingJunction.EntityTypes.Add(IFCEntityType.IfcPipeFittingType);
             propertySetFittingJunction.EntityTypes.Add(IFCEntityType.IfcCableCarrierFittingType);
             propertySetFittingJunction.ObjectType = "IfcCableFitting";
-            propertySetFittingJunction.PredefinedType = "JUNCTION";
+            propertySetFittingJunction.PredefinedTypes.Add("JUNCTION");
             ifcPSE = new PropertySetEntry("Pset_FittingJunction.JunctionType", "JunctionType");
             ifcPSE.PropertyName = "JunctionType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -49600,7 +49597,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFittingTransition.EntityTypes.Add(IFCEntityType.IfcPipeFittingType);
             propertySetFittingTransition.EntityTypes.Add(IFCEntityType.IfcCableCarrierFittingType);
             propertySetFittingTransition.ObjectType = "IfcCableFitting";
-            propertySetFittingTransition.PredefinedType = "TRANSITION";
+            propertySetFittingTransition.PredefinedTypes.Add("TRANSITION");
             ifcPSE = new PropertySetEntry("Pset_FittingTransition.NominalLength", "NominalLength");
             ifcPSE.PropertyName = "NominalLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -50015,7 +50012,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFlowInstrumentTypePressureGauge.EntityTypes.Add(IFCEntityType.IfcFlowInstrumentType);
             propertySetFlowInstrumentTypePressureGauge.ObjectType = "IfcFlowInstrumentType";
-            propertySetFlowInstrumentTypePressureGauge.PredefinedType = "PRESSUREGAUGE";
+            propertySetFlowInstrumentTypePressureGauge.PredefinedTypes.Add("PRESSUREGAUGE");
             ifcPSE = new PropertySetEntry("Pset_FlowInstrumentTypePressureGauge.PressureGaugeType", "PressureGaugeType");
             ifcPSE.PropertyName = "PressureGaugeType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -50039,7 +50036,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFlowInstrumentTypePressureGauge.EntityTypes.Add(IFCEntityType.IfcFlowInstrument);
             propertySetFlowInstrumentTypePressureGauge.ObjectType = "IfcFlowInstrument";
-            propertySetFlowInstrumentTypePressureGauge.PredefinedType = "PRESSUREGAUGE";
+            propertySetFlowInstrumentTypePressureGauge.PredefinedTypes.Add("PRESSUREGAUGE");
             ifcPSE = new PropertySetEntry("Pset_FlowInstrumentTypePressureGauge.PressureGaugeType", "PressureGaugeType");
             ifcPSE.PropertyName = "PressureGaugeType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -50070,7 +50067,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFlowInstrumentTypePressureGauge.EntityTypes.Add(IFCEntityType.IfcFlowInstrument);
             propertySetFlowInstrumentTypePressureGauge.EntityTypes.Add(IFCEntityType.IfcFlowInstrumentType);
             propertySetFlowInstrumentTypePressureGauge.ObjectType = "IfcFlowInstrument";
-            propertySetFlowInstrumentTypePressureGauge.PredefinedType = "PRESSUREGAUGE";
+            propertySetFlowInstrumentTypePressureGauge.PredefinedTypes.Add("PRESSUREGAUGE");
             ifcPSE = new PropertySetEntry("Pset_FlowInstrumentTypePressureGauge.PressureGaugeType", "PressureGaugeType");
             ifcPSE.PropertyName = "PressureGaugeType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -50130,7 +50127,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFlowInstrumentTypeThermometer.EntityTypes.Add(IFCEntityType.IfcFlowInstrumentType);
             propertySetFlowInstrumentTypeThermometer.ObjectType = "IfcFlowInstrumentType";
-            propertySetFlowInstrumentTypeThermometer.PredefinedType = "THERMOMETER";
+            propertySetFlowInstrumentTypeThermometer.PredefinedTypes.Add("THERMOMETER");
             ifcPSE = new PropertySetEntry("Pset_FlowInstrumentTypeThermometer.ThermometerType", "ThermometerType");
             ifcPSE.PropertyName = "ThermometerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -50154,7 +50151,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFlowInstrumentTypeThermometer.EntityTypes.Add(IFCEntityType.IfcFlowInstrument);
             propertySetFlowInstrumentTypeThermometer.ObjectType = "IfcFlowInstrument";
-            propertySetFlowInstrumentTypeThermometer.PredefinedType = "THERMOMETER";
+            propertySetFlowInstrumentTypeThermometer.PredefinedTypes.Add("THERMOMETER");
             ifcPSE = new PropertySetEntry("Pset_FlowInstrumentTypeThermometer.ThermometerType", "ThermometerType");
             ifcPSE.PropertyName = "ThermometerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -50185,7 +50182,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFlowInstrumentTypeThermometer.EntityTypes.Add(IFCEntityType.IfcFlowInstrument);
             propertySetFlowInstrumentTypeThermometer.EntityTypes.Add(IFCEntityType.IfcFlowInstrumentType);
             propertySetFlowInstrumentTypeThermometer.ObjectType = "IfcFlowInstrument";
-            propertySetFlowInstrumentTypeThermometer.PredefinedType = "THERMOMETER";
+            propertySetFlowInstrumentTypeThermometer.PredefinedTypes.Add("THERMOMETER");
             ifcPSE = new PropertySetEntry("Pset_FlowInstrumentTypeThermometer.ThermometerType", "ThermometerType");
             ifcPSE.PropertyName = "ThermometerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -50428,6 +50425,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFlowMeterTypeEnergyMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeterType);
             propertySetFlowMeterTypeEnergyMeter.ObjectType = "IfcFlowMeterType";
+            propertySetFlowMeterTypeEnergyMeter.PredefinedTypes.Add("");
             ifcPSE = new PropertySetEntry("Pset_FlowMeterTypeEnergyMeter.ConnectionSize", "ConnectionSize");
             ifcPSE.PropertyName = "ConnectionSize";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -50441,7 +50439,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFlowMeterTypeEnergyMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeterType);
             propertySetFlowMeterTypeEnergyMeter.ObjectType = "IfcFlowMeterType";
-            propertySetFlowMeterTypeEnergyMeter.PredefinedType = "ENERGYMETER";
+            propertySetFlowMeterTypeEnergyMeter.PredefinedTypes.Add("ENERGYMETER");
             ifcPSE = new PropertySetEntry("Pset_FlowMeterTypeEnergyMeter.ConnectionSize", "ConnectionSize");
             ifcPSE.PropertyName = "ConnectionSize";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -50455,7 +50453,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFlowMeterTypeEnergyMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeter);
             propertySetFlowMeterTypeEnergyMeter.ObjectType = "IfcFlowMeter";
-            propertySetFlowMeterTypeEnergyMeter.PredefinedType = "ENERGYMETER";
+            propertySetFlowMeterTypeEnergyMeter.PredefinedTypes.Add("ENERGYMETER");
             ifcPSE = new PropertySetEntry("Pset_FlowMeterTypeEnergyMeter.NominalCurrent", "NominalCurrent");
             ifcPSE.PropertyName = "NominalCurrent";
             ifcPSE.PropertyType = PropertyType.ElectricCurrent;
@@ -50489,7 +50487,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFlowMeterTypeEnergyMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeter);
             propertySetFlowMeterTypeEnergyMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeterType);
             propertySetFlowMeterTypeEnergyMeter.ObjectType = "IfcFlowMeter";
-            propertySetFlowMeterTypeEnergyMeter.PredefinedType = "ENERGYMETER";
+            propertySetFlowMeterTypeEnergyMeter.PredefinedTypes.Add("ENERGYMETER");
             ifcPSE = new PropertySetEntry("Pset_FlowMeterTypeEnergyMeter.NominalCurrent", "NominalCurrent");
             ifcPSE.PropertyName = "NominalCurrent";
             ifcPSE.PropertyType = PropertyType.ElectricCurrent;
@@ -50532,6 +50530,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFlowMeterTypeGasMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeterType);
             propertySetFlowMeterTypeGasMeter.ObjectType = "IfcFlowMeterType";
+            propertySetFlowMeterTypeGasMeter.PredefinedTypes.Add("");
             ifcPSE = new PropertySetEntry("Pset_FlowMeterTypeGasMeter.GasType", "GasType");
             ifcPSE.PropertyName = "GasType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -50571,7 +50570,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFlowMeterTypeGasMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeterType);
             propertySetFlowMeterTypeGasMeter.ObjectType = "IfcFlowMeterType";
-            propertySetFlowMeterTypeGasMeter.PredefinedType = "GASMETER";
+            propertySetFlowMeterTypeGasMeter.PredefinedTypes.Add("GASMETER");
             ifcPSE = new PropertySetEntry("Pset_FlowMeterTypeGasMeter.GasType", "GasType");
             ifcPSE.PropertyName = "GasType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -50611,7 +50610,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFlowMeterTypeGasMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeter);
             propertySetFlowMeterTypeGasMeter.ObjectType = "IfcFlowMeter";
-            propertySetFlowMeterTypeGasMeter.PredefinedType = "GASMETER";
+            propertySetFlowMeterTypeGasMeter.PredefinedTypes.Add("GASMETER");
             ifcPSE = new PropertySetEntry("Pset_FlowMeterTypeGasMeter.GasType", "GasType");
             ifcPSE.PropertyName = "GasType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -50656,7 +50655,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFlowMeterTypeGasMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeter);
             propertySetFlowMeterTypeGasMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeterType);
             propertySetFlowMeterTypeGasMeter.ObjectType = "IfcFlowMeter";
-            propertySetFlowMeterTypeGasMeter.PredefinedType = "GASMETER";
+            propertySetFlowMeterTypeGasMeter.PredefinedTypes.Add("GASMETER");
             ifcPSE = new PropertySetEntry("Pset_FlowMeterTypeGasMeter.GasType", "GasType");
             ifcPSE.PropertyName = "GasType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -50709,6 +50708,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFlowMeterTypeOilMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeterType);
             propertySetFlowMeterTypeOilMeter.ObjectType = "IfcFlowMeterType";
+            propertySetFlowMeterTypeOilMeter.PredefinedTypes.Add("");
             ifcPSE = new PropertySetEntry("Pset_FlowMeterTypeOilMeter.ConnectionSize", "ConnectionSize");
             ifcPSE.PropertyName = "ConnectionSize";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -50730,7 +50730,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFlowMeterTypeOilMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeterType);
             propertySetFlowMeterTypeOilMeter.ObjectType = "IfcFlowMeterType";
-            propertySetFlowMeterTypeOilMeter.PredefinedType = "OILMETER";
+            propertySetFlowMeterTypeOilMeter.PredefinedTypes.Add("OILMETER");
             ifcPSE = new PropertySetEntry("Pset_FlowMeterTypeOilMeter.ConnectionSize", "ConnectionSize");
             ifcPSE.PropertyName = "ConnectionSize";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -50752,7 +50752,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFlowMeterTypeOilMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeter);
             propertySetFlowMeterTypeOilMeter.ObjectType = "IfcFlowMeter";
-            propertySetFlowMeterTypeOilMeter.PredefinedType = "OILMETER";
+            propertySetFlowMeterTypeOilMeter.PredefinedTypes.Add("OILMETER");
             ifcPSE = new PropertySetEntry("Pset_FlowMeterTypeOilMeter.ConnectionSize", "ConnectionSize");
             ifcPSE.PropertyName = "ConnectionSize";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -50777,7 +50777,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFlowMeterTypeOilMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeter);
             propertySetFlowMeterTypeOilMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeterType);
             propertySetFlowMeterTypeOilMeter.ObjectType = "IfcFlowMeter";
-            propertySetFlowMeterTypeOilMeter.PredefinedType = "OILMETER";
+            propertySetFlowMeterTypeOilMeter.PredefinedTypes.Add("OILMETER");
             ifcPSE = new PropertySetEntry("Pset_FlowMeterTypeOilMeter.ConnectionSize", "ConnectionSize");
             ifcPSE.PropertyName = "ConnectionSize";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -50812,6 +50812,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFlowMeterTypeWaterMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeterType);
             propertySetFlowMeterTypeWaterMeter.ObjectType = "IfcFlowMeterType";
+            propertySetFlowMeterTypeWaterMeter.PredefinedTypes.Add("");
             ifcPSE = new PropertySetEntry("Pset_FlowMeterTypeWaterMeter.Type", "Type");
             ifcPSE.PropertyName = "Type";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -50861,7 +50862,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFlowMeterTypeWaterMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeterType);
             propertySetFlowMeterTypeWaterMeter.ObjectType = "IfcFlowMeterType";
-            propertySetFlowMeterTypeWaterMeter.PredefinedType = "WATERMETER";
+            propertySetFlowMeterTypeWaterMeter.PredefinedTypes.Add("WATERMETER");
             ifcPSE = new PropertySetEntry("Pset_FlowMeterTypeWaterMeter.Type", "Type");
             ifcPSE.PropertyName = "Type";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -50911,7 +50912,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFlowMeterTypeWaterMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeter);
             propertySetFlowMeterTypeWaterMeter.ObjectType = "IfcFlowMeter";
-            propertySetFlowMeterTypeWaterMeter.PredefinedType = "WATERMETER";
+            propertySetFlowMeterTypeWaterMeter.PredefinedTypes.Add("WATERMETER");
             ifcPSE = new PropertySetEntry("Pset_FlowMeterTypeWaterMeter.Type", "Type");
             ifcPSE.PropertyName = "Type";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -50967,7 +50968,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFlowMeterTypeWaterMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeter);
             propertySetFlowMeterTypeWaterMeter.EntityTypes.Add(IFCEntityType.IfcFlowMeterType);
             propertySetFlowMeterTypeWaterMeter.ObjectType = "IfcFlowMeter";
-            propertySetFlowMeterTypeWaterMeter.PredefinedType = "WATERMETER";
+            propertySetFlowMeterTypeWaterMeter.PredefinedTypes.Add("WATERMETER");
             ifcPSE = new PropertySetEntry("Pset_FlowMeterTypeWaterMeter.Type", "Type");
             ifcPSE.PropertyName = "Type";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -51220,6 +51221,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFlowMovingDeviceFanCentrifugal.EntityTypes.Add(IFCEntityType.IfcFlowMovingDevice);
             propertySetFlowMovingDeviceFanCentrifugal.ObjectType = "The related IfcFanType";
+            propertySetFlowMovingDeviceFanCentrifugal.PredefinedTypes.Add("");
             ifcPSE = new PropertySetEntry("Pset_FlowMovingDeviceFanCentrifugal.DischargePosition", "DischargePosition");
             ifcPSE.PropertyName = "DischargePosition";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -51255,6 +51257,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFlowMovingDeviceFanCentrifugal.EntityTypes.Add(IFCEntityType.IfcFlowMovingDevice);
             propertySetFlowMovingDeviceFanCentrifugal.ObjectType = "RelatedEntityIs:IfcFanType";
+            propertySetFlowMovingDeviceFanCentrifugal.PredefinedTypes.Add("");
             ifcPSE = new PropertySetEntry("Pset_FlowMovingDeviceFanCentrifugal.DischargePosition", "DischargePosition");
             ifcPSE.PropertyName = "DischargePosition";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -51801,7 +51804,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFootingTypePadFooting.EntityTypes.Add(IFCEntityType.IfcFooting);
             propertySetFootingTypePadFooting.EntityTypes.Add(IFCEntityType.IfcFootingType);
             propertySetFootingTypePadFooting.ObjectType = "IfcFooting";
-            propertySetFootingTypePadFooting.PredefinedType = "PAD_FOOTING";
+            propertySetFootingTypePadFooting.PredefinedTypes.Add("PAD_FOOTING");
             ifcPSE = new PropertySetEntry("Pset_FootingTypePadFooting.LoadBearingCapacity", "LoadBearingCapacity");
             ifcPSE.PropertyName = "LoadBearingCapacity";
             ifcPSE.PropertyType = PropertyType.PlanarForce;
@@ -51892,7 +51895,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFurnitureTypeChair.EntityTypes.Add(IFCEntityType.IfcFurniture);
             propertySetFurnitureTypeChair.ObjectType = "IfcFurniture";
-            propertySetFurnitureTypeChair.PredefinedType = "CHAIR";
+            propertySetFurnitureTypeChair.PredefinedTypes.Add("CHAIR");
             ifcPSE = new PropertySetEntry("Pset_FurnitureTypeChair.SeatingHeight", "SeatingHeight");
             ifcPSE.PropertyName = "SeatingHeight";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -51926,7 +51929,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFurnitureTypeChair.EntityTypes.Add(IFCEntityType.IfcFurniture);
             propertySetFurnitureTypeChair.EntityTypes.Add(IFCEntityType.IfcFurnitureType);
             propertySetFurnitureTypeChair.ObjectType = "IfcFurniture";
-            propertySetFurnitureTypeChair.PredefinedType = "CHAIR";
+            propertySetFurnitureTypeChair.PredefinedTypes.Add("CHAIR");
             ifcPSE = new PropertySetEntry("Pset_FurnitureTypeChair.SeatingHeight", "SeatingHeight");
             ifcPSE.PropertyName = "SeatingHeight";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -52259,7 +52262,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFurnitureTypeDesk.EntityTypes.Add(IFCEntityType.IfcFurniture);
             propertySetFurnitureTypeDesk.ObjectType = "IfcFurniture";
-            propertySetFurnitureTypeDesk.PredefinedType = "DESK";
+            propertySetFurnitureTypeDesk.PredefinedTypes.Add("DESK");
             ifcPSE = new PropertySetEntry("Pset_FurnitureTypeDesk.WorksurfaceArea", "WorksurfaceArea");
             ifcPSE.PropertyName = "WorksurfaceArea";
             ifcPSE.PropertyType = PropertyType.Area;
@@ -52275,7 +52278,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFurnitureTypeDesk.EntityTypes.Add(IFCEntityType.IfcFurniture);
             propertySetFurnitureTypeDesk.EntityTypes.Add(IFCEntityType.IfcFurnitureType);
             propertySetFurnitureTypeDesk.ObjectType = "IfcFurniture";
-            propertySetFurnitureTypeDesk.PredefinedType = "DESK";
+            propertySetFurnitureTypeDesk.PredefinedTypes.Add("DESK");
             ifcPSE = new PropertySetEntry("Pset_FurnitureTypeDesk.WorksurfaceArea", "WorksurfaceArea");
             ifcPSE.PropertyName = "WorksurfaceArea";
             ifcPSE.PropertyType = PropertyType.Area;
@@ -52326,7 +52329,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFurnitureTypeFileCabinet.EntityTypes.Add(IFCEntityType.IfcFurniture);
             propertySetFurnitureTypeFileCabinet.ObjectType = "IfcFurniture";
-            propertySetFurnitureTypeFileCabinet.PredefinedType = "FILECABINET";
+            propertySetFurnitureTypeFileCabinet.PredefinedTypes.Add("FILECABINET");
             ifcPSE = new PropertySetEntry("Pset_FurnitureTypeFileCabinet.WithLock", "WithLock");
             ifcPSE.PropertyName = "WithLock";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -52342,7 +52345,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFurnitureTypeFileCabinet.EntityTypes.Add(IFCEntityType.IfcFurniture);
             propertySetFurnitureTypeFileCabinet.EntityTypes.Add(IFCEntityType.IfcFurnitureType);
             propertySetFurnitureTypeFileCabinet.ObjectType = "IfcFurniture";
-            propertySetFurnitureTypeFileCabinet.PredefinedType = "FILECABINET";
+            propertySetFurnitureTypeFileCabinet.PredefinedTypes.Add("FILECABINET");
             ifcPSE = new PropertySetEntry("Pset_FurnitureTypeFileCabinet.WithLock", "WithLock");
             ifcPSE.PropertyName = "WithLock";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -52409,7 +52412,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetFurnitureTypeTable.EntityTypes.Add(IFCEntityType.IfcFurniture);
             propertySetFurnitureTypeTable.ObjectType = "IfcFurniture";
-            propertySetFurnitureTypeTable.PredefinedType = "TABLE";
+            propertySetFurnitureTypeTable.PredefinedTypes.Add("TABLE");
             ifcPSE = new PropertySetEntry("Pset_FurnitureTypeTable.WorksurfaceArea", "WorksurfaceArea");
             ifcPSE.PropertyName = "WorksurfaceArea";
             ifcPSE.PropertyType = PropertyType.Area;
@@ -52434,7 +52437,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetFurnitureTypeTable.EntityTypes.Add(IFCEntityType.IfcFurniture);
             propertySetFurnitureTypeTable.EntityTypes.Add(IFCEntityType.IfcFurnitureType);
             propertySetFurnitureTypeTable.ObjectType = "IfcFurniture";
-            propertySetFurnitureTypeTable.PredefinedType = "TABLE";
+            propertySetFurnitureTypeTable.PredefinedTypes.Add("TABLE");
             ifcPSE = new PropertySetEntry("Pset_FurnitureTypeTable.WorksurfaceArea", "WorksurfaceArea");
             ifcPSE.PropertyName = "WorksurfaceArea";
             ifcPSE.PropertyType = PropertyType.Area;
@@ -52543,7 +52546,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetGasTerminalTypeGasAppliance.EntityTypes.Add(IFCEntityType.IfcGasTerminalType);
             propertySetGasTerminalTypeGasAppliance.ObjectType = "IfcGasTerminalType";
-            propertySetGasTerminalTypeGasAppliance.PredefinedType = "GASAPPLIANCE";
+            propertySetGasTerminalTypeGasAppliance.PredefinedTypes.Add("GASAPPLIANCE");
             ifcPSE = new PropertySetEntry("Pset_GasTerminalTypeGasAppliance.GasApplianceType", "GasApplianceType");
             ifcPSE.PropertyName = "GasApplianceType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -52569,7 +52572,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetGasTerminalTypeGasAppliance.EntityTypes.Add(IFCEntityType.IfcGasTerminalType);
             propertySetGasTerminalTypeGasAppliance.ObjectType = "IfcGasTerminalType";
-            propertySetGasTerminalTypeGasAppliance.PredefinedType = "GASAPPLIANCE";
+            propertySetGasTerminalTypeGasAppliance.PredefinedTypes.Add("GASAPPLIANCE");
             ifcPSE = new PropertySetEntry("Pset_GasTerminalTypeGasAppliance.GasApplianceType", "GasApplianceType");
             ifcPSE.PropertyName = "GasApplianceType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -52608,7 +52611,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetGasTerminalTypeGasBurner.EntityTypes.Add(IFCEntityType.IfcGasTerminalType);
             propertySetGasTerminalTypeGasBurner.ObjectType = "IfcGasTerminalType";
-            propertySetGasTerminalTypeGasBurner.PredefinedType = "GASBURNER";
+            propertySetGasTerminalTypeGasBurner.PredefinedTypes.Add("GASBURNER");
             ifcPSE = new PropertySetEntry("Pset_GasTerminalTypeGasBurner.GasBurnerType", "GasBurnerType");
             ifcPSE.PropertyName = "GasBurnerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -52624,7 +52627,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetGasTerminalTypeGasBurner.EntityTypes.Add(IFCEntityType.IfcGasTerminalType);
             propertySetGasTerminalTypeGasBurner.ObjectType = "IfcGasTerminalType";
-            propertySetGasTerminalTypeGasBurner.PredefinedType = "GASBURNER";
+            propertySetGasTerminalTypeGasBurner.PredefinedTypes.Add("GASBURNER");
             ifcPSE = new PropertySetEntry("Pset_GasTerminalTypeGasBurner.GasBurnerType", "GasBurnerType");
             ifcPSE.PropertyName = "GasBurnerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -52653,7 +52656,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetGateHeadCommon.EntityTypes.Add(IFCEntityType.IfcMarinePart);
             propertySetGateHeadCommon.ObjectType = "IfcMarinePart";
-            propertySetGateHeadCommon.PredefinedType = "GATEHEAD";
+            propertySetGateHeadCommon.PredefinedTypes.Add("GATEHEAD");
             ifcPSE = new PropertySetEntry("Pset_GateHeadCommon.StructuralType", "StructuralType");
             ifcPSE.PropertyName = "StructuralType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -52934,7 +52937,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetHeatExchangerTypePlate.EntityTypes.Add(IFCEntityType.IfcHeatExchangerType);
             propertySetHeatExchangerTypePlate.ObjectType = "IfcHeatExchangerType";
-            propertySetHeatExchangerTypePlate.PredefinedType = "PLATE";
+            propertySetHeatExchangerTypePlate.PredefinedTypes.Add("PLATE");
             ifcPSE = new PropertySetEntry("Pset_HeatExchangerTypePlate.NumberOfPlates", "NumberOfPlates");
             ifcPSE.PropertyName = "NumberOfPlates";
             ifcPSE.PropertyType = PropertyType.Integer;
@@ -52948,7 +52951,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetHeatExchangerTypePlate.EntityTypes.Add(IFCEntityType.IfcHeatExchangerType);
             propertySetHeatExchangerTypePlate.ObjectType = "IfcHeatExchangerType";
-            propertySetHeatExchangerTypePlate.PredefinedType = "PLATE";
+            propertySetHeatExchangerTypePlate.PredefinedTypes.Add("PLATE");
             ifcPSE = new PropertySetEntry("Pset_HeatExchangerTypePlate.NumberOfPlates", "NumberOfPlates");
             ifcPSE.PropertyName = "NumberOfPlates";
             ifcPSE.PropertyType = PropertyType.Integer;
@@ -52962,7 +52965,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetHeatExchangerTypePlate.EntityTypes.Add(IFCEntityType.IfcHeatExchanger);
             propertySetHeatExchangerTypePlate.ObjectType = "IfcHeatExchanger";
-            propertySetHeatExchangerTypePlate.PredefinedType = "PLATE";
+            propertySetHeatExchangerTypePlate.PredefinedTypes.Add("PLATE");
             ifcPSE = new PropertySetEntry("Pset_HeatExchangerTypePlate.NumberOfPlates", "NumberOfPlates");
             ifcPSE.PropertyName = "NumberOfPlates";
             ifcPSE.PropertyType = PropertyType.Integer;
@@ -52979,7 +52982,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetHeatExchangerTypePlate.EntityTypes.Add(IFCEntityType.IfcHeatExchanger);
             propertySetHeatExchangerTypePlate.EntityTypes.Add(IFCEntityType.IfcHeatExchangerType);
             propertySetHeatExchangerTypePlate.ObjectType = "IfcHeatExchanger";
-            propertySetHeatExchangerTypePlate.PredefinedType = "PLATE";
+            propertySetHeatExchangerTypePlate.PredefinedTypes.Add("PLATE");
             ifcPSE = new PropertySetEntry("Pset_HeatExchangerTypePlate.NumberOfPlates", "NumberOfPlates");
             ifcPSE.PropertyName = "NumberOfPlates";
             ifcPSE.PropertyType = PropertyType.Count;
@@ -53479,7 +53482,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetImpactProtectionDeviceOccurrenceBumper.EntityTypes.Add(IFCEntityType.IfcImpactProtectionDevice);
             propertySetImpactProtectionDeviceOccurrenceBumper.ObjectType = "IfcImpactProtectionDevice";
-            propertySetImpactProtectionDeviceOccurrenceBumper.PredefinedType = "BUMPER";
+            propertySetImpactProtectionDeviceOccurrenceBumper.PredefinedTypes.Add("BUMPER");
             ifcPSE = new PropertySetEntry("Pset_ImpactProtectionDeviceOccurrenceBumper.BrakingLength", "BrakingLength");
             ifcPSE.PropertyName = "BrakingLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -53525,7 +53528,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetImpactProtectionDeviceTypeBumper.EntityTypes.Add(IFCEntityType.IfcImpactProtectionDevice);
             propertySetImpactProtectionDeviceTypeBumper.EntityTypes.Add(IFCEntityType.IfcImpactProtectionDeviceType);
             propertySetImpactProtectionDeviceTypeBumper.ObjectType = "IfcImpactProtectionDevice";
-            propertySetImpactProtectionDeviceTypeBumper.PredefinedType = "BUMPER";
+            propertySetImpactProtectionDeviceTypeBumper.PredefinedTypes.Add("BUMPER");
             ifcPSE = new PropertySetEntry("Pset_ImpactProtectionDeviceTypeBumper.IsAbsorbingEnergy", "IsAbsorbingEnergy");
             ifcPSE.PropertyName = "IsAbsorbingEnergy";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -53812,7 +53815,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetIpNetworkEquipmentPHistory.EntityTypes.Add(IFCEntityType.IfcCommunicationsAppliance);
             propertySetIpNetworkEquipmentPHistory.ObjectType = "IfcCommunicationsAppliance";
-            propertySetIpNetworkEquipmentPHistory.PredefinedType = "IPNETWORKEQUIPMENT";
+            propertySetIpNetworkEquipmentPHistory.PredefinedTypes.Add("IPNETWORKEQUIPMENT");
             ifcPSE = new PropertySetEntry("Pset_IpNetworkEquipmentPHistory.NumberOfPackets", "NumberOfPackets");
             ifcPSE.PropertyName = "NumberOfPackets";
             ifcPSE.PropertyType = PropertyType.IfcTimeSeries;
@@ -53840,7 +53843,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetJettyCommon.EntityTypes.Add(IFCEntityType.IfcMarineFacility);
             propertySetJettyCommon.ObjectType = "IfcMarineFacility";
-            propertySetJettyCommon.PredefinedType = "JETTY";
+            propertySetJettyCommon.PredefinedTypes.Add("JETTY");
             ifcPSE = new PropertySetEntry("Pset_JettyCommon.StructuralType", "StructuralType");
             ifcPSE.PropertyName = "StructuralType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -53893,7 +53896,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetJettyDesignCriteria.EntityTypes.Add(IFCEntityType.IfcMarineFacility);
             propertySetJettyDesignCriteria.ObjectType = "IfcMarineFacility";
-            propertySetJettyDesignCriteria.PredefinedType = "JETTY";
+            propertySetJettyDesignCriteria.PredefinedTypes.Add("JETTY");
             ifcPSE = new PropertySetEntry("Pset_JettyDesignCriteria.HighWaterLevel", "HighWaterLevel");
             ifcPSE.PropertyName = "HighWaterLevel";
             ifcPSE.PropertyType = PropertyType.Length;
@@ -54219,7 +54222,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetJunctionBoxTypeData.EntityTypes.Add(IFCEntityType.IfcJunctionBox);
             propertySetJunctionBoxTypeData.EntityTypes.Add(IFCEntityType.IfcJunctionBoxType);
             propertySetJunctionBoxTypeData.ObjectType = "IfcJunctionBox";
-            propertySetJunctionBoxTypeData.PredefinedType = "DATA";
+            propertySetJunctionBoxTypeData.PredefinedTypes.Add("DATA");
             ifcPSE = new PropertySetEntry("Pset_JunctionBoxTypeData.DataConnectionType", "DataConnectionType");
             ifcPSE.PropertyName = "DataConnectionType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -55271,7 +55274,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetLightFixtureTypeSecurityLighting.EntityTypes.Add(IFCEntityType.IfcLightFixture);
             propertySetLightFixtureTypeSecurityLighting.ObjectType = "IfcLightFixture";
-            propertySetLightFixtureTypeSecurityLighting.PredefinedType = "SECURITYLIGHTING";
+            propertySetLightFixtureTypeSecurityLighting.PredefinedTypes.Add("SECURITYLIGHTING");
             ifcPSE = new PropertySetEntry("Pset_LightFixtureTypeSecurityLighting.SecurityLightingType", "SecurityLightingType");
             ifcPSE.PropertyName = "SecurityLightingType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -55354,7 +55357,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetLightFixtureTypeSecurityLighting.EntityTypes.Add(IFCEntityType.IfcLightFixture);
             propertySetLightFixtureTypeSecurityLighting.EntityTypes.Add(IFCEntityType.IfcLightFixtureType);
             propertySetLightFixtureTypeSecurityLighting.ObjectType = "IfcLightFixture";
-            propertySetLightFixtureTypeSecurityLighting.PredefinedType = "SECURITYLIGHTING";
+            propertySetLightFixtureTypeSecurityLighting.PredefinedTypes.Add("SECURITYLIGHTING");
             ifcPSE = new PropertySetEntry("Pset_LightFixtureTypeSecurityLighting.SecurityLightingType", "SecurityLightingType");
             ifcPSE.PropertyName = "SecurityLightingType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -56306,7 +56309,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetMarinePartChamberCommon.EntityTypes.Add(IFCEntityType.IfcMarinePart);
             propertySetMarinePartChamberCommon.ObjectType = "IfcMarinePart";
-            propertySetMarinePartChamberCommon.PredefinedType = "CHAMBER";
+            propertySetMarinePartChamberCommon.PredefinedTypes.Add("CHAMBER");
             ifcPSE = new PropertySetEntry("Pset_MarinePartChamberCommon.EffectiveChamberSize", "EffectiveChamberSize");
             ifcPSE.PropertyName = "EffectiveChamberSize";
             ifcPSE.PropertyType = PropertyType.Volume;
@@ -56342,7 +56345,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMarineVehicleCommon.EntityTypes.Add(IFCEntityType.IfcVehicle);
             propertySetMarineVehicleCommon.EntityTypes.Add(IFCEntityType.IfcVehicleType);
             propertySetMarineVehicleCommon.ObjectType = "IfcVehicle";
-            propertySetMarineVehicleCommon.PredefinedType = "VEHICLEMARINE";
+            propertySetMarineVehicleCommon.PredefinedTypes.Add("VEHICLEMARINE");
             ifcPSE = new PropertySetEntry("Pset_MarineVehicleCommon.LengthBetweenPerpendiculars", "LengthBetweenPerpendiculars");
             ifcPSE.PropertyName = "LengthBetweenPerpendiculars";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -56426,7 +56429,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMarineVehicleDesignCriteria.EntityTypes.Add(IFCEntityType.IfcVehicle);
             propertySetMarineVehicleDesignCriteria.EntityTypes.Add(IFCEntityType.IfcVehicleType);
             propertySetMarineVehicleDesignCriteria.ObjectType = "IfcVehicle";
-            propertySetMarineVehicleDesignCriteria.PredefinedType = "VEHICLEMARINE";
+            propertySetMarineVehicleDesignCriteria.PredefinedTypes.Add("VEHICLEMARINE");
             ifcPSE = new PropertySetEntry("Pset_MarineVehicleDesignCriteria.AllowableHullPressure", "AllowableHullPressure");
             ifcPSE.PropertyName = "AllowableHullPressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -56462,7 +56465,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMarkerGeneral.EntityTypes.Add(IFCEntityType.IfcElementAssembly);
             propertySetMarkerGeneral.EntityTypes.Add(IFCEntityType.IfcElementAssemblyType);
             propertySetMarkerGeneral.ObjectType = "IfcElementAssembly";
-            propertySetMarkerGeneral.PredefinedType = "SIGNALASSEMBLY";
+            propertySetMarkerGeneral.PredefinedTypes.Add("SIGNALASSEMBLY");
             ifcPSE = new PropertySetEntry("Pset_MarkerGeneral.ApproachSpeed", "ApproachSpeed");
             ifcPSE.PropertyName = "ApproachSpeed";
             ifcPSE.PropertyType = PropertyType.LinearVelocity;
@@ -56524,7 +56527,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetMarkingLinesCommon.EntityTypes.Add(IFCEntityType.IfcSurfaceFeature);
             propertySetMarkingLinesCommon.ObjectType = "IfcSurfaceFeature";
-            propertySetMarkingLinesCommon.PredefinedType = "LINEMARKING";
+            propertySetMarkingLinesCommon.PredefinedTypes.Add("LINEMARKING");
             ifcPSE = new PropertySetEntry("Pset_MarkingLinesCommon.DashedLine", "DashedLine");
             ifcPSE.PropertyName = "DashedLine";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -59265,7 +59268,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetMechanicalFastenerAnchorBolt.EntityTypes.Add(IFCEntityType.IfcMechanicalFastener);
             propertySetMechanicalFastenerAnchorBolt.ObjectType = "IfcMechanicalFastener";
-            propertySetMechanicalFastenerAnchorBolt.PredefinedType = "ANCHORBOLT";
+            propertySetMechanicalFastenerAnchorBolt.PredefinedTypes.Add("ANCHORBOLT");
             ifcPSE = new PropertySetEntry("Pset_MechanicalFastenerAnchorBolt.AnchorBoltLength", "AnchorBoltLength");
             ifcPSE.PropertyName = "AnchorBoltLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -59314,7 +59317,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMechanicalFastenerAnchorBolt.EntityTypes.Add(IFCEntityType.IfcMechanicalFastener);
             propertySetMechanicalFastenerAnchorBolt.EntityTypes.Add(IFCEntityType.IfcMechanicalFastenerType);
             propertySetMechanicalFastenerAnchorBolt.ObjectType = "IfcMechanicalFastener";
-            propertySetMechanicalFastenerAnchorBolt.PredefinedType = "ANCHORBOLT";
+            propertySetMechanicalFastenerAnchorBolt.PredefinedTypes.Add("ANCHORBOLT");
             ifcPSE = new PropertySetEntry("Pset_MechanicalFastenerAnchorBolt.AnchorBoltLength", "AnchorBoltLength");
             ifcPSE.PropertyName = "AnchorBoltLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -59365,7 +59368,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetMechanicalFastenerBolt.EntityTypes.Add(IFCEntityType.IfcMechanicalFastener);
             propertySetMechanicalFastenerBolt.ObjectType = "IfcMechanicalFastener";
-            propertySetMechanicalFastenerBolt.PredefinedType = "BOLT";
+            propertySetMechanicalFastenerBolt.PredefinedTypes.Add("BOLT");
             ifcPSE = new PropertySetEntry("Pset_MechanicalFastenerBolt.ThreadDiameter", "ThreadDiameter");
             ifcPSE.PropertyName = "ThreadDiameter";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -59444,7 +59447,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMechanicalFastenerBolt.EntityTypes.Add(IFCEntityType.IfcMechanicalFastener);
             propertySetMechanicalFastenerBolt.EntityTypes.Add(IFCEntityType.IfcMechanicalFastenerType);
             propertySetMechanicalFastenerBolt.ObjectType = "IfcMechanicalFastener";
-            propertySetMechanicalFastenerBolt.PredefinedType = "BOLT";
+            propertySetMechanicalFastenerBolt.PredefinedTypes.Add("BOLT");
             ifcPSE = new PropertySetEntry("Pset_MechanicalFastenerBolt.ThreadDiameter", "ThreadDiameter");
             ifcPSE.PropertyName = "ThreadDiameter";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -59562,7 +59565,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMechanicalFastenerOCSFitting.EntityTypes.Add(IFCEntityType.IfcMechanicalFastener);
             propertySetMechanicalFastenerOCSFitting.EntityTypes.Add(IFCEntityType.IfcMechanicalFastenerType);
             propertySetMechanicalFastenerOCSFitting.ObjectType = "IfcMechanicalFastener";
-            propertySetMechanicalFastenerOCSFitting.PredefinedType = "COUPLER";
+            propertySetMechanicalFastenerOCSFitting.PredefinedTypes.Add("COUPLER");
             ifcPSE = new PropertySetEntry("Pset_MechanicalFastenerOCSFitting.ManufacturingTechnology", "ManufacturingTechnology");
             ifcPSE.PropertyName = "ManufacturingTechnology";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -59600,7 +59603,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMechanicalFastenerTypeRailFastening.EntityTypes.Add(IFCEntityType.IfcMechanicalFastener);
             propertySetMechanicalFastenerTypeRailFastening.EntityTypes.Add(IFCEntityType.IfcMechanicalFastenerType);
             propertySetMechanicalFastenerTypeRailFastening.ObjectType = "IfcMechanicalFastener";
-            propertySetMechanicalFastenerTypeRailFastening.PredefinedType = "RAILFASTENING";
+            propertySetMechanicalFastenerTypeRailFastening.PredefinedTypes.Add("RAILFASTENING");
             ifcPSE = new PropertySetEntry("Pset_MechanicalFastenerTypeRailFastening.TechnicalStandard", "TechnicalStandard");
             ifcPSE.PropertyName = "TechnicalStandard";
             ifcPSE.PropertyType = PropertyType.IfcExternalReference;
@@ -59647,7 +59650,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMechanicalFastenerTypeRailJoint.EntityTypes.Add(IFCEntityType.IfcMechanicalFastener);
             propertySetMechanicalFastenerTypeRailJoint.EntityTypes.Add(IFCEntityType.IfcMechanicalFastenerType);
             propertySetMechanicalFastenerTypeRailJoint.ObjectType = "IfcMechanicalFastener";
-            propertySetMechanicalFastenerTypeRailJoint.PredefinedType = "RAILJOINT";
+            propertySetMechanicalFastenerTypeRailJoint.PredefinedTypes.Add("RAILJOINT");
             ifcPSE = new PropertySetEntry("Pset_MechanicalFastenerTypeRailJoint.SleeperArrangement", "SleeperArrangement");
             ifcPSE.PropertyName = "SleeperArrangement";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -60479,7 +60482,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMemberTypeAnchoringBar.EntityTypes.Add(IFCEntityType.IfcMember);
             propertySetMemberTypeAnchoringBar.EntityTypes.Add(IFCEntityType.IfcMemberType);
             propertySetMemberTypeAnchoringBar.ObjectType = "IfcMember";
-            propertySetMemberTypeAnchoringBar.PredefinedType = "BRACE";
+            propertySetMemberTypeAnchoringBar.PredefinedTypes.Add("BRACE");
             ifcPSE = new PropertySetEntry("Pset_MemberTypeAnchoringBar.MechanicalStressType", "MechanicalStressType");
             ifcPSE.PropertyName = "MechanicalStressType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -60517,7 +60520,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMemberTypeCatenaryStay.EntityTypes.Add(IFCEntityType.IfcMember);
             propertySetMemberTypeCatenaryStay.EntityTypes.Add(IFCEntityType.IfcMemberType);
             propertySetMemberTypeCatenaryStay.ObjectType = "IfcMember";
-            propertySetMemberTypeCatenaryStay.PredefinedType = "STAY_CABLE";
+            propertySetMemberTypeCatenaryStay.PredefinedTypes.Add("STAY_CABLE");
             ifcPSE = new PropertySetEntry("Pset_MemberTypeCatenaryStay.AssemblyInstruction", "AssemblyInstruction");
             ifcPSE.PropertyName = "AssemblyInstruction";
             ifcPSE.PropertyType = PropertyType.IfcExternalReference;
@@ -60572,7 +60575,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMemberTypeOCSRigidSupport.EntityTypes.Add(IFCEntityType.IfcMember);
             propertySetMemberTypeOCSRigidSupport.EntityTypes.Add(IFCEntityType.IfcMemberType);
             propertySetMemberTypeOCSRigidSupport.ObjectType = "IfcMember";
-            propertySetMemberTypeOCSRigidSupport.PredefinedType = "MEMBER";
+            propertySetMemberTypeOCSRigidSupport.PredefinedTypes.Add("MEMBER");
             ifcPSE = new PropertySetEntry("Pset_MemberTypeOCSRigidSupport.AssemblyInstruction", "AssemblyInstruction");
             ifcPSE.PropertyName = "AssemblyInstruction";
             ifcPSE.PropertyType = PropertyType.IfcExternalReference;
@@ -60609,7 +60612,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMemberTypePost.EntityTypes.Add(IFCEntityType.IfcMember);
             propertySetMemberTypePost.EntityTypes.Add(IFCEntityType.IfcMemberType);
             propertySetMemberTypePost.ObjectType = "IfcMember";
-            propertySetMemberTypePost.PredefinedType = "POST";
+            propertySetMemberTypePost.PredefinedTypes.Add("POST");
             ifcPSE = new PropertySetEntry("Pset_MemberTypePost.NominalHeight", "NominalHeight");
             ifcPSE.PropertyName = "NominalHeight";
             ifcPSE.PropertyType = PropertyType.NonNegativeLength;
@@ -60677,7 +60680,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMemberTypeTieBar.EntityTypes.Add(IFCEntityType.IfcMember);
             propertySetMemberTypeTieBar.EntityTypes.Add(IFCEntityType.IfcMemberType);
             propertySetMemberTypeTieBar.ObjectType = "IfcMember";
-            propertySetMemberTypeTieBar.PredefinedType = "TIEBAR";
+            propertySetMemberTypeTieBar.PredefinedTypes.Add("TIEBAR");
             ifcPSE = new PropertySetEntry("Pset_MemberTypeTieBar.IsTemporaryInstallation", "IsTemporaryInstallation");
             ifcPSE.PropertyName = "IsTemporaryInstallation";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -60705,7 +60708,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMobileTelecommunicationsApplianceTypeAccessPoint.EntityTypes.Add(IFCEntityType.IfcMobileTelecommunicationsAppliance);
             propertySetMobileTelecommunicationsApplianceTypeAccessPoint.EntityTypes.Add(IFCEntityType.IfcMobileTelecommunicationsApplianceType);
             propertySetMobileTelecommunicationsApplianceTypeAccessPoint.ObjectType = "IfcMobileTelecommunicationsAppliance";
-            propertySetMobileTelecommunicationsApplianceTypeAccessPoint.PredefinedType = "ACCESSPOINT";
+            propertySetMobileTelecommunicationsApplianceTypeAccessPoint.PredefinedTypes.Add("ACCESSPOINT");
             ifcPSE = new PropertySetEntry("Pset_MobileTelecommunicationsApplianceTypeAccessPoint.BandWidth", "BandWidth");
             ifcPSE.PropertyName = "BandWidth";
             ifcPSE.PropertyType = PropertyType.Frequency;
@@ -60775,7 +60778,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMobileTelecommunicationsApplianceTypeBasebandUnit.EntityTypes.Add(IFCEntityType.IfcMobileTelecommunicationsAppliance);
             propertySetMobileTelecommunicationsApplianceTypeBasebandUnit.EntityTypes.Add(IFCEntityType.IfcMobileTelecommunicationsApplianceType);
             propertySetMobileTelecommunicationsApplianceTypeBasebandUnit.ObjectType = "IfcMobileTelecommunicationsAppliance";
-            propertySetMobileTelecommunicationsApplianceTypeBasebandUnit.PredefinedType = "BASEBANDUNIT";
+            propertySetMobileTelecommunicationsApplianceTypeBasebandUnit.PredefinedTypes.Add("BASEBANDUNIT");
             ifcPSE = new PropertySetEntry("Pset_MobileTelecommunicationsApplianceTypeBasebandUnit.NumberOfCarriers", "NumberOfCarriers");
             ifcPSE.PropertyName = "NumberOfCarriers";
             ifcPSE.PropertyType = PropertyType.Count;
@@ -60829,7 +60832,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMobileTelecommunicationsApplianceTypeBaseTransceiverStation.EntityTypes.Add(IFCEntityType.IfcMobileTelecommunicationsAppliance);
             propertySetMobileTelecommunicationsApplianceTypeBaseTransceiverStation.EntityTypes.Add(IFCEntityType.IfcMobileTelecommunicationsApplianceType);
             propertySetMobileTelecommunicationsApplianceTypeBaseTransceiverStation.ObjectType = "IfcMobileTelecommunicationsAppliance";
-            propertySetMobileTelecommunicationsApplianceTypeBaseTransceiverStation.PredefinedType = "BASETRANSCEIVERSTATION";
+            propertySetMobileTelecommunicationsApplianceTypeBaseTransceiverStation.PredefinedTypes.Add("BASETRANSCEIVERSTATION");
             ifcPSE = new PropertySetEntry("Pset_MobileTelecommunicationsApplianceTypeBaseTransceiverStation.DownlinkRadioBand", "DownlinkRadioBand");
             ifcPSE.PropertyName = "DownlinkRadioBand";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -60966,7 +60969,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMobileTelecommunicationsApplianceTypeEUtranNodeB.EntityTypes.Add(IFCEntityType.IfcMobileTelecommunicationsAppliance);
             propertySetMobileTelecommunicationsApplianceTypeEUtranNodeB.EntityTypes.Add(IFCEntityType.IfcMobileTelecommunicationsApplianceType);
             propertySetMobileTelecommunicationsApplianceTypeEUtranNodeB.ObjectType = "IfcMobileTelecommunicationsAppliance";
-            propertySetMobileTelecommunicationsApplianceTypeEUtranNodeB.PredefinedType = "E_UTRAN_NODE_B";
+            propertySetMobileTelecommunicationsApplianceTypeEUtranNodeB.PredefinedTypes.Add("E_UTRAN_NODE_B");
             ifcPSE = new PropertySetEntry("Pset_MobileTelecommunicationsApplianceTypeEUtranNodeB.DownlinkRadioBand", "DownlinkRadioBand");
             ifcPSE.PropertyName = "DownlinkRadioBand";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -61040,7 +61043,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMobileTelecommunicationsApplianceTypeMasterUnit.EntityTypes.Add(IFCEntityType.IfcMobileTelecommunicationsAppliance);
             propertySetMobileTelecommunicationsApplianceTypeMasterUnit.EntityTypes.Add(IFCEntityType.IfcMobileTelecommunicationsApplianceType);
             propertySetMobileTelecommunicationsApplianceTypeMasterUnit.ObjectType = "IfcMobileTelecommunicationsAppliance";
-            propertySetMobileTelecommunicationsApplianceTypeMasterUnit.PredefinedType = "MASTERUNIT";
+            propertySetMobileTelecommunicationsApplianceTypeMasterUnit.PredefinedTypes.Add("MASTERUNIT");
             ifcPSE = new PropertySetEntry("Pset_MobileTelecommunicationsApplianceTypeMasterUnit.NumberOfInterfaces", "NumberOfInterfaces");
             ifcPSE.PropertyName = "NumberOfInterfaces";
             ifcPSE.PropertyArgumentType = PropertyType.Label;
@@ -61124,7 +61127,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMobileTelecommunicationsApplianceTypeMobileSwitchingCenter.EntityTypes.Add(IFCEntityType.IfcMobileTelecommunicationsAppliance);
             propertySetMobileTelecommunicationsApplianceTypeMobileSwitchingCenter.EntityTypes.Add(IFCEntityType.IfcMobileTelecommunicationsApplianceType);
             propertySetMobileTelecommunicationsApplianceTypeMobileSwitchingCenter.ObjectType = "IfcMobileTelecommunicationsAppliance";
-            propertySetMobileTelecommunicationsApplianceTypeMobileSwitchingCenter.PredefinedType = "MOBILESWITCHINGCENTER";
+            propertySetMobileTelecommunicationsApplianceTypeMobileSwitchingCenter.PredefinedTypes.Add("MOBILESWITCHINGCENTER");
             ifcPSE = new PropertySetEntry("Pset_MobileTelecommunicationsApplianceTypeMobileSwitchingCenter.UserCapacity", "UserCapacity");
             ifcPSE.PropertyName = "UserCapacity";
             ifcPSE.PropertyType = PropertyType.Integer;
@@ -61170,7 +61173,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMobileTelecommunicationsApplianceTypeMSCServer.EntityTypes.Add(IFCEntityType.IfcMobileTelecommunicationsAppliance);
             propertySetMobileTelecommunicationsApplianceTypeMSCServer.EntityTypes.Add(IFCEntityType.IfcMobileTelecommunicationsApplianceType);
             propertySetMobileTelecommunicationsApplianceTypeMSCServer.ObjectType = "IfcMobileTelecommunicationsAppliance";
-            propertySetMobileTelecommunicationsApplianceTypeMSCServer.PredefinedType = "MSCSERVER";
+            propertySetMobileTelecommunicationsApplianceTypeMSCServer.PredefinedTypes.Add("MSCSERVER");
             ifcPSE = new PropertySetEntry("Pset_MobileTelecommunicationsApplianceTypeMSCServer.UserCapacity", "UserCapacity");
             ifcPSE.PropertyName = "UserCapacity";
             ifcPSE.PropertyType = PropertyType.Integer;
@@ -61208,7 +61211,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMobileTeleCommunicationsApplianceTypeRemoteRadioUnit.EntityTypes.Add(IFCEntityType.IfcMobileTelecommunicationsAppliance);
             propertySetMobileTeleCommunicationsApplianceTypeRemoteRadioUnit.EntityTypes.Add(IFCEntityType.IfcMobileTelecommunicationsApplianceType);
             propertySetMobileTeleCommunicationsApplianceTypeRemoteRadioUnit.ObjectType = "IfcMobileTelecommunicationsAppliance";
-            propertySetMobileTeleCommunicationsApplianceTypeRemoteRadioUnit.PredefinedType = "REMOTERADIOUNIT";
+            propertySetMobileTeleCommunicationsApplianceTypeRemoteRadioUnit.PredefinedTypes.Add("REMOTERADIOUNIT");
             ifcPSE = new PropertySetEntry("Pset_MobileTeleCommunicationsApplianceTypeRemoteRadioUnit.DownlinkRadioBand", "DownlinkRadioBand");
             ifcPSE.PropertyName = "DownlinkRadioBand";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -61302,7 +61305,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetMobileTelecommunicationsApplianceTypeRemoteUnit.EntityTypes.Add(IFCEntityType.IfcMobileTelecommunicationsAppliance);
             propertySetMobileTelecommunicationsApplianceTypeRemoteUnit.EntityTypes.Add(IFCEntityType.IfcMobileTelecommunicationsApplianceType);
             propertySetMobileTelecommunicationsApplianceTypeRemoteUnit.ObjectType = "IfcMobileTelecommunicationsAppliance";
-            propertySetMobileTelecommunicationsApplianceTypeRemoteUnit.PredefinedType = "REMOTEUNIT";
+            propertySetMobileTelecommunicationsApplianceTypeRemoteUnit.PredefinedTypes.Add("REMOTEUNIT");
             ifcPSE = new PropertySetEntry("Pset_MobileTelecommunicationsApplianceTypeRemoteUnit.NumberOfInterfaces", "NumberOfInterfaces");
             ifcPSE.PropertyName = "NumberOfInterfaces";
             ifcPSE.PropertyArgumentType = PropertyType.Label;
@@ -62053,7 +62056,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetOpticalAdapter.EntityTypes.Add(IFCEntityType.IfcCableFitting);
             propertySetOpticalAdapter.EntityTypes.Add(IFCEntityType.IfcCableFittingType);
             propertySetOpticalAdapter.ObjectType = "IfcCableFitting";
-            propertySetOpticalAdapter.PredefinedType = "TRANSITION";
+            propertySetOpticalAdapter.PredefinedTypes.Add("TRANSITION");
             ifcPSE = new PropertySetEntry("Pset_OpticalAdapter.FiberType", "FiberType");
             ifcPSE.PropertyName = "FiberType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -62083,7 +62086,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetOpticalPigtail.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetOpticalPigtail.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
             propertySetOpticalPigtail.ObjectType = "IfcCableSegment";
-            propertySetOpticalPigtail.PredefinedType = "OPTICALCABLESEGMENT";
+            propertySetOpticalPigtail.PredefinedTypes.Add("OPTICALCABLESEGMENT");
             ifcPSE = new PropertySetEntry("Pset_OpticalPigtail.JacketColour", "JacketColour");
             ifcPSE.PropertyName = "JacketColour";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -62129,7 +62132,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetOpticalSplitter.EntityTypes.Add(IFCEntityType.IfcJunctionBox);
             propertySetOpticalSplitter.EntityTypes.Add(IFCEntityType.IfcJunctionBoxType);
             propertySetOpticalSplitter.ObjectType = "IfcJunctionBox";
-            propertySetOpticalSplitter.PredefinedType = "DATA";
+            propertySetOpticalSplitter.PredefinedTypes.Add("DATA");
             ifcPSE = new PropertySetEntry("Pset_OpticalSplitter.NumberOfBranches", "NumberOfBranches");
             ifcPSE.PropertyName = "NumberOfBranches";
             ifcPSE.PropertyType = PropertyType.Count;
@@ -62811,7 +62814,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetPackingInstructions.EntityTypes.Add(IFCEntityType.IfcTask);
             propertySetPackingInstructions.ObjectType = "IfcTask";
-            propertySetPackingInstructions.PredefinedType = "MOVE";
+            propertySetPackingInstructions.PredefinedTypes.Add("MOVE");
             ifcPSE = new PropertySetEntry("Pset_PackingInstructions.PackingCareType", "PackingCareType");
             ifcPSE.PropertyName = "PackingCareType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -62862,7 +62865,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetPackingInstructions.EntityTypes.Add(IFCEntityType.IfcTask);
             propertySetPackingInstructions.EntityTypes.Add(IFCEntityType.IfcTaskType);
             propertySetPackingInstructions.ObjectType = "IfcTask";
-            propertySetPackingInstructions.PredefinedType = "MOVE";
+            propertySetPackingInstructions.PredefinedTypes.Add("MOVE");
             ifcPSE = new PropertySetEntry("Pset_PackingInstructions.PackingCareType", "PackingCareType");
             ifcPSE.PropertyName = "PackingCareType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -62916,11 +62919,10 @@ namespace Revit.IFC.Export.Exporter
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Pset_PatchCordCable"))
          {
             propertySetPatchCordCable.EntityTypes.Add(IFCEntityType.IfcCableSegment);
-            propertySetPatchCordCable.EntityTypes.Add(IFCEntityType.IfcCableSegment);
-            propertySetPatchCordCable.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
             propertySetPatchCordCable.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
             propertySetPatchCordCable.ObjectType = "IfcCableSegment";
-            propertySetPatchCordCable.PredefinedType = "OPTICALCABLESEGMENT";
+            propertySetPatchCordCable.PredefinedTypes.Add("CABLESEGMENT");
+            propertySetPatchCordCable.PredefinedTypes.Add("OPTICALCABLESEGMENT");
             ifcPSE = new PropertySetEntry("Pset_PatchCordCable.JacketColour", "JacketColour");
             ifcPSE.PropertyName = "JacketColour";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -63032,7 +63034,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetPavementMillingCommon.EntityTypes.Add(IFCEntityType.IfcEarthworksCut);
             propertySetPavementMillingCommon.ObjectType = "IfcEarthworksCut";
-            propertySetPavementMillingCommon.PredefinedType = "PAVEMENTMILLING";
+            propertySetPavementMillingCommon.PredefinedTypes.Add("PAVEMENTMILLING");
             ifcPSE = new PropertySetEntry("Pset_PavementMillingCommon.NominalDepth", "NominalDepth");
             ifcPSE.PropertyName = "NominalDepth";
             ifcPSE.PropertyType = PropertyType.NonNegativeLength;
@@ -63989,7 +63991,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetPipeFittingTypeBend.EntityTypes.Add(IFCEntityType.IfcPipeFitting);
             propertySetPipeFittingTypeBend.ObjectType = "IfcPipeFitting";
-            propertySetPipeFittingTypeBend.PredefinedType = "BEND";
+            propertySetPipeFittingTypeBend.PredefinedTypes.Add("BEND");
             ifcPSE = new PropertySetEntry("Pset_PipeFittingTypeBend.BendAngle", "BendAngle");
             ifcPSE.PropertyName = "BendAngle";
             ifcPSE.PropertyType = PropertyType.PositivePlaneAngle;
@@ -64366,7 +64368,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetPipeFittingTypeJunction.EntityTypes.Add(IFCEntityType.IfcPipeFitting);
             propertySetPipeFittingTypeJunction.ObjectType = "IfcPipeFitting";
-            propertySetPipeFittingTypeJunction.PredefinedType = "JUNCTION";
+            propertySetPipeFittingTypeJunction.PredefinedTypes.Add("JUNCTION");
             ifcPSE = new PropertySetEntry("Pset_PipeFittingTypeJunction.JunctionType", "JunctionType");
             ifcPSE.PropertyName = "JunctionType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -64980,7 +64982,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetPipeSegmentTypeCulvert.EntityTypes.Add(IFCEntityType.IfcPipeSegment);
             propertySetPipeSegmentTypeCulvert.ObjectType = "IfcPipeSegment";
-            propertySetPipeSegmentTypeCulvert.PredefinedType = "CULVERT";
+            propertySetPipeSegmentTypeCulvert.PredefinedTypes.Add("CULVERT");
             ifcPSE = new PropertySetEntry("Pset_PipeSegmentTypeCulvert.InternalWidth", "InternalWidth");
             ifcPSE.PropertyName = "InternalWidth";
             ifcPSE.PropertyType = PropertyType.Length;
@@ -65007,7 +65009,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetPipeSegmentTypeCulvert.EntityTypes.Add(IFCEntityType.IfcPipeSegment);
             propertySetPipeSegmentTypeCulvert.EntityTypes.Add(IFCEntityType.IfcPipeSegmentType);
             propertySetPipeSegmentTypeCulvert.ObjectType = "IfcPipeSegment";
-            propertySetPipeSegmentTypeCulvert.PredefinedType = "CULVERT";
+            propertySetPipeSegmentTypeCulvert.PredefinedTypes.Add("CULVERT");
             ifcPSE = new PropertySetEntry("Pset_PipeSegmentTypeCulvert.InternalWidth", "InternalWidth");
             ifcPSE.PropertyName = "InternalWidth";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -65042,7 +65044,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetPipeSegmentTypeGutter.EntityTypes.Add(IFCEntityType.IfcPipeSegmentType);
             propertySetPipeSegmentTypeGutter.ObjectType = "IfcPipeSegmentType";
-            propertySetPipeSegmentTypeGutter.PredefinedType = "GUTTER";
+            propertySetPipeSegmentTypeGutter.PredefinedTypes.Add("GUTTER");
             ifcPSE = new PropertySetEntry("Pset_PipeSegmentTypeGutter.Slope", "Slope");
             ifcPSE.PropertyName = "Slope";
             ifcPSE.PropertyType = PropertyType.PlaneAngle;
@@ -65064,7 +65066,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetPipeSegmentTypeGutter.EntityTypes.Add(IFCEntityType.IfcPipeSegmentType);
             propertySetPipeSegmentTypeGutter.ObjectType = "IfcPipeSegmentType";
-            propertySetPipeSegmentTypeGutter.PredefinedType = "GUTTER";
+            propertySetPipeSegmentTypeGutter.PredefinedTypes.Add("GUTTER");
             ifcPSE = new PropertySetEntry("Pset_PipeSegmentTypeGutter.Slope", "Slope");
             ifcPSE.PropertyName = "Slope";
             ifcPSE.PropertyType = PropertyType.PlaneAngle;
@@ -65086,7 +65088,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetPipeSegmentTypeGutter.EntityTypes.Add(IFCEntityType.IfcPipeSegment);
             propertySetPipeSegmentTypeGutter.ObjectType = "IfcPipeSegment";
-            propertySetPipeSegmentTypeGutter.PredefinedType = "GUTTER";
+            propertySetPipeSegmentTypeGutter.PredefinedTypes.Add("GUTTER");
             ifcPSE = new PropertySetEntry("Pset_PipeSegmentTypeGutter.Slope", "Slope");
             ifcPSE.PropertyName = "Slope";
             ifcPSE.PropertyType = PropertyType.PlaneAngle;
@@ -65113,7 +65115,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetPipeSegmentTypeGutter.EntityTypes.Add(IFCEntityType.IfcPipeSegment);
             propertySetPipeSegmentTypeGutter.EntityTypes.Add(IFCEntityType.IfcPipeSegmentType);
             propertySetPipeSegmentTypeGutter.ObjectType = "IfcPipeSegment";
-            propertySetPipeSegmentTypeGutter.PredefinedType = "GUTTER";
+            propertySetPipeSegmentTypeGutter.PredefinedTypes.Add("GUTTER");
             ifcPSE = new PropertySetEntry("Pset_PipeSegmentTypeGutter.Slope", "Slope");
             ifcPSE.PropertyName = "Slope";
             ifcPSE.PropertyType = PropertyType.PlaneAngle;
@@ -65407,15 +65409,12 @@ namespace Revit.IFC.Export.Exporter
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Pset_PointMachine"))
          {
             propertySetPointMachine.EntityTypes.Add(IFCEntityType.IfcActuator);
-            propertySetPointMachine.EntityTypes.Add(IFCEntityType.IfcActuator);
-            propertySetPointMachine.EntityTypes.Add(IFCEntityType.IfcActuator);
-            propertySetPointMachine.EntityTypes.Add(IFCEntityType.IfcActuator);
-            propertySetPointMachine.EntityTypes.Add(IFCEntityType.IfcActuatorType);
-            propertySetPointMachine.EntityTypes.Add(IFCEntityType.IfcActuatorType);
-            propertySetPointMachine.EntityTypes.Add(IFCEntityType.IfcActuatorType);
             propertySetPointMachine.EntityTypes.Add(IFCEntityType.IfcActuatorType);
             propertySetPointMachine.ObjectType = "IfcActuator";
-            propertySetPointMachine.PredefinedType = "PNEUMATICACTUATOR";
+            propertySetPointMachine.PredefinedTypes.Add("ELECTRICACTUATOR");
+            propertySetPointMachine.PredefinedTypes.Add("HANDOPERATEDACTUATOR");
+            propertySetPointMachine.PredefinedTypes.Add("HYDRAULICACTUATOR");
+            propertySetPointMachine.PredefinedTypes.Add("PNEUMATICACTUATOR");
             ifcPSE = new PropertySetEntry("Pset_PointMachine.ActionBarMovementLength", "ActionBarMovementLength");
             ifcPSE.PropertyName = "ActionBarMovementLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -65507,7 +65506,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetPowerControlSystem.EntityTypes.Add(IFCEntityType.IfcDistributionSystem);
             propertySetPowerControlSystem.ObjectType = "IfcDistributionSystem";
-            propertySetPowerControlSystem.PredefinedType = "ELECTRICAL";
+            propertySetPowerControlSystem.PredefinedTypes.Add("ELECTRICAL");
             ifcPSE = new PropertySetEntry("Pset_PowerControlSystem.AssemblyInstruction", "AssemblyInstruction");
             ifcPSE.PropertyName = "AssemblyInstruction";
             ifcPSE.PropertyType = PropertyType.IfcExternalReference;
@@ -68381,7 +68380,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProjectOrderChangeOrder.EntityTypes.Add(IFCEntityType.IfcProjectOrder);
             propertySetProjectOrderChangeOrder.ObjectType = "IfcProjectOrder";
-            propertySetProjectOrderChangeOrder.PredefinedType = "CHANGEORDER";
+            propertySetProjectOrderChangeOrder.PredefinedTypes.Add("CHANGEORDER");
             ifcPSE = new PropertySetEntry("Pset_ProjectOrderChangeOrder.ChangeDescription", "ChangeDescription");
             ifcPSE.PropertyName = "ChangeDescription";
             ifcPSE.PropertyType = PropertyType.Text;
@@ -68411,7 +68410,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProjectOrderChangeOrder.EntityTypes.Add(IFCEntityType.IfcProjectOrder);
             propertySetProjectOrderChangeOrder.ObjectType = "IfcProjectOrder";
-            propertySetProjectOrderChangeOrder.PredefinedType = "CHANGEORDER";
+            propertySetProjectOrderChangeOrder.PredefinedTypes.Add("CHANGEORDER");
             ifcPSE = new PropertySetEntry("Pset_ProjectOrderChangeOrder.ReasonForChange", "ReasonForChange");
             ifcPSE.PropertyName = "ReasonForChange";
             ifcPSE.PropertyType = PropertyType.Text;
@@ -68437,7 +68436,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProjectOrderChangeOrder.EntityTypes.Add(IFCEntityType.IfcProjectOrder);
             propertySetProjectOrderChangeOrder.ObjectType = "IfcProjectOrder";
-            propertySetProjectOrderChangeOrder.PredefinedType = "CHANGEORDER";
+            propertySetProjectOrderChangeOrder.PredefinedTypes.Add("CHANGEORDER");
             ifcPSE = new PropertySetEntry("Pset_ProjectOrderChangeOrder.ReasonForChange", "ReasonForChange");
             ifcPSE.PropertyName = "ReasonForChange";
             ifcPSE.PropertyType = PropertyType.Text;
@@ -68563,7 +68562,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProjectOrderMaintenanceWorkOrder.EntityTypes.Add(IFCEntityType.IfcProjectOrder);
             propertySetProjectOrderMaintenanceWorkOrder.ObjectType = "IfcProjectOrder";
-            propertySetProjectOrderMaintenanceWorkOrder.PredefinedType = "MAINTENANCEWORKORDER";
+            propertySetProjectOrderMaintenanceWorkOrder.PredefinedTypes.Add("MAINTENANCEWORKORDER");
             ifcPSE = new PropertySetEntry("Pset_ProjectOrderMaintenanceWorkOrder.ProductDescription", "ProductDescription");
             ifcPSE.PropertyName = "ProductDescription";
             ifcPSE.PropertyType = PropertyType.Text;
@@ -68655,7 +68654,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProjectOrderMaintenanceWorkOrder.EntityTypes.Add(IFCEntityType.IfcProjectOrder);
             propertySetProjectOrderMaintenanceWorkOrder.ObjectType = "IfcProjectOrder";
-            propertySetProjectOrderMaintenanceWorkOrder.PredefinedType = "MAINTENANCEWORKORDER";
+            propertySetProjectOrderMaintenanceWorkOrder.PredefinedTypes.Add("MAINTENANCEWORKORDER");
             ifcPSE = new PropertySetEntry("Pset_ProjectOrderMaintenanceWorkOrder.ProductDescription", "ProductDescription");
             ifcPSE.PropertyName = "ProductDescription";
             ifcPSE.PropertyType = PropertyType.Text;
@@ -68739,7 +68738,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProjectOrderMaintenanceWorkOrder.EntityTypes.Add(IFCEntityType.IfcProjectOrder);
             propertySetProjectOrderMaintenanceWorkOrder.ObjectType = "IfcProjectOrder";
-            propertySetProjectOrderMaintenanceWorkOrder.PredefinedType = "MAINTENANCEWORKORDER";
+            propertySetProjectOrderMaintenanceWorkOrder.PredefinedTypes.Add("MAINTENANCEWORKORDER");
             ifcPSE = new PropertySetEntry("Pset_ProjectOrderMaintenanceWorkOrder.ProductDescription", "ProductDescription");
             ifcPSE.PropertyName = "ProductDescription";
             ifcPSE.PropertyType = PropertyType.Text;
@@ -68849,7 +68848,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProjectOrderMoveOrder.EntityTypes.Add(IFCEntityType.IfcProjectOrder);
             propertySetProjectOrderMoveOrder.ObjectType = "IfcProjectOrder";
-            propertySetProjectOrderMoveOrder.PredefinedType = "MOVEORDER";
+            propertySetProjectOrderMoveOrder.PredefinedTypes.Add("MOVEORDER");
             ifcPSE = new PropertySetEntry("Pset_ProjectOrderMoveOrder.MoveDescription", "MoveDescription");
             ifcPSE.PropertyName = "MoveDescription";
             ifcPSE.PropertyType = PropertyType.Text;
@@ -68871,7 +68870,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProjectOrderMoveOrder.EntityTypes.Add(IFCEntityType.IfcProjectOrder);
             propertySetProjectOrderMoveOrder.ObjectType = "IfcProjectOrder";
-            propertySetProjectOrderMoveOrder.PredefinedType = "MOVEORDER";
+            propertySetProjectOrderMoveOrder.PredefinedTypes.Add("MOVEORDER");
             ifcPSE = new PropertySetEntry("Pset_ProjectOrderMoveOrder.SpecialInstructions", "SpecialInstructions");
             ifcPSE.PropertyName = "SpecialInstructions";
             ifcPSE.PropertyType = PropertyType.Text;
@@ -68887,7 +68886,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProjectOrderMoveOrder.EntityTypes.Add(IFCEntityType.IfcProjectOrder);
             propertySetProjectOrderMoveOrder.ObjectType = "IfcProjectOrder";
-            propertySetProjectOrderMoveOrder.PredefinedType = "MOVEORDER";
+            propertySetProjectOrderMoveOrder.PredefinedTypes.Add("MOVEORDER");
             ifcPSE = new PropertySetEntry("Pset_ProjectOrderMoveOrder.SpecialInstructions", "SpecialInstructions");
             ifcPSE.PropertyName = "SpecialInstructions";
             ifcPSE.PropertyType = PropertyType.Text;
@@ -68935,7 +68934,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProjectOrderPurchaseOrder.EntityTypes.Add(IFCEntityType.IfcProjectOrder);
             propertySetProjectOrderPurchaseOrder.ObjectType = "IfcProjectOrder";
-            propertySetProjectOrderPurchaseOrder.PredefinedType = "PURCHASEORDER";
+            propertySetProjectOrderPurchaseOrder.PredefinedTypes.Add("PURCHASEORDER");
             ifcPSE = new PropertySetEntry("Pset_ProjectOrderPurchaseOrder.IsFOB", "IsFOB");
             ifcPSE.PropertyName = "IsFOB";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -68957,7 +68956,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProjectOrderPurchaseOrder.EntityTypes.Add(IFCEntityType.IfcProjectOrder);
             propertySetProjectOrderPurchaseOrder.ObjectType = "IfcProjectOrder";
-            propertySetProjectOrderPurchaseOrder.PredefinedType = "PURCHASEORDER";
+            propertySetProjectOrderPurchaseOrder.PredefinedTypes.Add("PURCHASEORDER");
             ifcPSE = new PropertySetEntry("Pset_ProjectOrderPurchaseOrder.IsFOB", "IsFOB");
             ifcPSE.PropertyName = "IsFOB";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -68981,7 +68980,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProjectOrderPurchaseOrder.EntityTypes.Add(IFCEntityType.IfcProjectOrder);
             propertySetProjectOrderPurchaseOrder.ObjectType = "IfcProjectOrder";
-            propertySetProjectOrderPurchaseOrder.PredefinedType = "PURCHASEORDER";
+            propertySetProjectOrderPurchaseOrder.PredefinedTypes.Add("PURCHASEORDER");
             ifcPSE = new PropertySetEntry("Pset_ProjectOrderPurchaseOrder.IsFOB", "IsFOB");
             ifcPSE.PropertyName = "IsFOB";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -69069,7 +69068,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProjectOrderWorkOrder.EntityTypes.Add(IFCEntityType.IfcProjectOrder);
             propertySetProjectOrderWorkOrder.ObjectType = "IfcProjectOrder";
-            propertySetProjectOrderWorkOrder.PredefinedType = "WORKORDER";
+            propertySetProjectOrderWorkOrder.PredefinedTypes.Add("WORKORDER");
             ifcPSE = new PropertySetEntry("Pset_ProjectOrderWorkOrder.ProductDescription", "ProductDescription");
             ifcPSE.PropertyName = "ProductDescription";
             ifcPSE.PropertyType = PropertyType.Text;
@@ -69123,7 +69122,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProjectOrderWorkOrder.EntityTypes.Add(IFCEntityType.IfcProjectOrder);
             propertySetProjectOrderWorkOrder.ObjectType = "IfcProjectOrder";
-            propertySetProjectOrderWorkOrder.PredefinedType = "WORKORDER";
+            propertySetProjectOrderWorkOrder.PredefinedTypes.Add("WORKORDER");
             ifcPSE = new PropertySetEntry("Pset_ProjectOrderWorkOrder.ProductDescription", "ProductDescription");
             ifcPSE.PropertyName = "ProductDescription";
             ifcPSE.PropertyType = PropertyType.Text;
@@ -69165,7 +69164,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProjectOrderWorkOrder.EntityTypes.Add(IFCEntityType.IfcProjectOrder);
             propertySetProjectOrderWorkOrder.ObjectType = "IfcProjectOrder";
-            propertySetProjectOrderWorkOrder.PredefinedType = "WORKORDER";
+            propertySetProjectOrderWorkOrder.PredefinedTypes.Add("WORKORDER");
             ifcPSE = new PropertySetEntry("Pset_ProjectOrderWorkOrder.ProductDescription", "ProductDescription");
             ifcPSE.PropertyName = "ProductDescription";
             ifcPSE.PropertyType = PropertyType.Text;
@@ -69929,7 +69928,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProtectiveDeviceBreakerUnitTypeMCB.EntityTypes.Add(IFCEntityType.IfcProtectiveDevice);
             propertySetProtectiveDeviceBreakerUnitTypeMCB.ObjectType = "IfcProtectiveDevice";
-            propertySetProtectiveDeviceBreakerUnitTypeMCB.PredefinedType = "CIRCUITBREAKER";
+            propertySetProtectiveDeviceBreakerUnitTypeMCB.PredefinedTypes.Add("CIRCUITBREAKER");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceBreakerUnitTypeMCB.PowerLoss", "PowerLoss");
             ifcPSE.PropertyName = "PowerLoss";
             ifcPSE.PropertyType = PropertyType.Power;
@@ -70016,7 +70015,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetProtectiveDeviceBreakerUnitTypeMCB.EntityTypes.Add(IFCEntityType.IfcProtectiveDevice);
             propertySetProtectiveDeviceBreakerUnitTypeMCB.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceType);
             propertySetProtectiveDeviceBreakerUnitTypeMCB.ObjectType = "IfcProtectiveDevice";
-            propertySetProtectiveDeviceBreakerUnitTypeMCB.PredefinedType = "CIRCUITBREAKER";
+            propertySetProtectiveDeviceBreakerUnitTypeMCB.PredefinedTypes.Add("CIRCUITBREAKER");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceBreakerUnitTypeMCB.PowerLoss", "PowerLoss");
             ifcPSE.PropertyName = "PowerLoss";
             ifcPSE.PropertyType = PropertyType.Power;
@@ -72204,7 +72203,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProtectiveDeviceTrippingUnitTypeElectroMagnetic.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceTrippingUnit);
             propertySetProtectiveDeviceTrippingUnitTypeElectroMagnetic.ObjectType = "IfcProtectiveDeviceTrippingUnit";
-            propertySetProtectiveDeviceTrippingUnitTypeElectroMagnetic.PredefinedType = "ELECTROMAGNETIC";
+            propertySetProtectiveDeviceTrippingUnitTypeElectroMagnetic.PredefinedTypes.Add("ELECTROMAGNETIC");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTrippingUnitTypeElectroMagnetic.ElectroMagneticTrippingUnitType", "ElectroMagneticTrippingUnitType");
             ifcPSE.PropertyName = "ElectroMagneticTrippingUnitType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -72323,7 +72322,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetProtectiveDeviceTrippingUnitTypeElectroMagnetic.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceTrippingUnit);
             propertySetProtectiveDeviceTrippingUnitTypeElectroMagnetic.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceTrippingUnitType);
             propertySetProtectiveDeviceTrippingUnitTypeElectroMagnetic.ObjectType = "IfcProtectiveDeviceTrippingUnit";
-            propertySetProtectiveDeviceTrippingUnitTypeElectroMagnetic.PredefinedType = "ELECTROMAGNETIC";
+            propertySetProtectiveDeviceTrippingUnitTypeElectroMagnetic.PredefinedTypes.Add("ELECTROMAGNETIC");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTrippingUnitTypeElectroMagnetic.ElectroMagneticTrippingUnitType", "ElectroMagneticTrippingUnitType");
             ifcPSE.PropertyName = "ElectroMagneticTrippingUnitType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -72424,7 +72423,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProtectiveDeviceTrippingUnitTypeElectronic.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceTrippingUnit);
             propertySetProtectiveDeviceTrippingUnitTypeElectronic.ObjectType = "IfcProtectiveDeviceTrippingUnit";
-            propertySetProtectiveDeviceTrippingUnitTypeElectronic.PredefinedType = "ELECTRONIC";
+            propertySetProtectiveDeviceTrippingUnitTypeElectronic.PredefinedTypes.Add("ELECTRONIC");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTrippingUnitTypeElectronic.ElectronicTrippingUnitType", "ElectronicTrippingUnitType");
             ifcPSE.PropertyName = "ElectronicTrippingUnitType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -72500,7 +72499,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetProtectiveDeviceTrippingUnitTypeElectronic.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceTrippingUnit);
             propertySetProtectiveDeviceTrippingUnitTypeElectronic.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceTrippingUnitType);
             propertySetProtectiveDeviceTrippingUnitTypeElectronic.ObjectType = "IfcProtectiveDeviceTrippingUnit";
-            propertySetProtectiveDeviceTrippingUnitTypeElectronic.PredefinedType = "ELECTRONIC";
+            propertySetProtectiveDeviceTrippingUnitTypeElectronic.PredefinedTypes.Add("ELECTRONIC");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTrippingUnitTypeElectronic.ElectronicTrippingUnitType", "ElectronicTrippingUnitType");
             ifcPSE.PropertyName = "ElectronicTrippingUnitType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -72570,7 +72569,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProtectiveDeviceTrippingUnitTypeResidualCurrent.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceTrippingUnit);
             propertySetProtectiveDeviceTrippingUnitTypeResidualCurrent.ObjectType = "IfcProtectiveDeviceTrippingUnit";
-            propertySetProtectiveDeviceTrippingUnitTypeResidualCurrent.PredefinedType = "RESIDUALCURRENT";
+            propertySetProtectiveDeviceTrippingUnitTypeResidualCurrent.PredefinedTypes.Add("RESIDUALCURRENT");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTrippingUnitTypeResidualCurrent.TrippingUnitReleaseCurrent", "TrippingUnitReleaseCurrent");
             ifcPSE.PropertyName = "TrippingUnitReleaseCurrent";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -72590,7 +72589,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetProtectiveDeviceTrippingUnitTypeResidualCurrent.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceTrippingUnit);
             propertySetProtectiveDeviceTrippingUnitTypeResidualCurrent.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceTrippingUnitType);
             propertySetProtectiveDeviceTrippingUnitTypeResidualCurrent.ObjectType = "IfcProtectiveDeviceTrippingUnit";
-            propertySetProtectiveDeviceTrippingUnitTypeResidualCurrent.PredefinedType = "RESIDUALCURRENT";
+            propertySetProtectiveDeviceTrippingUnitTypeResidualCurrent.PredefinedTypes.Add("RESIDUALCURRENT");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTrippingUnitTypeResidualCurrent.TrippingUnitReleaseCurrent", "TrippingUnitReleaseCurrent");
             ifcPSE.PropertyName = "TrippingUnitReleaseCurrent";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -72619,7 +72618,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProtectiveDeviceTrippingUnitTypeThermal.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceTrippingUnit);
             propertySetProtectiveDeviceTrippingUnitTypeThermal.ObjectType = "IfcProtectiveDeviceTrippingUnit";
-            propertySetProtectiveDeviceTrippingUnitTypeThermal.PredefinedType = "THERMAL";
+            propertySetProtectiveDeviceTrippingUnitTypeThermal.PredefinedTypes.Add("THERMAL");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTrippingUnitTypeThermal.ThermalTrippingUnitType", "ThermalTrippingUnitType");
             ifcPSE.PropertyName = "ThermalTrippingUnitType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -72705,7 +72704,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetProtectiveDeviceTrippingUnitTypeThermal.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceTrippingUnit);
             propertySetProtectiveDeviceTrippingUnitTypeThermal.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceTrippingUnitType);
             propertySetProtectiveDeviceTrippingUnitTypeThermal.ObjectType = "IfcProtectiveDeviceTrippingUnit";
-            propertySetProtectiveDeviceTrippingUnitTypeThermal.PredefinedType = "THERMAL";
+            propertySetProtectiveDeviceTrippingUnitTypeThermal.PredefinedTypes.Add("THERMAL");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTrippingUnitTypeThermal.ThermalTrippingUnitType", "ThermalTrippingUnitType");
             ifcPSE.PropertyName = "ThermalTrippingUnitType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -72783,7 +72782,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetProtectiveDeviceTypeAntiArcingDevice.EntityTypes.Add(IFCEntityType.IfcProtectiveDevice);
             propertySetProtectiveDeviceTypeAntiArcingDevice.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceType);
             propertySetProtectiveDeviceTypeAntiArcingDevice.ObjectType = "IfcProtectiveDevice";
-            propertySetProtectiveDeviceTypeAntiArcingDevice.PredefinedType = "ANTI_ARCING_DEVICE";
+            propertySetProtectiveDeviceTypeAntiArcingDevice.PredefinedTypes.Add("ANTI_ARCING_DEVICE");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeAntiArcingDevice.RatedVoltage", "RatedVoltage");
             ifcPSE.PropertyName = "RatedVoltage";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -72834,7 +72833,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProtectiveDeviceTypeCircuitBreaker.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceType);
             propertySetProtectiveDeviceTypeCircuitBreaker.ObjectType = "IfcProtectiveDeviceType";
-            propertySetProtectiveDeviceTypeCircuitBreaker.PredefinedType = "CIRCUITBREAKER";
+            propertySetProtectiveDeviceTypeCircuitBreaker.PredefinedTypes.Add("CIRCUITBREAKER");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeCircuitBreaker.CircuitBreakerType", "CircuitBreakerType");
             ifcPSE.PropertyName = "CircuitBreakerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -72850,7 +72849,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProtectiveDeviceTypeCircuitBreaker.EntityTypes.Add(IFCEntityType.IfcProtectiveDevice);
             propertySetProtectiveDeviceTypeCircuitBreaker.ObjectType = "IfcProtectiveDevice";
-            propertySetProtectiveDeviceTypeCircuitBreaker.PredefinedType = "CIRCUITBREAKER";
+            propertySetProtectiveDeviceTypeCircuitBreaker.PredefinedTypes.Add("CIRCUITBREAKER");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeCircuitBreaker.PerformanceClasses", "PerformanceClasses");
             ifcPSE.PropertyName = "PerformanceClasses";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -72926,7 +72925,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetProtectiveDeviceTypeCircuitBreaker.EntityTypes.Add(IFCEntityType.IfcProtectiveDevice);
             propertySetProtectiveDeviceTypeCircuitBreaker.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceType);
             propertySetProtectiveDeviceTypeCircuitBreaker.ObjectType = "IfcProtectiveDevice";
-            propertySetProtectiveDeviceTypeCircuitBreaker.PredefinedType = "CIRCUITBREAKER";
+            propertySetProtectiveDeviceTypeCircuitBreaker.PredefinedTypes.Add("CIRCUITBREAKER");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeCircuitBreaker.PerformanceClasses", "PerformanceClasses");
             ifcPSE.PropertyName = "PerformanceClasses";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -73224,7 +73223,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProtectiveDeviceTypeEarthFailureDevice.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceType);
             propertySetProtectiveDeviceTypeEarthFailureDevice.ObjectType = "IfcProtectiveDeviceType";
-            propertySetProtectiveDeviceTypeEarthFailureDevice.PredefinedType = "EARTHFAILUREDEVICE";
+            propertySetProtectiveDeviceTypeEarthFailureDevice.PredefinedTypes.Add("EARTHFAILUREDEVICE");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeEarthFailureDevice.EarthFailureDeviceType", "EarthFailureDeviceType");
             ifcPSE.PropertyName = "EarthFailureDeviceType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -73261,7 +73260,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProtectiveDeviceTypeEarthLeakageCircuitBreaker.EntityTypes.Add(IFCEntityType.IfcProtectiveDevice);
             propertySetProtectiveDeviceTypeEarthLeakageCircuitBreaker.ObjectType = "IfcProtectiveDevice";
-            propertySetProtectiveDeviceTypeEarthLeakageCircuitBreaker.PredefinedType = "EARTHLEAKAGECIRCUITBREAKER";
+            propertySetProtectiveDeviceTypeEarthLeakageCircuitBreaker.PredefinedTypes.Add("EARTHLEAKAGECIRCUITBREAKER");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeEarthLeakageCircuitBreaker.EarthFailureDeviceType", "EarthFailureDeviceType");
             ifcPSE.PropertyName = "EarthFailureDeviceType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -73292,7 +73291,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetProtectiveDeviceTypeEarthLeakageCircuitBreaker.EntityTypes.Add(IFCEntityType.IfcProtectiveDevice);
             propertySetProtectiveDeviceTypeEarthLeakageCircuitBreaker.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceType);
             propertySetProtectiveDeviceTypeEarthLeakageCircuitBreaker.ObjectType = "IfcProtectiveDevice";
-            propertySetProtectiveDeviceTypeEarthLeakageCircuitBreaker.PredefinedType = "EARTHLEAKAGECIRCUITBREAKER";
+            propertySetProtectiveDeviceTypeEarthLeakageCircuitBreaker.PredefinedTypes.Add("EARTHLEAKAGECIRCUITBREAKER");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeEarthLeakageCircuitBreaker.EarthFailureDeviceType", "EarthFailureDeviceType");
             ifcPSE.PropertyName = "EarthFailureDeviceType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -73344,7 +73343,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProtectiveDeviceTypeFuseDisconnector.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceType);
             propertySetProtectiveDeviceTypeFuseDisconnector.ObjectType = " IfcProtectiveDeviceType";
-            propertySetProtectiveDeviceTypeFuseDisconnector.PredefinedType = "FUSEDISCONNECTOR";
+            propertySetProtectiveDeviceTypeFuseDisconnector.PredefinedTypes.Add("FUSEDISCONNECTOR");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeFuseDisconnector.FuseDisconnectorType", "FuseDisconnectorType");
             ifcPSE.PropertyName = "FuseDisconnectorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -73360,7 +73359,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProtectiveDeviceTypeFuseDisconnector.EntityTypes.Add(IFCEntityType.IfcProtectiveDevice);
             propertySetProtectiveDeviceTypeFuseDisconnector.ObjectType = "IfcProtectiveDevice";
-            propertySetProtectiveDeviceTypeFuseDisconnector.PredefinedType = "FUSEDISCONNECTOR";
+            propertySetProtectiveDeviceTypeFuseDisconnector.PredefinedTypes.Add("FUSEDISCONNECTOR");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeFuseDisconnector.FuseDisconnectorType", "FuseDisconnectorType");
             ifcPSE.PropertyName = "FuseDisconnectorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -73415,7 +73414,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetProtectiveDeviceTypeFuseDisconnector.EntityTypes.Add(IFCEntityType.IfcProtectiveDevice);
             propertySetProtectiveDeviceTypeFuseDisconnector.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceType);
             propertySetProtectiveDeviceTypeFuseDisconnector.ObjectType = "IfcProtectiveDevice";
-            propertySetProtectiveDeviceTypeFuseDisconnector.PredefinedType = "FUSEDISCONNECTOR";
+            propertySetProtectiveDeviceTypeFuseDisconnector.PredefinedTypes.Add("FUSEDISCONNECTOR");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeFuseDisconnector.FuseDisconnectorType", "FuseDisconnectorType");
             ifcPSE.PropertyName = "FuseDisconnectorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -73557,7 +73556,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProtectiveDeviceTypeResidualCurrentCircuitBreaker.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceType);
             propertySetProtectiveDeviceTypeResidualCurrentCircuitBreaker.ObjectType = "IfcProtectiveDeviceType";
-            propertySetProtectiveDeviceTypeResidualCurrentCircuitBreaker.PredefinedType = "RESIDUALCURRENTCIRCUITBREAKER";
+            propertySetProtectiveDeviceTypeResidualCurrentCircuitBreaker.PredefinedTypes.Add("RESIDUALCURRENTCIRCUITBREAKER");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeResidualCurrentCircuitBreaker.Sensitivity", "Sensitivity");
             ifcPSE.PropertyName = "Sensitivity";
             ifcPSE.PropertyType = PropertyType.ElectricCurrent;
@@ -73571,7 +73570,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProtectiveDeviceTypeResidualCurrentCircuitBreaker.EntityTypes.Add(IFCEntityType.IfcProtectiveDevice);
             propertySetProtectiveDeviceTypeResidualCurrentCircuitBreaker.ObjectType = "IfcProtectiveDevice";
-            propertySetProtectiveDeviceTypeResidualCurrentCircuitBreaker.PredefinedType = "RESIDUALCURRENTCIRCUITBREAKER";
+            propertySetProtectiveDeviceTypeResidualCurrentCircuitBreaker.PredefinedTypes.Add("RESIDUALCURRENTCIRCUITBREAKER");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeResidualCurrentCircuitBreaker.Sensitivity", "Sensitivity");
             ifcPSE.PropertyName = "Sensitivity";
             ifcPSE.PropertyType = PropertyType.ElectricCurrent;
@@ -73589,7 +73588,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetProtectiveDeviceTypeResidualCurrentCircuitBreaker.EntityTypes.Add(IFCEntityType.IfcProtectiveDevice);
             propertySetProtectiveDeviceTypeResidualCurrentCircuitBreaker.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceType);
             propertySetProtectiveDeviceTypeResidualCurrentCircuitBreaker.ObjectType = "IfcProtectiveDevice";
-            propertySetProtectiveDeviceTypeResidualCurrentCircuitBreaker.PredefinedType = "RESIDUALCURRENTCIRCUITBREAKER";
+            propertySetProtectiveDeviceTypeResidualCurrentCircuitBreaker.PredefinedTypes.Add("RESIDUALCURRENTCIRCUITBREAKER");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeResidualCurrentCircuitBreaker.Sensitivity", "Sensitivity");
             ifcPSE.PropertyName = "Sensitivity";
             ifcPSE.PropertyType = PropertyType.ElectricCurrent;
@@ -73629,7 +73628,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProtectiveDeviceTypeResidualCurrentSwitch.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceType);
             propertySetProtectiveDeviceTypeResidualCurrentSwitch.ObjectType = "IfcProtectiveDeviceType";
-            propertySetProtectiveDeviceTypeResidualCurrentSwitch.PredefinedType = "RESIDUALCURRENTSWITCH";
+            propertySetProtectiveDeviceTypeResidualCurrentSwitch.PredefinedTypes.Add("RESIDUALCURRENTSWITCH");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeResidualCurrentSwitch.Sensitivity", "Sensitivity");
             ifcPSE.PropertyName = "Sensitivity";
             ifcPSE.PropertyType = PropertyType.ElectricCurrent;
@@ -73643,7 +73642,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProtectiveDeviceTypeResidualCurrentSwitch.EntityTypes.Add(IFCEntityType.IfcProtectiveDevice);
             propertySetProtectiveDeviceTypeResidualCurrentSwitch.ObjectType = "IfcProtectiveDevice";
-            propertySetProtectiveDeviceTypeResidualCurrentSwitch.PredefinedType = "RESIDUALCURRENTSWITCH";
+            propertySetProtectiveDeviceTypeResidualCurrentSwitch.PredefinedTypes.Add("RESIDUALCURRENTSWITCH");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeResidualCurrentSwitch.Sensitivity", "Sensitivity");
             ifcPSE.PropertyName = "Sensitivity";
             ifcPSE.PropertyType = PropertyType.ElectricCurrent;
@@ -73661,7 +73660,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetProtectiveDeviceTypeResidualCurrentSwitch.EntityTypes.Add(IFCEntityType.IfcProtectiveDevice);
             propertySetProtectiveDeviceTypeResidualCurrentSwitch.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceType);
             propertySetProtectiveDeviceTypeResidualCurrentSwitch.ObjectType = "IfcProtectiveDevice";
-            propertySetProtectiveDeviceTypeResidualCurrentSwitch.PredefinedType = "RESIDUALCURRENTSWITCH";
+            propertySetProtectiveDeviceTypeResidualCurrentSwitch.PredefinedTypes.Add("RESIDUALCURRENTSWITCH");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeResidualCurrentSwitch.Sensitivity", "Sensitivity");
             ifcPSE.PropertyName = "Sensitivity";
             ifcPSE.PropertyType = PropertyType.ElectricCurrent;
@@ -73687,11 +73686,10 @@ namespace Revit.IFC.Export.Exporter
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Pset_ProtectiveDeviceTypeSparkGap"))
          {
             propertySetProtectiveDeviceTypeSparkGap.EntityTypes.Add(IFCEntityType.IfcProtectiveDevice);
-            propertySetProtectiveDeviceTypeSparkGap.EntityTypes.Add(IFCEntityType.IfcProtectiveDevice);
-            propertySetProtectiveDeviceTypeSparkGap.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceType);
             propertySetProtectiveDeviceTypeSparkGap.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceType);
             propertySetProtectiveDeviceTypeSparkGap.ObjectType = "IfcProtectiveDevice";
-            propertySetProtectiveDeviceTypeSparkGap.PredefinedType = "VOLTAGELIMITER";
+            propertySetProtectiveDeviceTypeSparkGap.PredefinedTypes.Add("SPARKGAP");
+            propertySetProtectiveDeviceTypeSparkGap.PredefinedTypes.Add("VOLTAGELIMITER");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeSparkGap.BreakdownVoltageTolerance", "BreakdownVoltageTolerance");
             ifcPSE.PropertyName = "BreakdownVoltageTolerance";
             ifcPSE.PropertyType = PropertyType.ElectricVoltage;
@@ -73775,7 +73773,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProtectiveDeviceTypeVaristor.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceType);
             propertySetProtectiveDeviceTypeVaristor.ObjectType = "IfcProtectiveDeviceType";
-            propertySetProtectiveDeviceTypeVaristor.PredefinedType = "VARISTOR";
+            propertySetProtectiveDeviceTypeVaristor.PredefinedTypes.Add("VARISTOR");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeVaristor.VaristorType", "VaristorType");
             ifcPSE.PropertyName = "VaristorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -73791,7 +73789,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetProtectiveDeviceTypeVaristor.EntityTypes.Add(IFCEntityType.IfcProtectiveDevice);
             propertySetProtectiveDeviceTypeVaristor.ObjectType = "IfcProtectiveDevice";
-            propertySetProtectiveDeviceTypeVaristor.PredefinedType = "VARISTOR";
+            propertySetProtectiveDeviceTypeVaristor.PredefinedTypes.Add("VARISTOR");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeVaristor.VaristorType", "VaristorType");
             ifcPSE.PropertyName = "VaristorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -73811,7 +73809,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetProtectiveDeviceTypeVaristor.EntityTypes.Add(IFCEntityType.IfcProtectiveDevice);
             propertySetProtectiveDeviceTypeVaristor.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceType);
             propertySetProtectiveDeviceTypeVaristor.ObjectType = "IfcProtectiveDevice";
-            propertySetProtectiveDeviceTypeVaristor.PredefinedType = "VARISTOR";
+            propertySetProtectiveDeviceTypeVaristor.PredefinedTypes.Add("VARISTOR");
             ifcPSE = new PropertySetEntry("Pset_ProtectiveDeviceTypeVaristor.VaristorType", "VaristorType");
             ifcPSE.PropertyName = "VaristorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -73849,7 +73847,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetProvisionForVoid.EntityTypes.Add(IFCEntityType.IfcBuildingElementProxy);
             propertySetProvisionForVoid.EntityTypes.Add(IFCEntityType.IfcVirtualElement);
             propertySetProvisionForVoid.ObjectType = "IfcBuildingElementProxy";
-            propertySetProvisionForVoid.PredefinedType = "PROVISIONFORVOID";
+            propertySetProvisionForVoid.PredefinedTypes.Add("PROVISIONFORVOID");
             ifcPSE = new PropertySetEntry("Pset_ProvisionForVoid.VoidShape", "VoidShape");
             ifcPSE.PropertyName = "VoidShape";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -74663,7 +74661,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetQuayCommon.EntityTypes.Add(IFCEntityType.IfcMarineFacility);
             propertySetQuayCommon.ObjectType = "IfcMarineFacility";
-            propertySetQuayCommon.PredefinedType = "QUAY";
+            propertySetQuayCommon.PredefinedTypes.Add("QUAY");
             ifcPSE = new PropertySetEntry("Pset_QuayCommon.StructuralType", "StructuralType");
             ifcPSE.PropertyName = "StructuralType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -74716,7 +74714,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetQuayDesignCriteria.EntityTypes.Add(IFCEntityType.IfcMarineFacility);
             propertySetQuayDesignCriteria.ObjectType = "IfcMarineFacility";
-            propertySetQuayDesignCriteria.PredefinedType = "QUAY";
+            propertySetQuayDesignCriteria.PredefinedTypes.Add("QUAY");
             ifcPSE = new PropertySetEntry("Pset_QuayDesignCriteria.HighWaterLevel", "HighWaterLevel");
             ifcPSE.PropertyName = "HighWaterLevel";
             ifcPSE.PropertyType = PropertyType.Length;
@@ -75049,7 +75047,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetRailTypeBlade.EntityTypes.Add(IFCEntityType.IfcRail);
             propertySetRailTypeBlade.EntityTypes.Add(IFCEntityType.IfcRailType);
             propertySetRailTypeBlade.ObjectType = "IfcRail";
-            propertySetRailTypeBlade.PredefinedType = "BLADE";
+            propertySetRailTypeBlade.PredefinedTypes.Add("BLADE");
             ifcPSE = new PropertySetEntry("Pset_RailTypeBlade.IsArticulatedBlade", "IsArticulatedBlade");
             ifcPSE.PropertyName = "IsArticulatedBlade";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -75101,7 +75099,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetRailTypeCheckRail.EntityTypes.Add(IFCEntityType.IfcRail);
             propertySetRailTypeCheckRail.EntityTypes.Add(IFCEntityType.IfcRailType);
             propertySetRailTypeCheckRail.ObjectType = "IfcRail";
-            propertySetRailTypeCheckRail.PredefinedType = "CHECKRAIL";
+            propertySetRailTypeCheckRail.PredefinedTypes.Add("CHECKRAIL");
             ifcPSE = new PropertySetEntry("Pset_RailTypeCheckRail.CheckRailType", "CheckRailType");
             ifcPSE.PropertyName = "CheckRailType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -75140,7 +75138,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetRailTypeGuardRail.EntityTypes.Add(IFCEntityType.IfcRail);
             propertySetRailTypeGuardRail.EntityTypes.Add(IFCEntityType.IfcRailType);
             propertySetRailTypeGuardRail.ObjectType = "IfcRail";
-            propertySetRailTypeGuardRail.PredefinedType = "GUARDRAIL";
+            propertySetRailTypeGuardRail.PredefinedTypes.Add("GUARDRAIL");
             ifcPSE = new PropertySetEntry("Pset_RailTypeGuardRail.GuardRailConnection", "GuardRailConnection");
             ifcPSE.PropertyName = "GuardRailConnection";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -75190,7 +75188,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetRailTypeRail.EntityTypes.Add(IFCEntityType.IfcRail);
             propertySetRailTypeRail.EntityTypes.Add(IFCEntityType.IfcRailType);
             propertySetRailTypeRail.ObjectType = "IfcRail";
-            propertySetRailTypeRail.PredefinedType = "RAIL";
+            propertySetRailTypeRail.PredefinedTypes.Add("RAIL");
             ifcPSE = new PropertySetEntry("Pset_RailTypeRail.PositionInTrack", "PositionInTrack");
             ifcPSE.PropertyName = "PositionInTrack";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -75294,7 +75292,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetRailTypeStockRail.EntityTypes.Add(IFCEntityType.IfcRail);
             propertySetRailTypeStockRail.EntityTypes.Add(IFCEntityType.IfcRailType);
             propertySetRailTypeStockRail.ObjectType = "IfcRail";
-            propertySetRailTypeStockRail.PredefinedType = "STOCKRAIL";
+            propertySetRailTypeStockRail.PredefinedTypes.Add("STOCKRAIL");
             ifcPSE = new PropertySetEntry("Pset_RailTypeStockRail.StockRailRadius", "StockRailRadius");
             ifcPSE.PropertyName = "StockRailRadius";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -75339,7 +75337,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetRailwayBalise.EntityTypes.Add(IFCEntityType.IfcCommunicationsAppliance);
             propertySetRailwayBalise.EntityTypes.Add(IFCEntityType.IfcCommunicationsApplianceType);
             propertySetRailwayBalise.ObjectType = "IfcCommunicationsAppliance";
-            propertySetRailwayBalise.PredefinedType = "TRANSPONDER";
+            propertySetRailwayBalise.PredefinedTypes.Add("TRANSPONDER");
             ifcPSE = new PropertySetEntry("Pset_RailwayBalise.NominalHeight", "NominalHeight");
             ifcPSE.PropertyName = "NominalHeight";
             ifcPSE.PropertyType = PropertyType.NonNegativeLength;
@@ -75475,7 +75473,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetRailwayLevelCrossing.EntityTypes.Add(IFCEntityType.IfcFacilityPartCommon);
             propertySetRailwayLevelCrossing.ObjectType = "IfcFacilityPartCommon";
-            propertySetRailwayLevelCrossing.PredefinedType = "LEVELCROSSING";
+            propertySetRailwayLevelCrossing.PredefinedTypes.Add("LEVELCROSSING");
             ifcPSE = new PropertySetEntry("Pset_RailwayLevelCrossing.IsAccessibleByVehicle", "IsAccessibleByVehicle");
             ifcPSE.PropertyName = "IsAccessibleByVehicle";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -75913,12 +75911,12 @@ namespace Revit.IFC.Export.Exporter
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Pset_RailwayTrackStructurePart"))
          {
             propertySetRailwayTrackStructurePart.EntityTypes.Add(IFCEntityType.IfcRailwayPart);
-            propertySetRailwayTrackStructurePart.EntityTypes.Add(IFCEntityType.IfcRailwayPart);
-            propertySetRailwayTrackStructurePart.EntityTypes.Add(IFCEntityType.IfcRailwayPart);
-            propertySetRailwayTrackStructurePart.EntityTypes.Add(IFCEntityType.IfcRailwayPart);
-            propertySetRailwayTrackStructurePart.EntityTypes.Add(IFCEntityType.IfcRailwayPart);
             propertySetRailwayTrackStructurePart.ObjectType = "IfcRailwayPart";
-            propertySetRailwayTrackStructurePart.PredefinedType = "TRACKPART";
+            propertySetRailwayTrackStructurePart.PredefinedTypes.Add("DILATIONTRACK");
+            propertySetRailwayTrackStructurePart.PredefinedTypes.Add("PLAINTRACK");
+            propertySetRailwayTrackStructurePart.PredefinedTypes.Add("TRACK");
+            propertySetRailwayTrackStructurePart.PredefinedTypes.Add("TURNOUTTRACK");
+            propertySetRailwayTrackStructurePart.PredefinedTypes.Add("TRACKPART");
             ifcPSE = new PropertySetEntry("Pset_RailwayTrackStructurePart.HasBallastTrack", "HasBallastTrack");
             ifcPSE.PropertyName = "HasBallastTrack";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -79330,7 +79328,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetRevetmentCommon.EntityTypes.Add(IFCEntityType.IfcMarineFacility);
             propertySetRevetmentCommon.ObjectType = "IfcMarineFacility";
-            propertySetRevetmentCommon.PredefinedType = "REVETMENT";
+            propertySetRevetmentCommon.PredefinedTypes.Add("REVETMENT");
             ifcPSE = new PropertySetEntry("Pset_RevetmentCommon.StructuralType", "StructuralType");
             ifcPSE.PropertyName = "StructuralType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -79768,18 +79766,19 @@ namespace Revit.IFC.Export.Exporter
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Pset_RoadDesignCriteriaCommon"))
          {
             propertySetRoadDesignCriteriaCommon.EntityTypes.Add(IFCEntityType.IfcFacilityPartCommon);
-            propertySetRoadDesignCriteriaCommon.EntityTypes.Add(IFCEntityType.IfcFacilityPartCommon);
-            propertySetRoadDesignCriteriaCommon.EntityTypes.Add(IFCEntityType.IfcFacilityPartCommon);
-            propertySetRoadDesignCriteriaCommon.EntityTypes.Add(IFCEntityType.IfcRoadPart);
-            propertySetRoadDesignCriteriaCommon.EntityTypes.Add(IFCEntityType.IfcRoadPart);
-            propertySetRoadDesignCriteriaCommon.EntityTypes.Add(IFCEntityType.IfcRoadPart);
-            propertySetRoadDesignCriteriaCommon.EntityTypes.Add(IFCEntityType.IfcRoadPart);
-            propertySetRoadDesignCriteriaCommon.EntityTypes.Add(IFCEntityType.IfcRoadPart);
-            propertySetRoadDesignCriteriaCommon.EntityTypes.Add(IFCEntityType.IfcRoadPart);
             propertySetRoadDesignCriteriaCommon.EntityTypes.Add(IFCEntityType.IfcRoadPart);
             propertySetRoadDesignCriteriaCommon.EntityTypes.Add(IFCEntityType.IfcRoad);
             propertySetRoadDesignCriteriaCommon.ObjectType = "IfcFacilityPartCommon";
-            propertySetRoadDesignCriteriaCommon.PredefinedType = "TOLLPLAZA";
+            propertySetRoadDesignCriteriaCommon.PredefinedTypes.Add("JUNCTION");
+            propertySetRoadDesignCriteriaCommon.PredefinedTypes.Add("LEVELCROSSING");
+            propertySetRoadDesignCriteriaCommon.PredefinedTypes.Add("SEGMENT");
+            propertySetRoadDesignCriteriaCommon.PredefinedTypes.Add("BICYCLECROSSING");
+            propertySetRoadDesignCriteriaCommon.PredefinedTypes.Add("INTERSECTION");
+            propertySetRoadDesignCriteriaCommon.PredefinedTypes.Add("PEDESTRIAN_CROSSING");
+            propertySetRoadDesignCriteriaCommon.PredefinedTypes.Add("RAILWAYCROSSING");
+            propertySetRoadDesignCriteriaCommon.PredefinedTypes.Add("ROADSEGMENT");
+            propertySetRoadDesignCriteriaCommon.PredefinedTypes.Add("ROUNDABOUT");
+            propertySetRoadDesignCriteriaCommon.PredefinedTypes.Add("TOLLPLAZA");
             ifcPSE = new PropertySetEntry("Pset_RoadDesignCriteriaCommon.Crossfall", "Crossfall");
             ifcPSE.PropertyName = "Crossfall";
             ifcPSE.PropertyType = PropertyType.Ratio;
@@ -79857,7 +79856,8 @@ namespace Revit.IFC.Export.Exporter
             propertySetRoadGuardElement.EntityTypes.Add(IFCEntityType.IfcRailingType);
             propertySetRoadGuardElement.EntityTypes.Add(IFCEntityType.IfcWallType);
             propertySetRoadGuardElement.ObjectType = "IfcRailing";
-            propertySetRoadGuardElement.PredefinedType = "PARAPET";
+            propertySetRoadGuardElement.PredefinedTypes.Add("GUARDRAIL");
+            propertySetRoadGuardElement.PredefinedTypes.Add("PARAPET");
             ifcPSE = new PropertySetEntry("Pset_RoadGuardElement.IsMoveable", "IsMoveable");
             ifcPSE.PropertyName = "IsMoveable";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -79907,11 +79907,11 @@ namespace Revit.IFC.Export.Exporter
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Pset_RoadMarkingCommon"))
          {
             propertySetRoadMarkingCommon.EntityTypes.Add(IFCEntityType.IfcSurfaceFeature);
-            propertySetRoadMarkingCommon.EntityTypes.Add(IFCEntityType.IfcSurfaceFeature);
-            propertySetRoadMarkingCommon.EntityTypes.Add(IFCEntityType.IfcSurfaceFeature);
-            propertySetRoadMarkingCommon.EntityTypes.Add(IFCEntityType.IfcSurfaceFeature);
             propertySetRoadMarkingCommon.ObjectType = "IfcSurfaceFeature";
-            propertySetRoadMarkingCommon.PredefinedType = "SYMBOLMARKING";
+            propertySetRoadMarkingCommon.PredefinedTypes.Add("HATCHMARKING");
+            propertySetRoadMarkingCommon.PredefinedTypes.Add("LINEMARKING");
+            propertySetRoadMarkingCommon.PredefinedTypes.Add("PAVEMENTSURFACEMARKING");
+            propertySetRoadMarkingCommon.PredefinedTypes.Add("SYMBOLMARKING");
             ifcPSE = new PropertySetEntry("Pset_RoadMarkingCommon.ApplicationMethod", "ApplicationMethod");
             ifcPSE.PropertyName = "ApplicationMethod";
             ifcPSE.PropertyType = PropertyType.Text;
@@ -79978,7 +79978,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetRoadSymbolsCommon.EntityTypes.Add(IFCEntityType.IfcSurfaceFeature);
             propertySetRoadSymbolsCommon.ObjectType = "IfcSurfaceFeature";
-            propertySetRoadSymbolsCommon.PredefinedType = "SYMBOLMARKING";
+            propertySetRoadSymbolsCommon.PredefinedTypes.Add("SYMBOLMARKING");
             ifcPSE = new PropertySetEntry("Pset_RoadSymbolsCommon.Text", "Text");
             ifcPSE.PropertyName = "Text";
             ifcPSE.PropertyType = PropertyType.Text;
@@ -80333,7 +80333,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSanitaryTerminalTypeBath.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
             propertySetSanitaryTerminalTypeBath.ObjectType = "IfcSanitaryTerminalType";
-            propertySetSanitaryTerminalTypeBath.PredefinedType = "BATH";
+            propertySetSanitaryTerminalTypeBath.PredefinedTypes.Add("BATH");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeBath.BathType", "BathType");
             ifcPSE.PropertyName = "BathType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -80414,7 +80414,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSanitaryTerminalTypeBath.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminal);
             propertySetSanitaryTerminalTypeBath.ObjectType = "IfcSanitaryTerminal";
-            propertySetSanitaryTerminalTypeBath.PredefinedType = "BATH";
+            propertySetSanitaryTerminalTypeBath.PredefinedTypes.Add("BATH");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeBath.BathType", "BathType");
             ifcPSE.PropertyName = "BathType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -80453,7 +80453,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSanitaryTerminalTypeBath.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminal);
             propertySetSanitaryTerminalTypeBath.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
             propertySetSanitaryTerminalTypeBath.ObjectType = "IfcSanitaryTerminal";
-            propertySetSanitaryTerminalTypeBath.PredefinedType = "BATH";
+            propertySetSanitaryTerminalTypeBath.PredefinedTypes.Add("BATH");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeBath.BathType", "BathType");
             ifcPSE.PropertyName = "BathType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -80570,7 +80570,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSanitaryTerminalTypeBidet.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
             propertySetSanitaryTerminalTypeBidet.ObjectType = "IfcSanitaryTerminalType";
-            propertySetSanitaryTerminalTypeBidet.PredefinedType = "BIDET";
+            propertySetSanitaryTerminalTypeBidet.PredefinedTypes.Add("BIDET");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeBidet.BidetMounting", "BidetMounting");
             ifcPSE.PropertyName = "BidetMounting";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -80643,7 +80643,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSanitaryTerminalTypeBidet.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminal);
             propertySetSanitaryTerminalTypeBidet.ObjectType = "IfcSanitaryTerminal";
-            propertySetSanitaryTerminalTypeBidet.PredefinedType = "BIDET";
+            propertySetSanitaryTerminalTypeBidet.PredefinedTypes.Add("BIDET");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeBidet.Mounting", "Mounting");
             ifcPSE.PropertyName = "Mounting";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -80682,7 +80682,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSanitaryTerminalTypeBidet.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminal);
             propertySetSanitaryTerminalTypeBidet.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
             propertySetSanitaryTerminalTypeBidet.ObjectType = "IfcSanitaryTerminal";
-            propertySetSanitaryTerminalTypeBidet.PredefinedType = "BIDET";
+            propertySetSanitaryTerminalTypeBidet.PredefinedTypes.Add("BIDET");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeBidet.Mounting", "Mounting");
             ifcPSE.PropertyName = "Mounting";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -80802,7 +80802,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSanitaryTerminalTypeCistern.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
             propertySetSanitaryTerminalTypeCistern.ObjectType = "IfcSanitaryTerminalType";
-            propertySetSanitaryTerminalTypeCistern.PredefinedType = "CISTERN";
+            propertySetSanitaryTerminalTypeCistern.PredefinedTypes.Add("CISTERN");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeCistern.CisternHeight", "CisternHeight");
             ifcPSE.PropertyName = "CisternHeight";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -80878,7 +80878,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSanitaryTerminalTypeCistern.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminal);
             propertySetSanitaryTerminalTypeCistern.ObjectType = "IfcSanitaryTerminal";
-            propertySetSanitaryTerminalTypeCistern.PredefinedType = "CISTERN";
+            propertySetSanitaryTerminalTypeCistern.PredefinedTypes.Add("CISTERN");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeCistern.CisternHeight", "CisternHeight");
             ifcPSE.PropertyName = "CisternHeight";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -80950,7 +80950,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSanitaryTerminalTypeCistern.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminal);
             propertySetSanitaryTerminalTypeCistern.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
             propertySetSanitaryTerminalTypeCistern.ObjectType = "IfcSanitaryTerminal";
-            propertySetSanitaryTerminalTypeCistern.PredefinedType = "CISTERN";
+            propertySetSanitaryTerminalTypeCistern.PredefinedTypes.Add("CISTERN");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeCistern.CisternHeight", "CisternHeight");
             ifcPSE.PropertyName = "CisternHeight";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -81222,7 +81222,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSanitaryTerminalTypeSanitaryFountain.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
             propertySetSanitaryTerminalTypeSanitaryFountain.ObjectType = "IfcSanitaryTerminalType";
-            propertySetSanitaryTerminalTypeSanitaryFountain.PredefinedType = "SANITARYFOUNTAIN";
+            propertySetSanitaryTerminalTypeSanitaryFountain.PredefinedTypes.Add("SANITARYFOUNTAIN");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeSanitaryFountain.FountainType", "FountainType");
             ifcPSE.PropertyName = "FountainType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -81297,7 +81297,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSanitaryTerminalTypeSanitaryFountain.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminal);
             propertySetSanitaryTerminalTypeSanitaryFountain.ObjectType = "IfcSanitaryTerminal";
-            propertySetSanitaryTerminalTypeSanitaryFountain.PredefinedType = "SANITARYFOUNTAIN";
+            propertySetSanitaryTerminalTypeSanitaryFountain.PredefinedTypes.Add("SANITARYFOUNTAIN");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeSanitaryFountain.FountainType", "FountainType");
             ifcPSE.PropertyName = "FountainType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -81338,7 +81338,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSanitaryTerminalTypeSanitaryFountain.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminal);
             propertySetSanitaryTerminalTypeSanitaryFountain.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
             propertySetSanitaryTerminalTypeSanitaryFountain.ObjectType = "IfcSanitaryTerminal";
-            propertySetSanitaryTerminalTypeSanitaryFountain.PredefinedType = "SANITARYFOUNTAIN";
+            propertySetSanitaryTerminalTypeSanitaryFountain.PredefinedTypes.Add("SANITARYFOUNTAIN");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeSanitaryFountain.FountainType", "FountainType");
             ifcPSE.PropertyName = "FountainType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -81473,7 +81473,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSanitaryTerminalTypeShower.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
             propertySetSanitaryTerminalTypeShower.ObjectType = "IfcSanitaryTerminalType";
-            propertySetSanitaryTerminalTypeShower.PredefinedType = "SHOWER";
+            propertySetSanitaryTerminalTypeShower.PredefinedTypes.Add("SHOWER");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeShower.ShowerType", "ShowerType");
             ifcPSE.PropertyName = "ShowerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -81562,7 +81562,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSanitaryTerminalTypeShower.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminal);
             propertySetSanitaryTerminalTypeShower.ObjectType = "IfcSanitaryTerminal";
-            propertySetSanitaryTerminalTypeShower.PredefinedType = "SHOWER";
+            propertySetSanitaryTerminalTypeShower.PredefinedTypes.Add("SHOWER");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeShower.ShowerType", "ShowerType");
             ifcPSE.PropertyName = "ShowerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -81610,7 +81610,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSanitaryTerminalTypeShower.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminal);
             propertySetSanitaryTerminalTypeShower.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
             propertySetSanitaryTerminalTypeShower.ObjectType = "IfcSanitaryTerminal";
-            propertySetSanitaryTerminalTypeShower.PredefinedType = "SHOWER";
+            propertySetSanitaryTerminalTypeShower.PredefinedTypes.Add("SHOWER");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeShower.ShowerType", "ShowerType");
             ifcPSE.PropertyName = "ShowerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -81737,7 +81737,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSanitaryTerminalTypeSink.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
             propertySetSanitaryTerminalTypeSink.ObjectType = "IfcSanitaryTerminalType";
-            propertySetSanitaryTerminalTypeSink.PredefinedType = "SINK";
+            propertySetSanitaryTerminalTypeSink.PredefinedTypes.Add("SINK");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeSink.SinkType", "SinkType");
             ifcPSE.PropertyName = "SinkType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -81812,7 +81812,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSanitaryTerminalTypeSink.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminal);
             propertySetSanitaryTerminalTypeSink.ObjectType = "IfcSanitaryTerminal";
-            propertySetSanitaryTerminalTypeSink.PredefinedType = "SINK";
+            propertySetSanitaryTerminalTypeSink.PredefinedTypes.Add("SINK");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeSink.SinkType", "SinkType");
             ifcPSE.PropertyName = "SinkType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -81873,7 +81873,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSanitaryTerminalTypeSink.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminal);
             propertySetSanitaryTerminalTypeSink.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
             propertySetSanitaryTerminalTypeSink.ObjectType = "IfcSanitaryTerminal";
-            propertySetSanitaryTerminalTypeSink.PredefinedType = "SINK";
+            propertySetSanitaryTerminalTypeSink.PredefinedTypes.Add("SINK");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeSink.SinkType", "SinkType");
             ifcPSE.PropertyName = "SinkType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -82020,7 +82020,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSanitaryTerminalTypeToiletPan.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
             propertySetSanitaryTerminalTypeToiletPan.ObjectType = "IfcSanitaryTerminalType";
-            propertySetSanitaryTerminalTypeToiletPan.PredefinedType = "TOILETPAN";
+            propertySetSanitaryTerminalTypeToiletPan.PredefinedTypes.Add("TOILETPAN");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeToiletPan.ToiletType", "ToiletType");
             ifcPSE.PropertyName = "ToiletType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -82105,7 +82105,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSanitaryTerminalTypeToiletPan.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminal);
             propertySetSanitaryTerminalTypeToiletPan.ObjectType = "IfcSanitaryTerminal";
-            propertySetSanitaryTerminalTypeToiletPan.PredefinedType = "TOILETPAN";
+            propertySetSanitaryTerminalTypeToiletPan.PredefinedTypes.Add("TOILETPAN");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeToiletPan.ToiletType", "ToiletType");
             ifcPSE.PropertyName = "ToiletType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -82158,7 +82158,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSanitaryTerminalTypeToiletPan.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminal);
             propertySetSanitaryTerminalTypeToiletPan.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
             propertySetSanitaryTerminalTypeToiletPan.ObjectType = "IfcSanitaryTerminal";
-            propertySetSanitaryTerminalTypeToiletPan.PredefinedType = "TOILETPAN";
+            propertySetSanitaryTerminalTypeToiletPan.PredefinedTypes.Add("TOILETPAN");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeToiletPan.ToiletType", "ToiletType");
             ifcPSE.PropertyName = "ToiletType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -82279,7 +82279,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSanitaryTerminalTypeUrinal.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
             propertySetSanitaryTerminalTypeUrinal.ObjectType = "IfcSanitaryTerminalType";
-            propertySetSanitaryTerminalTypeUrinal.PredefinedType = "URINAL";
+            propertySetSanitaryTerminalTypeUrinal.PredefinedTypes.Add("URINAL");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeUrinal.UrinalType", "UrinalType");
             ifcPSE.PropertyName = "UrinalType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -82344,7 +82344,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSanitaryTerminalTypeUrinal.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminal);
             propertySetSanitaryTerminalTypeUrinal.ObjectType = "IfcSanitaryTerminal";
-            propertySetSanitaryTerminalTypeUrinal.PredefinedType = "URINAL";
+            propertySetSanitaryTerminalTypeUrinal.PredefinedTypes.Add("URINAL");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeUrinal.UrinalType", "UrinalType");
             ifcPSE.PropertyName = "UrinalType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -82385,7 +82385,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSanitaryTerminalTypeUrinal.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminal);
             propertySetSanitaryTerminalTypeUrinal.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
             propertySetSanitaryTerminalTypeUrinal.ObjectType = "IfcSanitaryTerminal";
-            propertySetSanitaryTerminalTypeUrinal.PredefinedType = "URINAL";
+            propertySetSanitaryTerminalTypeUrinal.PredefinedTypes.Add("URINAL");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeUrinal.UrinalType", "UrinalType");
             ifcPSE.PropertyName = "UrinalType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -82506,7 +82506,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSanitaryTerminalTypeWashHandBasin.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
             propertySetSanitaryTerminalTypeWashHandBasin.ObjectType = "IfcSanitaryTerminalType";
-            propertySetSanitaryTerminalTypeWashHandBasin.PredefinedType = "WASHHANDBASIN";
+            propertySetSanitaryTerminalTypeWashHandBasin.PredefinedTypes.Add("WASHHANDBASIN");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeWashHandBasin.WashHandBasinType", "WashHandBasinType");
             ifcPSE.PropertyName = "WashHandBasinType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -82581,7 +82581,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSanitaryTerminalTypeWashHandBasin.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminal);
             propertySetSanitaryTerminalTypeWashHandBasin.ObjectType = "IfcSanitaryTerminal";
-            propertySetSanitaryTerminalTypeWashHandBasin.PredefinedType = "WASHHANDBASIN";
+            propertySetSanitaryTerminalTypeWashHandBasin.PredefinedTypes.Add("WASHHANDBASIN");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeWashHandBasin.WashHandBasinType", "WashHandBasinType");
             ifcPSE.PropertyName = "WashHandBasinType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -82632,7 +82632,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSanitaryTerminalTypeWashHandBasin.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminal);
             propertySetSanitaryTerminalTypeWashHandBasin.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
             propertySetSanitaryTerminalTypeWashHandBasin.ObjectType = "IfcSanitaryTerminal";
-            propertySetSanitaryTerminalTypeWashHandBasin.PredefinedType = "WASHHANDBASIN";
+            propertySetSanitaryTerminalTypeWashHandBasin.PredefinedTypes.Add("WASHHANDBASIN");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeWashHandBasin.WashHandBasinType", "WashHandBasinType");
             ifcPSE.PropertyName = "WashHandBasinType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -82727,7 +82727,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSanitaryTerminalTypeWCSeat.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
             propertySetSanitaryTerminalTypeWCSeat.ObjectType = "IfcSanitaryTerminalType";
-            propertySetSanitaryTerminalTypeWCSeat.PredefinedType = "WCSEAT";
+            propertySetSanitaryTerminalTypeWCSeat.PredefinedTypes.Add("WCSEAT");
             ifcPSE = new PropertySetEntry("Pset_SanitaryTerminalTypeWCSeat.SeatType", "SeatType");
             ifcPSE.PropertyName = "SeatType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -82782,7 +82782,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSectioningDevice.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetSectioningDevice.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetSectioningDevice.ObjectType = "IfcDiscreteAccessory";
-            propertySetSectioningDevice.PredefinedType = "INSULATOR";
+            propertySetSectioningDevice.PredefinedTypes.Add("INSULATOR");
             ifcPSE = new PropertySetEntry("Pset_SectioningDevice.SectioningDeviceType", "SectioningDeviceType");
             ifcPSE.PropertyName = "SectioningDeviceType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -82812,7 +82812,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSectionInsulator.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetSectionInsulator.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetSectionInsulator.ObjectType = "IfcDiscreteAccessory";
-            propertySetSectionInsulator.PredefinedType = "INSULATOR";
+            propertySetSectionInsulator.PredefinedTypes.Add("INSULATOR");
             ifcPSE = new PropertySetEntry("Pset_SectionInsulator.ACResistance", "ACResistance");
             ifcPSE.PropertyName = "ACResistance";
             ifcPSE.PropertyType = PropertyType.ElectricResistance;
@@ -83008,7 +83008,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeCO2Sensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeCO2Sensor.ObjectType = "IfcSensorType";
-            propertySetSensorTypeCO2Sensor.PredefinedType = "CO2SENSOR";
+            propertySetSensorTypeCO2Sensor.PredefinedTypes.Add("CO2SENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeCO2Sensor.CoverageArea", "CoverageArea");
             ifcPSE.PropertyName = "CoverageArea";
             ifcPSE.PropertyType = PropertyType.Area;
@@ -83055,7 +83055,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeCO2Sensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeCO2Sensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeCO2Sensor.PredefinedType = "CO2SENSOR";
+            propertySetSensorTypeCO2Sensor.PredefinedTypes.Add("CO2SENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeCO2Sensor.SetPointConcentration", "SetPointConcentration");
             ifcPSE.PropertyName = "SetPointConcentration";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -83072,7 +83072,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeCO2Sensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeCO2Sensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeCO2Sensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeCO2Sensor.PredefinedType = "CO2SENSOR";
+            propertySetSensorTypeCO2Sensor.PredefinedTypes.Add("CO2SENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeCO2Sensor.SetPointCO2Concentration", "SetPointCO2Concentration");
             ifcPSE.PropertyName = "SetPointCO2Concentration";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -83165,7 +83165,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeConductanceSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeConductanceSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeConductanceSensor.PredefinedType = "CONDUCTANCESENSOR";
+            propertySetSensorTypeConductanceSensor.PredefinedTypes.Add("CONDUCTANCESENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeConductanceSensor.SetPointConductance", "SetPointConductance");
             ifcPSE.PropertyName = "SetPointConductance";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -83184,7 +83184,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeConductanceSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeConductanceSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeConductanceSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeConductanceSensor.PredefinedType = "CONDUCTANCESENSOR";
+            propertySetSensorTypeConductanceSensor.PredefinedTypes.Add("CONDUCTANCESENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeConductanceSensor.SetPointConductance", "SetPointConductance");
             ifcPSE.PropertyName = "SetPointConductance";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -83212,7 +83212,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeContactSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeContactSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeContactSensor.PredefinedType = "CONTACTSENSOR";
+            propertySetSensorTypeContactSensor.PredefinedTypes.Add("CONTACTSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeContactSensor.SetPointContact", "SetPointContact");
             ifcPSE.PropertyName = "SetPointContact";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -83231,7 +83231,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeContactSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeContactSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeContactSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeContactSensor.PredefinedType = "CONTACTSENSOR";
+            propertySetSensorTypeContactSensor.PredefinedTypes.Add("CONTACTSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeContactSensor.SetPointContact", "SetPointContact");
             ifcPSE.PropertyName = "SetPointContact";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -83260,7 +83260,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeEarthquakeSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeEarthquakeSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeEarthquakeSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeEarthquakeSensor.PredefinedType = "EARTHQUAKESENSOR";
+            propertySetSensorTypeEarthquakeSensor.PredefinedTypes.Add("EARTHQUAKESENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeEarthquakeSensor.MarginOfError", "MarginOfError");
             ifcPSE.PropertyName = "MarginOfError";
             ifcPSE.PropertyType = PropertyType.Ratio;
@@ -83412,7 +83412,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeFireSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeFireSensor.ObjectType = "IfcSensorType";
-            propertySetSensorTypeFireSensor.PredefinedType = "FIRESENSOR";
+            propertySetSensorTypeFireSensor.PredefinedTypes.Add("FIRESENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeFireSensor.FireSensorSetPoint", "FireSensorSetPoint");
             ifcPSE.PropertyName = "FireSensorSetPoint";
             ifcPSE.PropertyType = PropertyType.ThermodynamicTemperature;
@@ -83442,7 +83442,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeFireSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeFireSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeFireSensor.PredefinedType = "FIRESENSOR";
+            propertySetSensorTypeFireSensor.PredefinedTypes.Add("FIRESENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeFireSensor.FireSensorSetPoint", "FireSensorSetPoint");
             ifcPSE.PropertyName = "FireSensorSetPoint";
             ifcPSE.PropertyType = PropertyType.ThermodynamicTemperature;
@@ -83482,7 +83482,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeFireSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeFireSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeFireSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeFireSensor.PredefinedType = "FIRESENSOR";
+            propertySetSensorTypeFireSensor.PredefinedTypes.Add("FIRESENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeFireSensor.FireSensorSetPoint", "FireSensorSetPoint");
             ifcPSE.PropertyName = "FireSensorSetPoint";
             ifcPSE.PropertyType = PropertyType.ThermodynamicTemperature;
@@ -83525,7 +83525,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeFlowSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeFlowSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeFlowSensor.PredefinedType = "FLOWSENSOR";
+            propertySetSensorTypeFlowSensor.PredefinedTypes.Add("FLOWSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeFlowSensor.SetPointFlow", "SetPointFlow");
             ifcPSE.PropertyName = "SetPointFlow";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -83544,7 +83544,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeFlowSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeFlowSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeFlowSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeFlowSensor.PredefinedType = "FLOWSENSOR";
+            propertySetSensorTypeFlowSensor.PredefinedTypes.Add("FLOWSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeFlowSensor.SetPointFlow", "SetPointFlow");
             ifcPSE.PropertyName = "SetPointFlow";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -83573,7 +83573,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeForeignObjectDetectionSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeForeignObjectDetectionSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeForeignObjectDetectionSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeForeignObjectDetectionSensor.PredefinedType = "FOREIGNOBJECTDETECTIONSENSOR";
+            propertySetSensorTypeForeignObjectDetectionSensor.PredefinedTypes.Add("FOREIGNOBJECTDETECTIONSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeForeignObjectDetectionSensor.WorkingState", "WorkingState");
             ifcPSE.PropertyName = "WorkingState";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -83620,7 +83620,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeFrostSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeFrostSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeFrostSensor.PredefinedType = "FROSTSENSOR";
+            propertySetSensorTypeFrostSensor.PredefinedTypes.Add("FROSTSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeFrostSensor.SetPointFrost", "SetPointFrost");
             ifcPSE.PropertyName = "SetPointFrost";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -83637,7 +83637,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeFrostSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeFrostSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeFrostSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeFrostSensor.PredefinedType = "FROSTSENSOR";
+            propertySetSensorTypeFrostSensor.PredefinedTypes.Add("FROSTSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeFrostSensor.SetPointFrost", "SetPointFrost");
             ifcPSE.PropertyName = "SetPointFrost";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -83711,7 +83711,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeGasSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeGasSensor.ObjectType = "IfcSensorType";
-            propertySetSensorTypeGasSensor.PredefinedType = "GASSENSOR";
+            propertySetSensorTypeGasSensor.PredefinedTypes.Add("GASSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeGasSensor.GasDetected", "GasDetected");
             ifcPSE.PropertyName = "GasDetected";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -83758,7 +83758,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeGasSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeGasSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeGasSensor.PredefinedType = "GASSENSOR";
+            propertySetSensorTypeGasSensor.PredefinedTypes.Add("GASSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeGasSensor.GasDetected", "GasDetected");
             ifcPSE.PropertyName = "GasDetected";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -83796,7 +83796,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeGasSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeGasSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeGasSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeGasSensor.PredefinedType = "GASSENSOR";
+            propertySetSensorTypeGasSensor.PredefinedTypes.Add("GASSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeGasSensor.GasDetected", "GasDetected");
             ifcPSE.PropertyName = "GasDetected";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -83886,7 +83886,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeHeatSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeHeatSensor.ObjectType = "IfcSensorType";
-            propertySetSensorTypeHeatSensor.PredefinedType = "HEATSENSOR";
+            propertySetSensorTypeHeatSensor.PredefinedTypes.Add("HEATSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeHeatSensor.CoverageArea", "CoverageArea");
             ifcPSE.PropertyName = "CoverageArea";
             ifcPSE.PropertyType = PropertyType.Area;
@@ -83933,7 +83933,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeHeatSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeHeatSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeHeatSensor.PredefinedType = "HEATSENSOR";
+            propertySetSensorTypeHeatSensor.PredefinedTypes.Add("HEATSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeHeatSensor.CoverageArea", "CoverageArea");
             ifcPSE.PropertyName = "CoverageArea";
             ifcPSE.PropertyType = PropertyType.Area;
@@ -83974,7 +83974,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeHeatSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeHeatSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeHeatSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeHeatSensor.PredefinedType = "HEATSENSOR";
+            propertySetSensorTypeHeatSensor.PredefinedTypes.Add("HEATSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeHeatSensor.CoverageArea", "CoverageArea");
             ifcPSE.PropertyName = "CoverageArea";
             ifcPSE.PropertyType = PropertyType.Area;
@@ -84056,7 +84056,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeHumiditySensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeHumiditySensor.ObjectType = "IfcSensorType";
-            propertySetSensorTypeHumiditySensor.PredefinedType = "HUMIDITYSENSOR";
+            propertySetSensorTypeHumiditySensor.PredefinedTypes.Add("HUMIDITYSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeHumiditySensor.HumiditySetPoint", "HumiditySetPoint");
             ifcPSE.PropertyName = "HumiditySetPoint";
             ifcPSE.PropertyType = PropertyType.PositiveRatio;
@@ -84095,7 +84095,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeHumiditySensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeHumiditySensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeHumiditySensor.PredefinedType = "HUMIDITYSENSOR";
+            propertySetSensorTypeHumiditySensor.PredefinedTypes.Add("HUMIDITYSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeHumiditySensor.SetPointHumidity", "SetPointHumidity");
             ifcPSE.PropertyName = "SetPointHumidity";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -84114,7 +84114,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeHumiditySensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeHumiditySensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeHumiditySensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeHumiditySensor.PredefinedType = "HUMIDITYSENSOR";
+            propertySetSensorTypeHumiditySensor.PredefinedTypes.Add("HUMIDITYSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeHumiditySensor.SetPointHumidity", "SetPointHumidity");
             ifcPSE.PropertyName = "SetPointHumidity";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -84142,7 +84142,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeIdentifierSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeIdentifierSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeIdentifierSensor.PredefinedType = "IDENTIFIERSENSOR";
+            propertySetSensorTypeIdentifierSensor.PredefinedTypes.Add("IDENTIFIERSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeIdentifierSensor.SetPointIdentifier", "SetPointIdentifier");
             ifcPSE.PropertyName = "SetPointIdentifier";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -84159,7 +84159,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeIdentifierSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeIdentifierSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeIdentifierSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeIdentifierSensor.PredefinedType = "IDENTIFIERSENSOR";
+            propertySetSensorTypeIdentifierSensor.PredefinedTypes.Add("IDENTIFIERSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeIdentifierSensor.SetPointIdentifier", "SetPointIdentifier");
             ifcPSE.PropertyName = "SetPointIdentifier";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -84187,7 +84187,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeIonConcentrationSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeIonConcentrationSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeIonConcentrationSensor.PredefinedType = "IONCONCENTRATIONSENSOR";
+            propertySetSensorTypeIonConcentrationSensor.PredefinedTypes.Add("IONCONCENTRATIONSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeIonConcentrationSensor.SubstanceDetected", "SubstanceDetected");
             ifcPSE.PropertyName = "SubstanceDetected";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -84217,7 +84217,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeIonConcentrationSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeIonConcentrationSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeIonConcentrationSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeIonConcentrationSensor.PredefinedType = "IONCONCENTRATIONSENSOR";
+            propertySetSensorTypeIonConcentrationSensor.PredefinedTypes.Add("IONCONCENTRATIONSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeIonConcentrationSensor.SubstanceDetected", "SubstanceDetected");
             ifcPSE.PropertyName = "SubstanceDetected";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -84253,7 +84253,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeLevelSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeLevelSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeLevelSensor.PredefinedType = "LEVEL";
+            propertySetSensorTypeLevelSensor.PredefinedTypes.Add("LEVEL");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeLevelSensor.SetPointLevel", "SetPointLevel");
             ifcPSE.PropertyName = "SetPointLevel";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -84272,7 +84272,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeLevelSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeLevelSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeLevelSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeLevelSensor.PredefinedType = "LEVELSENSOR";
+            propertySetSensorTypeLevelSensor.PredefinedTypes.Add("LEVELSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeLevelSensor.SetPointLevel", "SetPointLevel");
             ifcPSE.PropertyName = "SetPointLevel";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -84338,7 +84338,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeLightSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeLightSensor.ObjectType = "IfcSensorType";
-            propertySetSensorTypeLightSensor.PredefinedType = "LIGHTSENSOR";
+            propertySetSensorTypeLightSensor.PredefinedTypes.Add("LIGHTSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeLightSensor.LightSensorSetPoint", "LightSensorSetPoint");
             ifcPSE.PropertyName = "LightSensorSetPoint";
             ifcPSE.PropertyType = PropertyType.Illuminance;
@@ -84377,7 +84377,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeLightSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeLightSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeLightSensor.PredefinedType = "LIGHTSENSOR";
+            propertySetSensorTypeLightSensor.PredefinedTypes.Add("LIGHTSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeLightSensor.SetPointIlluminance", "SetPointIlluminance");
             ifcPSE.PropertyName = "SetPointIlluminance";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -84396,7 +84396,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeLightSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeLightSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeLightSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeLightSensor.PredefinedType = "LIGHTSENSOR";
+            propertySetSensorTypeLightSensor.PredefinedTypes.Add("LIGHTSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeLightSensor.SetPointIlluminance", "SetPointIlluminance");
             ifcPSE.PropertyName = "SetPointIlluminance";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -84424,7 +84424,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeMoistureSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeMoistureSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeMoistureSensor.PredefinedType = "MOISTURESENSOR";
+            propertySetSensorTypeMoistureSensor.PredefinedTypes.Add("MOISTURESENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeMoistureSensor.SetPointMoisture", "SetPointMoisture");
             ifcPSE.PropertyName = "SetPointMoisture";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -84443,7 +84443,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeMoistureSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeMoistureSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeMoistureSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeMoistureSensor.PredefinedType = "MOISTURESENSOR";
+            propertySetSensorTypeMoistureSensor.PredefinedTypes.Add("MOISTURESENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeMoistureSensor.SetPointMoisture", "SetPointMoisture");
             ifcPSE.PropertyName = "SetPointMoisture";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -84494,7 +84494,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeMovementSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeMovementSensor.ObjectType = "IfcSensorType";
-            propertySetSensorTypeMovementSensor.PredefinedType = "MOVEMENTSENSOR";
+            propertySetSensorTypeMovementSensor.PredefinedTypes.Add("MOVEMENTSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeMovementSensor.MovementSensingType", "MovementSensingType");
             ifcPSE.PropertyName = "MovementSensingType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -84518,7 +84518,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeMovementSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeMovementSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeMovementSensor.PredefinedType = "MOVEMENTSENSOR";
+            propertySetSensorTypeMovementSensor.PredefinedTypes.Add("MOVEMENTSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeMovementSensor.MovementSensingType", "MovementSensingType");
             ifcPSE.PropertyName = "MovementSensingType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -84546,7 +84546,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeMovementSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeMovementSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeMovementSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeMovementSensor.PredefinedType = "MOVEMENTSENSOR";
+            propertySetSensorTypeMovementSensor.PredefinedTypes.Add("MOVEMENTSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeMovementSensor.MovementSensingType", "MovementSensingType");
             ifcPSE.PropertyName = "MovementSensingType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -84584,7 +84584,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypePHSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypePHSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypePHSensor.PredefinedType = "PHSENSOR";
+            propertySetSensorTypePHSensor.PredefinedTypes.Add("PHSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypePHSensor.SetPointPH", "SetPointPH");
             ifcPSE.PropertyName = "SetPointPH";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -84603,7 +84603,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypePHSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypePHSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypePHSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypePHSensor.PredefinedType = "PHSENSOR";
+            propertySetSensorTypePHSensor.PredefinedTypes.Add("PHSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypePHSensor.SetPointPH", "SetPointPH");
             ifcPSE.PropertyName = "SetPointPH";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -84677,7 +84677,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypePressureSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypePressureSensor.ObjectType = "IfcSensorType";
-            propertySetSensorTypePressureSensor.PredefinedType = "PRESSURESENSOR";
+            propertySetSensorTypePressureSensor.PredefinedTypes.Add("PRESSURESENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypePressureSensor.PressureSensorSetPoint", "PressureSensorSetPoint");
             ifcPSE.PropertyName = "PressureSensorSetPoint";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -84724,7 +84724,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypePressureSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypePressureSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypePressureSensor.PredefinedType = "PRESSURESENSOR";
+            propertySetSensorTypePressureSensor.PredefinedTypes.Add("PRESSURESENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypePressureSensor.SetPointPressure", "SetPointPressure");
             ifcPSE.PropertyName = "SetPointPressure";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -84754,7 +84754,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypePressureSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypePressureSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypePressureSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypePressureSensor.PredefinedType = "PRESSURESENSOR";
+            propertySetSensorTypePressureSensor.PredefinedTypes.Add("PRESSURESENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypePressureSensor.SetPointPressure", "SetPointPressure");
             ifcPSE.PropertyName = "SetPointPressure";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -84790,7 +84790,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeRadiationSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeRadiationSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeRadiationSensor.PredefinedType = "RADIATIONSENSOR";
+            propertySetSensorTypeRadiationSensor.PredefinedTypes.Add("RADIATIONSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeRadiationSensor.SetPointRadiation", "SetPointRadiation");
             ifcPSE.PropertyName = "SetPointRadiation";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -84809,7 +84809,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeRadiationSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeRadiationSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeRadiationSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeRadiationSensor.PredefinedType = "RADIATIONSENSOR";
+            propertySetSensorTypeRadiationSensor.PredefinedTypes.Add("RADIATIONSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeRadiationSensor.SetPointRadiation", "SetPointRadiation");
             ifcPSE.PropertyName = "SetPointRadiation";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -84837,7 +84837,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeRadioactivitySensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeRadioactivitySensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeRadioactivitySensor.PredefinedType = "RADIOACTIVITYSENSOR";
+            propertySetSensorTypeRadioactivitySensor.PredefinedTypes.Add("RADIOACTIVITYSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeRadioactivitySensor.SetPointRadioactivity", "SetPointRadioactivity");
             ifcPSE.PropertyName = "SetPointRadioactivity";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -84856,7 +84856,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeRadioactivitySensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeRadioactivitySensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeRadioactivitySensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeRadioactivitySensor.PredefinedType = "RADIOACTIVITYSENSOR";
+            propertySetSensorTypeRadioactivitySensor.PredefinedTypes.Add("RADIOACTIVITYSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeRadioactivitySensor.SetPointRadioactivity", "SetPointRadioactivity");
             ifcPSE.PropertyName = "SetPointRadioactivity";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -84885,7 +84885,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeRainSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeRainSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeRainSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeRainSensor.PredefinedType = "RAINSENSOR";
+            propertySetSensorTypeRainSensor.PredefinedTypes.Add("RAINSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeRainSensor.MarginOfError", "MarginOfError");
             ifcPSE.PropertyName = "MarginOfError";
             ifcPSE.PropertyType = PropertyType.Ratio;
@@ -85029,7 +85029,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeSmokeSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeSmokeSensor.ObjectType = "IfcSensorType";
-            propertySetSensorTypeSmokeSensor.PredefinedType = "SMOKESENSOR";
+            propertySetSensorTypeSmokeSensor.PredefinedTypes.Add("SMOKESENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeSmokeSensor.CoverageArea", "CoverageArea");
             ifcPSE.PropertyName = "CoverageArea";
             ifcPSE.PropertyType = PropertyType.Area;
@@ -85084,7 +85084,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeSmokeSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeSmokeSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeSmokeSensor.PredefinedType = "SMOKESENSOR";
+            propertySetSensorTypeSmokeSensor.PredefinedTypes.Add("SMOKESENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeSmokeSensor.CoverageArea", "CoverageArea");
             ifcPSE.PropertyName = "CoverageArea";
             ifcPSE.PropertyType = PropertyType.Area;
@@ -85125,7 +85125,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeSmokeSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeSmokeSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeSmokeSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeSmokeSensor.PredefinedType = "SMOKESENSOR";
+            propertySetSensorTypeSmokeSensor.PredefinedTypes.Add("SMOKESENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeSmokeSensor.CoverageArea", "CoverageArea");
             ifcPSE.PropertyName = "CoverageArea";
             ifcPSE.PropertyType = PropertyType.Area;
@@ -85170,7 +85170,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeSnowSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeSnowSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeSnowSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeSnowSensor.PredefinedType = "SNOWDEPTHSENSOR";
+            propertySetSensorTypeSnowSensor.PredefinedTypes.Add("SNOWDEPTHSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeSnowSensor.MarginOfError", "MarginOfError");
             ifcPSE.PropertyName = "MarginOfError";
             ifcPSE.PropertyType = PropertyType.Ratio;
@@ -85308,7 +85308,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeSoundSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeSoundSensor.ObjectType = "IfcSensorType";
-            propertySetSensorTypeSoundSensor.PredefinedType = "SOUNDSENSOR";
+            propertySetSensorTypeSoundSensor.PredefinedTypes.Add("SOUNDSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeSoundSensor.SoundSensorSetPoint", "SoundSensorSetPoint");
             ifcPSE.PropertyName = "SoundSensorSetPoint";
             ifcPSE.PropertyType = PropertyType.SoundPressure;
@@ -85347,7 +85347,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeSoundSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeSoundSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeSoundSensor.PredefinedType = "SOUNDSENSOR";
+            propertySetSensorTypeSoundSensor.PredefinedTypes.Add("SOUNDSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeSoundSensor.SetPointSound", "SetPointSound");
             ifcPSE.PropertyName = "SetPointSound";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -85366,7 +85366,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeSoundSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeSoundSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeSoundSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeSoundSensor.PredefinedType = "SOUNDSENSOR";
+            propertySetSensorTypeSoundSensor.PredefinedTypes.Add("SOUNDSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeSoundSensor.SetPointSound", "SetPointSound");
             ifcPSE.PropertyName = "SetPointSound";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -85442,7 +85442,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeTemperatureSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeTemperatureSensor.ObjectType = "IfcSensorType";
-            propertySetSensorTypeTemperatureSensor.PredefinedType = "TEMPERATURESENSOR";
+            propertySetSensorTypeTemperatureSensor.PredefinedTypes.Add("TEMPERATURESENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeTemperatureSensor.TemperatureSensorType", "TemperatureSensorType");
             ifcPSE.PropertyName = "TemperatureSensorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -85491,7 +85491,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeTemperatureSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeTemperatureSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeTemperatureSensor.PredefinedType = "TEMPERATURESENSOR";
+            propertySetSensorTypeTemperatureSensor.PredefinedTypes.Add("TEMPERATURESENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeTemperatureSensor.TemperatureSensorType", "TemperatureSensorType");
             ifcPSE.PropertyName = "TemperatureSensorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -85523,7 +85523,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeTemperatureSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeTemperatureSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeTemperatureSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeTemperatureSensor.PredefinedType = "TEMPERATURESENSOR";
+            propertySetSensorTypeTemperatureSensor.PredefinedTypes.Add("TEMPERATURESENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeTemperatureSensor.TemperatureSensorType", "TemperatureSensorType");
             ifcPSE.PropertyName = "TemperatureSensorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -85562,7 +85562,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeTurnoutClosureSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeTurnoutClosureSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeTurnoutClosureSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeTurnoutClosureSensor.PredefinedType = "TURNOUTCLOSURESENSOR";
+            propertySetSensorTypeTurnoutClosureSensor.PredefinedTypes.Add("TURNOUTCLOSURESENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeTurnoutClosureSensor.DetectionRange", "DetectionRange");
             ifcPSE.PropertyName = "DetectionRange";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -85598,7 +85598,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSensorTypeWindSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeWindSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeWindSensor.PredefinedType = "WINDSENSOR";
+            propertySetSensorTypeWindSensor.PredefinedTypes.Add("WINDSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeWindSensor.WindSensorType", "WindSensorType");
             ifcPSE.PropertyName = "WindSensorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -85629,7 +85629,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSensorTypeWindSensor.EntityTypes.Add(IFCEntityType.IfcSensor);
             propertySetSensorTypeWindSensor.EntityTypes.Add(IFCEntityType.IfcSensorType);
             propertySetSensorTypeWindSensor.ObjectType = "IfcSensor";
-            propertySetSensorTypeWindSensor.PredefinedType = "WINDSENSOR";
+            propertySetSensorTypeWindSensor.PredefinedTypes.Add("WINDSENSOR");
             ifcPSE = new PropertySetEntry("Pset_SensorTypeWindSensor.WindSensorType", "WindSensorType");
             ifcPSE.PropertyName = "WindSensorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -86309,7 +86309,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetShipLockCommon.EntityTypes.Add(IFCEntityType.IfcMarineFacility);
             propertySetShipLockCommon.ObjectType = "IfcMarineFacility";
-            propertySetShipLockCommon.PredefinedType = "SHIPLOCK";
+            propertySetShipLockCommon.PredefinedTypes.Add("SHIPLOCK");
             ifcPSE = new PropertySetEntry("Pset_ShipLockCommon.CillLevelUpperHead", "CillLevelUpperHead");
             ifcPSE.PropertyName = "CillLevelUpperHead";
             ifcPSE.PropertyType = PropertyType.Length;
@@ -86360,7 +86360,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetShiplockComplex.EntityTypes.Add(IFCEntityType.IfcMarineFacility);
             propertySetShiplockComplex.ObjectType = "IfcMarineFacility";
-            propertySetShiplockComplex.PredefinedType = "SHIPLOCK";
+            propertySetShiplockComplex.PredefinedTypes.Add("SHIPLOCK");
             ifcPSE = new PropertySetEntry("Pset_ShiplockComplex.LockGrade", "LockGrade");
             ifcPSE.PropertyName = "LockGrade";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -86411,7 +86411,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetShiplockDesignCriteria.EntityTypes.Add(IFCEntityType.IfcMarineFacility);
             propertySetShiplockDesignCriteria.ObjectType = "IfcMarineFacility";
-            propertySetShiplockDesignCriteria.PredefinedType = "SHIPLOCK";
+            propertySetShiplockDesignCriteria.PredefinedTypes.Add("SHIPLOCK");
             ifcPSE = new PropertySetEntry("Pset_ShiplockDesignCriteria.MaximumUpstreamNavigableWaterLevel", "MaximumUpstreamNavigableWaterLevel");
             ifcPSE.PropertyName = "MaximumUpstreamNavigableWaterLevel";
             ifcPSE.PropertyType = PropertyType.Length;
@@ -86494,7 +86494,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetShipyardCommon.EntityTypes.Add(IFCEntityType.IfcMarineFacility);
             propertySetShipyardCommon.ObjectType = "IfcMarineFacility";
-            propertySetShipyardCommon.PredefinedType = "SHIPYARD";
+            propertySetShipyardCommon.PredefinedTypes.Add("SHIPYARD");
             ifcPSE = new PropertySetEntry("Pset_ShipyardCommon.PrimaryProductionType", "PrimaryProductionType");
             ifcPSE.PropertyName = "PrimaryProductionType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -87295,7 +87295,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSlabTypeTrackSlab.EntityTypes.Add(IFCEntityType.IfcSlab);
             propertySetSlabTypeTrackSlab.EntityTypes.Add(IFCEntityType.IfcSlabType);
             propertySetSlabTypeTrackSlab.ObjectType = "IfcSlab";
-            propertySetSlabTypeTrackSlab.PredefinedType = "TRACKSLAB";
+            propertySetSlabTypeTrackSlab.PredefinedTypes.Add("TRACKSLAB");
             ifcPSE = new PropertySetEntry("Pset_SlabTypeTrackSlab.TechnicalStandard", "TechnicalStandard");
             ifcPSE.PropertyName = "TechnicalStandard";
             ifcPSE.PropertyType = PropertyType.IfcExternalReference;
@@ -87404,7 +87404,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSolidStratumCapacity.EntityTypes.Add(IFCEntityType.IfcGeotechnicalStratum);
             propertySetSolidStratumCapacity.ObjectType = "IfcGeotechnicalStratum";
-            propertySetSolidStratumCapacity.PredefinedType = "SOLID";
+            propertySetSolidStratumCapacity.PredefinedTypes.Add("SOLID");
             ifcPSE = new PropertySetEntry("Pset_SolidStratumCapacity.CohesionBehaviour", "CohesionBehaviour");
             ifcPSE.PropertyName = "CohesionBehaviour";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -87527,7 +87527,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSolidStratumComposition.EntityTypes.Add(IFCEntityType.IfcGeotechnicalStratum);
             propertySetSolidStratumComposition.ObjectType = "IfcGeotechnicalStratum";
-            propertySetSolidStratumComposition.PredefinedType = "SOLID";
+            propertySetSolidStratumComposition.PredefinedTypes.Add("SOLID");
             ifcPSE = new PropertySetEntry("Pset_SolidStratumComposition.AirVolume", "AirVolume");
             ifcPSE.PropertyName = "AirVolume";
             ifcPSE.PropertyType = PropertyType.Volume;
@@ -87652,7 +87652,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSoundAttenuation.EntityTypes.Add(IFCEntityType.IfcAnnotation);
             propertySetSoundAttenuation.ObjectType = "IfcAnnotation";
-            propertySetSoundAttenuation.PredefinedType = "SOUND";
+            propertySetSoundAttenuation.PredefinedTypes.Add("SOUND");
             ifcPSE = new PropertySetEntry("Pset_SoundAttenuation.SoundScale", "SoundScale");
             ifcPSE.PropertyName = "SoundScale";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -89711,7 +89711,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSpaceHeaterTypeConvector.EntityTypes.Add(IFCEntityType.IfcSpaceHeater);
             propertySetSpaceHeaterTypeConvector.ObjectType = "IfcSpaceHeater";
-            propertySetSpaceHeaterTypeConvector.PredefinedType = "CONVECTOR";
+            propertySetSpaceHeaterTypeConvector.PredefinedTypes.Add("CONVECTOR");
             ifcPSE = new PropertySetEntry("Pset_SpaceHeaterTypeConvector.ConvectorType", "ConvectorType");
             ifcPSE.PropertyName = "ConvectorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -89730,7 +89730,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSpaceHeaterTypeConvector.EntityTypes.Add(IFCEntityType.IfcSpaceHeater);
             propertySetSpaceHeaterTypeConvector.EntityTypes.Add(IFCEntityType.IfcSpaceHeaterType);
             propertySetSpaceHeaterTypeConvector.ObjectType = "IfcSpaceHeater";
-            propertySetSpaceHeaterTypeConvector.PredefinedType = "CONVECTOR";
+            propertySetSpaceHeaterTypeConvector.PredefinedTypes.Add("CONVECTOR");
             ifcPSE = new PropertySetEntry("Pset_SpaceHeaterTypeConvector.ConvectorType", "ConvectorType");
             ifcPSE.PropertyName = "ConvectorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -89812,7 +89812,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSpaceHeaterTypeRadiator.EntityTypes.Add(IFCEntityType.IfcSpaceHeater);
             propertySetSpaceHeaterTypeRadiator.ObjectType = "IfcSpaceHeater";
-            propertySetSpaceHeaterTypeRadiator.PredefinedType = "RADIATOR";
+            propertySetSpaceHeaterTypeRadiator.PredefinedTypes.Add("RADIATOR");
             ifcPSE = new PropertySetEntry("Pset_SpaceHeaterTypeRadiator.RadiatorType", "RadiatorType");
             ifcPSE.PropertyName = "RadiatorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -89851,7 +89851,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSpaceHeaterTypeRadiator.EntityTypes.Add(IFCEntityType.IfcSpaceHeater);
             propertySetSpaceHeaterTypeRadiator.EntityTypes.Add(IFCEntityType.IfcSpaceHeaterType);
             propertySetSpaceHeaterTypeRadiator.ObjectType = "IfcSpaceHeater";
-            propertySetSpaceHeaterTypeRadiator.PredefinedType = "RADIATOR";
+            propertySetSpaceHeaterTypeRadiator.PredefinedTypes.Add("RADIATOR");
             ifcPSE = new PropertySetEntry("Pset_SpaceHeaterTypeRadiator.RadiatorType", "RadiatorType");
             ifcPSE.PropertyName = "RadiatorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -90507,7 +90507,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSpaceParking.EntityTypes.Add(IFCEntityType.IfcSpace);
             propertySetSpaceParking.ObjectType = "IfcSpace";
-            propertySetSpaceParking.PredefinedType = "Parking";
+            propertySetSpaceParking.PredefinedTypes.Add("Parking");
             ifcPSE = new PropertySetEntry("Pset_SpaceParking.HandicapAccessible", "HandicapAccessible");
             ifcPSE.PropertyName = "HandicapAccessible";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -90537,7 +90537,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSpaceParking.EntityTypes.Add(IFCEntityType.IfcSpace);
             propertySetSpaceParking.ObjectType = "IfcSpace";
-            propertySetSpaceParking.PredefinedType = "PARKING";
+            propertySetSpaceParking.PredefinedTypes.Add("PARKING");
             ifcPSE = new PropertySetEntry("Pset_SpaceParking.ParkingUse", "ParkingUse");
             ifcPSE.PropertyName = "ParkingUse";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -90588,7 +90588,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSpaceParking.EntityTypes.Add(IFCEntityType.IfcSpace);
             propertySetSpaceParking.EntityTypes.Add(IFCEntityType.IfcSpaceType);
             propertySetSpaceParking.ObjectType = "IfcSpace";
-            propertySetSpaceParking.PredefinedType = "PARKING";
+            propertySetSpaceParking.PredefinedTypes.Add("PARKING");
             ifcPSE = new PropertySetEntry("Pset_SpaceParking.ParkingUse", "ParkingUse");
             ifcPSE.PropertyName = "ParkingUse";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -90651,7 +90651,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSpaceParkingAisle.EntityTypes.Add(IFCEntityType.IfcSpace);
             propertySetSpaceParkingAisle.ObjectType = "IfcSpace";
-            propertySetSpaceParkingAisle.PredefinedType = "ParkingAisle";
+            propertySetSpaceParkingAisle.PredefinedTypes.Add("ParkingAisle");
             ifcPSE = new PropertySetEntry("Pset_SpaceParkingAisle.IsOneWay", "IsOneWay");
             ifcPSE.PropertyName = "IsOneWay";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -92604,7 +92604,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSpringTensioner.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessory);
             propertySetSpringTensioner.EntityTypes.Add(IFCEntityType.IfcDiscreteAccessoryType);
             propertySetSpringTensioner.ObjectType = "IfcDiscreteAccessory";
-            propertySetSpringTensioner.PredefinedType = "TENSIONINGEQUIPMENT";
+            propertySetSpringTensioner.PredefinedTypes.Add("TENSIONINGEQUIPMENT");
             ifcPSE = new PropertySetEntry("Pset_SpringTensioner.TensileStrength", "TensileStrength");
             ifcPSE.PropertyName = "TensileStrength";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -93986,7 +93986,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSumpBusterCommon.EntityTypes.Add(IFCEntityType.IfcElementAssembly);
             propertySetSumpBusterCommon.EntityTypes.Add(IFCEntityType.IfcElementAssemblyType);
             propertySetSumpBusterCommon.ObjectType = "IfcElementAssembly";
-            propertySetSumpBusterCommon.PredefinedType = "SUMPBUSTER";
+            propertySetSumpBusterCommon.PredefinedTypes.Add("SUMPBUSTER");
             ifcPSE = new PropertySetEntry("Pset_SumpBusterCommon.TypeDesignation", "TypeDesignation");
             ifcPSE.PropertyName = "TypeDesignation";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -94013,7 +94013,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSuperelevation.EntityTypes.Add(IFCEntityType.IfcReferent);
             propertySetSuperelevation.ObjectType = "IfcReferent";
-            propertySetSuperelevation.PredefinedType = "SUPERELEVATIONEVENT";
+            propertySetSuperelevation.PredefinedTypes.Add("SUPERELEVATIONEVENT");
             ifcPSE = new PropertySetEntry("Pset_Superelevation.Side", "Side");
             ifcPSE.PropertyName = "Side";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -94322,7 +94322,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSwitchingDeviceTypeContactor.EntityTypes.Add(IFCEntityType.IfcSwitchingDeviceType);
             propertySetSwitchingDeviceTypeContactor.ObjectType = "IfcSwitchingDeviceType";
-            propertySetSwitchingDeviceTypeContactor.PredefinedType = "CONTACTOR";
+            propertySetSwitchingDeviceTypeContactor.PredefinedTypes.Add("CONTACTOR");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeContactor.ContactorType", "ContactorType");
             ifcPSE.PropertyName = "ContactorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -94338,7 +94338,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSwitchingDeviceTypeContactor.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             propertySetSwitchingDeviceTypeContactor.ObjectType = "IfcSwitchingDevice";
-            propertySetSwitchingDeviceTypeContactor.PredefinedType = "CONTACTOR";
+            propertySetSwitchingDeviceTypeContactor.PredefinedTypes.Add("CONTACTOR");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeContactor.ContactorType", "ContactorType");
             ifcPSE.PropertyName = "ContactorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -94358,7 +94358,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSwitchingDeviceTypeContactor.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             propertySetSwitchingDeviceTypeContactor.EntityTypes.Add(IFCEntityType.IfcSwitchingDeviceType);
             propertySetSwitchingDeviceTypeContactor.ObjectType = "IfcSwitchingDevice";
-            propertySetSwitchingDeviceTypeContactor.PredefinedType = "CONTACTOR";
+            propertySetSwitchingDeviceTypeContactor.PredefinedTypes.Add("CONTACTOR");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeContactor.ContactorType", "ContactorType");
             ifcPSE.PropertyName = "ContactorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -94387,7 +94387,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSwitchingDeviceTypeDimmerSwitch.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             propertySetSwitchingDeviceTypeDimmerSwitch.ObjectType = "IfcSwitchingDevice";
-            propertySetSwitchingDeviceTypeDimmerSwitch.PredefinedType = "DIMMERSWITCH";
+            propertySetSwitchingDeviceTypeDimmerSwitch.PredefinedTypes.Add("DIMMERSWITCH");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeDimmerSwitch.DimmerType", "DimmerType");
             ifcPSE.PropertyName = "DimmerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -94407,7 +94407,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSwitchingDeviceTypeDimmerSwitch.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             propertySetSwitchingDeviceTypeDimmerSwitch.EntityTypes.Add(IFCEntityType.IfcSwitchingDeviceType);
             propertySetSwitchingDeviceTypeDimmerSwitch.ObjectType = "IfcSwitchingDevice";
-            propertySetSwitchingDeviceTypeDimmerSwitch.PredefinedType = "DIMMERSWITCH";
+            propertySetSwitchingDeviceTypeDimmerSwitch.PredefinedTypes.Add("DIMMERSWITCH");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeDimmerSwitch.DimmerType", "DimmerType");
             ifcPSE.PropertyName = "DimmerType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -94451,7 +94451,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSwitchingDeviceTypeEmergencyStop.EntityTypes.Add(IFCEntityType.IfcSwitchingDeviceType);
             propertySetSwitchingDeviceTypeEmergencyStop.ObjectType = "IfcSwitchingDeviceType";
-            propertySetSwitchingDeviceTypeEmergencyStop.PredefinedType = "EMERGENCYSTOP";
+            propertySetSwitchingDeviceTypeEmergencyStop.PredefinedTypes.Add("EMERGENCYSTOP");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeEmergencyStop.SwitchOperation", "SwitchOperation");
             ifcPSE.PropertyName = "SwitchOperation";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -94467,7 +94467,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSwitchingDeviceTypeEmergencyStop.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             propertySetSwitchingDeviceTypeEmergencyStop.ObjectType = "IfcSwitchingDevice";
-            propertySetSwitchingDeviceTypeEmergencyStop.PredefinedType = "EMERGENCYSTOP";
+            propertySetSwitchingDeviceTypeEmergencyStop.PredefinedTypes.Add("EMERGENCYSTOP");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeEmergencyStop.SwitchOperation", "SwitchOperation");
             ifcPSE.PropertyName = "SwitchOperation";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -94487,7 +94487,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSwitchingDeviceTypeEmergencyStop.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             propertySetSwitchingDeviceTypeEmergencyStop.EntityTypes.Add(IFCEntityType.IfcSwitchingDeviceType);
             propertySetSwitchingDeviceTypeEmergencyStop.ObjectType = "IfcSwitchingDevice";
-            propertySetSwitchingDeviceTypeEmergencyStop.PredefinedType = "EMERGENCYSTOP";
+            propertySetSwitchingDeviceTypeEmergencyStop.PredefinedTypes.Add("EMERGENCYSTOP");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeEmergencyStop.SwitchOperation", "SwitchOperation");
             ifcPSE.PropertyName = "SwitchOperation";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -94614,7 +94614,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSwitchingDeviceTypeKeypad.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             propertySetSwitchingDeviceTypeKeypad.ObjectType = "IfcSwitchingDevice";
-            propertySetSwitchingDeviceTypeKeypad.PredefinedType = "KEYPAD";
+            propertySetSwitchingDeviceTypeKeypad.PredefinedTypes.Add("KEYPAD");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeKeypad.KeypadType", "KeypadType");
             ifcPSE.PropertyName = "KeypadType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -94634,7 +94634,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSwitchingDeviceTypeKeypad.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             propertySetSwitchingDeviceTypeKeypad.EntityTypes.Add(IFCEntityType.IfcSwitchingDeviceType);
             propertySetSwitchingDeviceTypeKeypad.ObjectType = "IfcSwitchingDevice";
-            propertySetSwitchingDeviceTypeKeypad.PredefinedType = "KEYPAD";
+            propertySetSwitchingDeviceTypeKeypad.PredefinedTypes.Add("KEYPAD");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeKeypad.KeypadType", "KeypadType");
             ifcPSE.PropertyName = "KeypadType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -94663,7 +94663,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSwitchingDeviceTypeMomentarySwitch.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             propertySetSwitchingDeviceTypeMomentarySwitch.ObjectType = "IfcSwitchingDevice";
-            propertySetSwitchingDeviceTypeMomentarySwitch.PredefinedType = "MOMENTARYSWITCH";
+            propertySetSwitchingDeviceTypeMomentarySwitch.PredefinedTypes.Add("MOMENTARYSWITCH");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeMomentarySwitch.MomentaryType", "MomentaryType");
             ifcPSE.PropertyName = "MomentaryType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -94683,7 +94683,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSwitchingDeviceTypeMomentarySwitch.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             propertySetSwitchingDeviceTypeMomentarySwitch.EntityTypes.Add(IFCEntityType.IfcSwitchingDeviceType);
             propertySetSwitchingDeviceTypeMomentarySwitch.ObjectType = "IfcSwitchingDevice";
-            propertySetSwitchingDeviceTypeMomentarySwitch.PredefinedType = "MOMENTARYSWITCH";
+            propertySetSwitchingDeviceTypeMomentarySwitch.PredefinedTypes.Add("MOMENTARYSWITCH");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeMomentarySwitch.MomentaryType", "MomentaryType");
             ifcPSE.PropertyName = "MomentaryType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -94755,7 +94755,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSwitchingDeviceTypeRelay.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             propertySetSwitchingDeviceTypeRelay.EntityTypes.Add(IFCEntityType.IfcSwitchingDeviceType);
             propertySetSwitchingDeviceTypeRelay.ObjectType = "IfcSwitchingDevice";
-            propertySetSwitchingDeviceTypeRelay.PredefinedType = "RELAY";
+            propertySetSwitchingDeviceTypeRelay.PredefinedTypes.Add("RELAY");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeRelay.NominalHeight", "NominalHeight");
             ifcPSE.PropertyName = "NominalHeight";
             ifcPSE.PropertyType = PropertyType.NonNegativeLength;
@@ -94848,7 +94848,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSwitchingDeviceTypeSelectorSwitch.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             propertySetSwitchingDeviceTypeSelectorSwitch.ObjectType = "IfcSwitchingDevice";
-            propertySetSwitchingDeviceTypeSelectorSwitch.PredefinedType = "SELECTORSWITCH";
+            propertySetSwitchingDeviceTypeSelectorSwitch.PredefinedTypes.Add("SELECTORSWITCH");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeSelectorSwitch.SelectorType", "SelectorType");
             ifcPSE.PropertyName = "SelectorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -94894,7 +94894,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSwitchingDeviceTypeSelectorSwitch.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             propertySetSwitchingDeviceTypeSelectorSwitch.EntityTypes.Add(IFCEntityType.IfcSwitchingDeviceType);
             propertySetSwitchingDeviceTypeSelectorSwitch.ObjectType = "IfcSwitchingDevice";
-            propertySetSwitchingDeviceTypeSelectorSwitch.PredefinedType = "SELECTORSWITCH";
+            propertySetSwitchingDeviceTypeSelectorSwitch.PredefinedTypes.Add("SELECTORSWITCH");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeSelectorSwitch.SelectorType", "SelectorType");
             ifcPSE.PropertyName = "SelectorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -94999,7 +94999,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSwitchingDeviceTypeStarter.EntityTypes.Add(IFCEntityType.IfcSwitchingDeviceType);
             propertySetSwitchingDeviceTypeStarter.ObjectType = "IfcSwitchingDeviceType";
-            propertySetSwitchingDeviceTypeStarter.PredefinedType = "STARTER";
+            propertySetSwitchingDeviceTypeStarter.PredefinedTypes.Add("STARTER");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeStarter.StarterType", "StarterType");
             ifcPSE.PropertyName = "StarterType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -95015,7 +95015,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSwitchingDeviceTypeStarter.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             propertySetSwitchingDeviceTypeStarter.ObjectType = "IfcSwitchingDevice";
-            propertySetSwitchingDeviceTypeStarter.PredefinedType = "STARTER";
+            propertySetSwitchingDeviceTypeStarter.PredefinedTypes.Add("STARTER");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeStarter.StarterType", "StarterType");
             ifcPSE.PropertyName = "StarterType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -95035,7 +95035,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSwitchingDeviceTypeStarter.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             propertySetSwitchingDeviceTypeStarter.EntityTypes.Add(IFCEntityType.IfcSwitchingDeviceType);
             propertySetSwitchingDeviceTypeStarter.ObjectType = "IfcSwitchingDevice";
-            propertySetSwitchingDeviceTypeStarter.PredefinedType = "STARTER";
+            propertySetSwitchingDeviceTypeStarter.PredefinedTypes.Add("STARTER");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeStarter.StarterType", "StarterType");
             ifcPSE.PropertyName = "StarterType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -95097,7 +95097,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSwitchingDeviceTypeSwitchDisconnector.EntityTypes.Add(IFCEntityType.IfcSwitchingDeviceType);
             propertySetSwitchingDeviceTypeSwitchDisconnector.ObjectType = "IfcSwitchingDeviceType";
-            propertySetSwitchingDeviceTypeSwitchDisconnector.PredefinedType = "SWITCHDISCONNECTOR";
+            propertySetSwitchingDeviceTypeSwitchDisconnector.PredefinedTypes.Add("SWITCHDISCONNECTOR");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeSwitchDisconnector.SwitchDisconnectorType", "SwitchDisconnectorType");
             ifcPSE.PropertyName = "SwitchDisconnectorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -95131,7 +95131,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSwitchingDeviceTypeSwitchDisconnector.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             propertySetSwitchingDeviceTypeSwitchDisconnector.ObjectType = "IfcSwitchingDevice";
-            propertySetSwitchingDeviceTypeSwitchDisconnector.PredefinedType = "SWITCHDISCONNECTOR";
+            propertySetSwitchingDeviceTypeSwitchDisconnector.PredefinedTypes.Add("SWITCHDISCONNECTOR");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeSwitchDisconnector.SwitchDisconnectorType", "SwitchDisconnectorType");
             ifcPSE.PropertyName = "SwitchDisconnectorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -95163,7 +95163,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSwitchingDeviceTypeSwitchDisconnector.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             propertySetSwitchingDeviceTypeSwitchDisconnector.EntityTypes.Add(IFCEntityType.IfcSwitchingDeviceType);
             propertySetSwitchingDeviceTypeSwitchDisconnector.ObjectType = "IfcSwitchingDevice";
-            propertySetSwitchingDeviceTypeSwitchDisconnector.PredefinedType = "SWITCHDISCONNECTOR";
+            propertySetSwitchingDeviceTypeSwitchDisconnector.PredefinedTypes.Add("SWITCHDISCONNECTOR");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeSwitchDisconnector.SwitchDisconnectorType", "SwitchDisconnectorType");
             ifcPSE.PropertyName = "SwitchDisconnectorType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -95253,7 +95253,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSwitchingDeviceTypeToggleSwitch.EntityTypes.Add(IFCEntityType.IfcSwitchingDeviceType);
             propertySetSwitchingDeviceTypeToggleSwitch.ObjectType = "IfcSwitchingDeviceType";
-            propertySetSwitchingDeviceTypeToggleSwitch.PredefinedType = "TOGGLESWITCH";
+            propertySetSwitchingDeviceTypeToggleSwitch.PredefinedTypes.Add("TOGGLESWITCH");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeToggleSwitch.ToggleSwitchType", "ToggleSwitchType");
             ifcPSE.PropertyName = "ToggleSwitchType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -95305,7 +95305,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSwitchingDeviceTypeToggleSwitch.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             propertySetSwitchingDeviceTypeToggleSwitch.ObjectType = "IfcSwitchingDevice";
-            propertySetSwitchingDeviceTypeToggleSwitch.PredefinedType = "TOGGLESWITCH";
+            propertySetSwitchingDeviceTypeToggleSwitch.PredefinedTypes.Add("TOGGLESWITCH");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeToggleSwitch.ToggleSwitchType", "ToggleSwitchType");
             ifcPSE.PropertyName = "ToggleSwitchType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -95351,7 +95351,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSwitchingDeviceTypeToggleSwitch.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             propertySetSwitchingDeviceTypeToggleSwitch.EntityTypes.Add(IFCEntityType.IfcSwitchingDeviceType);
             propertySetSwitchingDeviceTypeToggleSwitch.ObjectType = "IfcSwitchingDevice";
-            propertySetSwitchingDeviceTypeToggleSwitch.PredefinedType = "TOGGLESWITCH";
+            propertySetSwitchingDeviceTypeToggleSwitch.PredefinedTypes.Add("TOGGLESWITCH");
             ifcPSE = new PropertySetEntry("Pset_SwitchingDeviceTypeToggleSwitch.ToggleSwitchType", "ToggleSwitchType");
             ifcPSE.PropertyName = "ToggleSwitchType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -95401,7 +95401,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSymmetricPairCable.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             propertySetSymmetricPairCable.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
             propertySetSymmetricPairCable.ObjectType = "IfcCableSegment";
-            propertySetSymmetricPairCable.PredefinedType = "CABLESEGMENT";
+            propertySetSymmetricPairCable.PredefinedTypes.Add("CABLESEGMENT");
             ifcPSE = new PropertySetEntry("Pset_SymmetricPairCable.NumberOfTwistedPairs", "NumberOfTwistedPairs");
             ifcPSE.PropertyName = "NumberOfTwistedPairs";
             ifcPSE.PropertyType = PropertyType.Count;
@@ -95693,7 +95693,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSystemFurnitureElementTypePanel.EntityTypes.Add(IFCEntityType.IfcSystemFurnitureElement);
             propertySetSystemFurnitureElementTypePanel.ObjectType = "IfcSystemFurnitureElement";
-            propertySetSystemFurnitureElementTypePanel.PredefinedType = "PANEL";
+            propertySetSystemFurnitureElementTypePanel.PredefinedTypes.Add("PANEL");
             ifcPSE = new PropertySetEntry("Pset_SystemFurnitureElementTypePanel.HasOpening", "HasOpening");
             ifcPSE.PropertyName = "HasOpening";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -95729,7 +95729,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSystemFurnitureElementTypePanel.EntityTypes.Add(IFCEntityType.IfcSystemFurnitureElement);
             propertySetSystemFurnitureElementTypePanel.EntityTypes.Add(IFCEntityType.IfcSystemFurnitureElementType);
             propertySetSystemFurnitureElementTypePanel.ObjectType = "IfcSystemFurnitureElement";
-            propertySetSystemFurnitureElementTypePanel.PredefinedType = "PANEL";
+            propertySetSystemFurnitureElementTypePanel.PredefinedTypes.Add("PANEL");
             ifcPSE = new PropertySetEntry("Pset_SystemFurnitureElementTypePanel.HasOpening", "HasOpening");
             ifcPSE.PropertyName = "HasOpening";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -95775,7 +95775,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSystemFurnitureElementTypeSubrack.EntityTypes.Add(IFCEntityType.IfcSystemFurnitureElement);
             propertySetSystemFurnitureElementTypeSubrack.EntityTypes.Add(IFCEntityType.IfcSystemFurnitureElementType);
             propertySetSystemFurnitureElementTypeSubrack.ObjectType = "IfcSystemFurnitureElement";
-            propertySetSystemFurnitureElementTypeSubrack.PredefinedType = "SUBRACK";
+            propertySetSystemFurnitureElementTypeSubrack.PredefinedTypes.Add("SUBRACK");
             ifcPSE = new PropertySetEntry("Pset_SystemFurnitureElementTypeSubrack.NumberOfSlots", "NumberOfSlots");
             ifcPSE.PropertyName = "NumberOfSlots";
             ifcPSE.PropertyType = PropertyType.Count;
@@ -95910,7 +95910,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetSystemFurnitureElementTypeWorkSurface.EntityTypes.Add(IFCEntityType.IfcSystemFurnitureElement);
             propertySetSystemFurnitureElementTypeWorkSurface.ObjectType = "IfcSystemFurnitureElement";
-            propertySetSystemFurnitureElementTypeWorkSurface.PredefinedType = "WORKSURFACE";
+            propertySetSystemFurnitureElementTypeWorkSurface.PredefinedTypes.Add("WORKSURFACE");
             ifcPSE = new PropertySetEntry("Pset_SystemFurnitureElementTypeWorkSurface.UsePurpose", "UsePurpose");
             ifcPSE.PropertyName = "UsePurpose";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -95964,7 +95964,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetSystemFurnitureElementTypeWorkSurface.EntityTypes.Add(IFCEntityType.IfcSystemFurnitureElement);
             propertySetSystemFurnitureElementTypeWorkSurface.EntityTypes.Add(IFCEntityType.IfcSystemFurnitureElementType);
             propertySetSystemFurnitureElementTypeWorkSurface.ObjectType = "IfcSystemFurnitureElement";
-            propertySetSystemFurnitureElementTypeWorkSurface.PredefinedType = "WORKSURFACE";
+            propertySetSystemFurnitureElementTypeWorkSurface.PredefinedTypes.Add("WORKSURFACE");
             ifcPSE = new PropertySetEntry("Pset_SystemFurnitureElementTypeWorkSurface.UsePurpose", "UsePurpose");
             ifcPSE.PropertyName = "UsePurpose";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -96641,7 +96641,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTankTypeExpansion.EntityTypes.Add(IFCEntityType.IfcTankType);
             propertySetTankTypeExpansion.ObjectType = "IfcTankType";
-            propertySetTankTypeExpansion.PredefinedType = "EXPANSION";
+            propertySetTankTypeExpansion.PredefinedTypes.Add("EXPANSION");
             ifcPSE = new PropertySetEntry("Pset_TankTypeExpansion.ChargePressure", "ChargePressure");
             ifcPSE.PropertyName = "ChargePressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -96671,7 +96671,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTankTypeExpansion.EntityTypes.Add(IFCEntityType.IfcTankType);
             propertySetTankTypeExpansion.ObjectType = "IfcTankType";
-            propertySetTankTypeExpansion.PredefinedType = "EXPANSION";
+            propertySetTankTypeExpansion.PredefinedTypes.Add("EXPANSION");
             ifcPSE = new PropertySetEntry("Pset_TankTypeExpansion.ChargePressure", "ChargePressure");
             ifcPSE.PropertyName = "ChargePressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -96701,7 +96701,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTankTypeExpansion.EntityTypes.Add(IFCEntityType.IfcTank);
             propertySetTankTypeExpansion.ObjectType = "IfcTank";
-            propertySetTankTypeExpansion.PredefinedType = "EXPANSION";
+            propertySetTankTypeExpansion.PredefinedTypes.Add("EXPANSION");
             ifcPSE = new PropertySetEntry("Pset_TankTypeExpansion.ChargePressure", "ChargePressure");
             ifcPSE.PropertyName = "ChargePressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -96738,7 +96738,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetTankTypeExpansion.EntityTypes.Add(IFCEntityType.IfcTank);
             propertySetTankTypeExpansion.EntityTypes.Add(IFCEntityType.IfcTankType);
             propertySetTankTypeExpansion.ObjectType = "IfcTank";
-            propertySetTankTypeExpansion.PredefinedType = "EXPANSION";
+            propertySetTankTypeExpansion.PredefinedTypes.Add("EXPANSION");
             ifcPSE = new PropertySetEntry("Pset_TankTypeExpansion.ChargePressure", "ChargePressure");
             ifcPSE.PropertyName = "ChargePressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -96781,7 +96781,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTankTypePreformed.EntityTypes.Add(IFCEntityType.IfcTankType);
             propertySetTankTypePreformed.ObjectType = "IfcTankType";
-            propertySetTankTypePreformed.PredefinedType = "PREFORMED";
+            propertySetTankTypePreformed.PredefinedTypes.Add("PREFORMED");
             ifcPSE = new PropertySetEntry("Pset_TankTypePreformed.PatternType", "PatternType");
             ifcPSE.PropertyName = "PatternType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -96823,7 +96823,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTankTypePreformed.EntityTypes.Add(IFCEntityType.IfcTankType);
             propertySetTankTypePreformed.ObjectType = "IfcTankType";
-            propertySetTankTypePreformed.PredefinedType = "PREFORMED";
+            propertySetTankTypePreformed.PredefinedTypes.Add("PREFORMED");
             ifcPSE = new PropertySetEntry("Pset_TankTypePreformed.PatternType", "PatternType");
             ifcPSE.PropertyName = "PatternType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -96865,7 +96865,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTankTypePreformed.EntityTypes.Add(IFCEntityType.IfcTank);
             propertySetTankTypePreformed.ObjectType = "IfcTank";
-            propertySetTankTypePreformed.PredefinedType = "PREFORMED";
+            propertySetTankTypePreformed.PredefinedTypes.Add("PREFORMED");
             ifcPSE = new PropertySetEntry("Pset_TankTypePreformed.PatternType", "PatternType");
             ifcPSE.PropertyName = "PatternType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -96999,7 +96999,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTankTypePressureVessel.EntityTypes.Add(IFCEntityType.IfcTankType);
             propertySetTankTypePressureVessel.ObjectType = "IfcTankType";
-            propertySetTankTypePressureVessel.PredefinedType = "PRESSUREVESSEL";
+            propertySetTankTypePressureVessel.PredefinedTypes.Add("PRESSUREVESSEL");
             ifcPSE = new PropertySetEntry("Pset_TankTypePressureVessel.ChargePressure", "ChargePressure");
             ifcPSE.PropertyName = "ChargePressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -97029,7 +97029,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTankTypePressureVessel.EntityTypes.Add(IFCEntityType.IfcTank);
             propertySetTankTypePressureVessel.ObjectType = "IfcTank";
-            propertySetTankTypePressureVessel.PredefinedType = "PRESSUREVESSEL";
+            propertySetTankTypePressureVessel.PredefinedTypes.Add("PRESSUREVESSEL");
             ifcPSE = new PropertySetEntry("Pset_TankTypePressureVessel.ChargePressure", "ChargePressure");
             ifcPSE.PropertyName = "ChargePressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -97066,7 +97066,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetTankTypePressureVessel.EntityTypes.Add(IFCEntityType.IfcTank);
             propertySetTankTypePressureVessel.EntityTypes.Add(IFCEntityType.IfcTankType);
             propertySetTankTypePressureVessel.ObjectType = "IfcTank";
-            propertySetTankTypePressureVessel.PredefinedType = "PRESSUREVESSEL";
+            propertySetTankTypePressureVessel.PredefinedTypes.Add("PRESSUREVESSEL");
             ifcPSE = new PropertySetEntry("Pset_TankTypePressureVessel.ChargePressure", "ChargePressure");
             ifcPSE.PropertyName = "ChargePressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -97109,7 +97109,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTankTypeSectional.EntityTypes.Add(IFCEntityType.IfcTankType);
             propertySetTankTypeSectional.ObjectType = "IfcTankType";
-            propertySetTankTypeSectional.PredefinedType = "SECTIONAL";
+            propertySetTankTypeSectional.PredefinedTypes.Add("SECTIONAL");
             ifcPSE = new PropertySetEntry("Pset_TankTypeSectional.NumberOfSections", "NumberOfSections");
             ifcPSE.PropertyName = "NumberOfSections";
             ifcPSE.PropertyType = PropertyType.Integer;
@@ -97139,7 +97139,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTankTypeSectional.EntityTypes.Add(IFCEntityType.IfcTankType);
             propertySetTankTypeSectional.ObjectType = "IfcTankType";
-            propertySetTankTypeSectional.PredefinedType = "SECTIONAL";
+            propertySetTankTypeSectional.PredefinedTypes.Add("SECTIONAL");
             ifcPSE = new PropertySetEntry("Pset_TankTypeSectional.NumberOfSections", "NumberOfSections");
             ifcPSE.PropertyName = "NumberOfSections";
             ifcPSE.PropertyType = PropertyType.Integer;
@@ -97169,7 +97169,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTankTypeSectional.EntityTypes.Add(IFCEntityType.IfcTank);
             propertySetTankTypeSectional.ObjectType = "IfcTank";
-            propertySetTankTypeSectional.PredefinedType = "SECTIONAL";
+            propertySetTankTypeSectional.PredefinedTypes.Add("SECTIONAL");
             ifcPSE = new PropertySetEntry("Pset_TankTypeSectional.NumberOfSections", "NumberOfSections");
             ifcPSE.PropertyName = "NumberOfSections";
             ifcPSE.PropertyType = PropertyType.Integer;
@@ -98000,11 +98000,10 @@ namespace Revit.IFC.Export.Exporter
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Pset_TicketProcessing"))
          {
             propertySetTicketProcessing.EntityTypes.Add(IFCEntityType.IfcDoor);
-            propertySetTicketProcessing.EntityTypes.Add(IFCEntityType.IfcDoor);
-            propertySetTicketProcessing.EntityTypes.Add(IFCEntityType.IfcDoorType);
             propertySetTicketProcessing.EntityTypes.Add(IFCEntityType.IfcDoorType);
             propertySetTicketProcessing.ObjectType = "IfcDoor";
-            propertySetTicketProcessing.PredefinedType = "TURNSTILE";
+            propertySetTicketProcessing.PredefinedTypes.Add("BOOM_BARRIER");
+            propertySetTicketProcessing.PredefinedTypes.Add("TURNSTILE");
             ifcPSE = new PropertySetEntry("Pset_TicketProcessing.TicketProcessingTime", "TicketProcessingTime");
             ifcPSE.PropertyName = "TicketProcessingTime";
             ifcPSE.PropertyType = PropertyType.Time;
@@ -98040,7 +98039,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetTicketVendingMachine.EntityTypes.Add(IFCEntityType.IfcElectricAppliance);
             propertySetTicketVendingMachine.EntityTypes.Add(IFCEntityType.IfcElectricApplianceType);
             propertySetTicketVendingMachine.ObjectType = "IfcElectricAppliance";
-            propertySetTicketVendingMachine.PredefinedType = "VENDINGMACHINE";
+            propertySetTicketVendingMachine.PredefinedTypes.Add("VENDINGMACHINE");
             ifcPSE = new PropertySetEntry("Pset_TicketVendingMachine.TicketStuckRatio", "TicketStuckRatio");
             ifcPSE.PropertyName = "TicketStuckRatio";
             ifcPSE.PropertyType = PropertyType.Ratio;
@@ -98324,7 +98323,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetTrackBase.EntityTypes.Add(IFCEntityType.IfcSlab);
             propertySetTrackBase.EntityTypes.Add(IFCEntityType.IfcSlabType);
             propertySetTrackBase.ObjectType = "IfcSlab";
-            propertySetTrackBase.PredefinedType = "BASESLAB";
+            propertySetTrackBase.PredefinedTypes.Add("BASESLAB");
             ifcPSE = new PropertySetEntry("Pset_TrackBase.IsSurfaceGalling", "IsSurfaceGalling");
             ifcPSE.PropertyName = "IsSurfaceGalling";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -98359,7 +98358,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTrackElementOccurrenceSleeper.EntityTypes.Add(IFCEntityType.IfcTrackElement);
             propertySetTrackElementOccurrenceSleeper.ObjectType = "IfcTrackElement";
-            propertySetTrackElementOccurrenceSleeper.PredefinedType = "SLEEPER";
+            propertySetTrackElementOccurrenceSleeper.PredefinedTypes.Add("SLEEPER");
             ifcPSE = new PropertySetEntry("Pset_TrackElementOccurrenceSleeper.HasSpecialEquipment", "HasSpecialEquipment");
             ifcPSE.PropertyName = "HasSpecialEquipment";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -98412,7 +98411,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTrackElementPHistoryDerailer.EntityTypes.Add(IFCEntityType.IfcTrackElement);
             propertySetTrackElementPHistoryDerailer.ObjectType = "IfcTrackElement";
-            propertySetTrackElementPHistoryDerailer.PredefinedType = "DERAILER";
+            propertySetTrackElementPHistoryDerailer.PredefinedTypes.Add("DERAILER");
             ifcPSE = new PropertySetEntry("Pset_TrackElementPHistoryDerailer.IsDerailing", "IsDerailing");
             ifcPSE.PropertyName = "IsDerailing";
             ifcPSE.PropertyType = PropertyType.IfcTimeSeries;
@@ -98441,7 +98440,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetTrackElementTypeDerailer.EntityTypes.Add(IFCEntityType.IfcTrackElement);
             propertySetTrackElementTypeDerailer.EntityTypes.Add(IFCEntityType.IfcTrackElementType);
             propertySetTrackElementTypeDerailer.ObjectType = "IfcTrackElement";
-            propertySetTrackElementTypeDerailer.PredefinedType = "DERAILER";
+            propertySetTrackElementTypeDerailer.PredefinedTypes.Add("DERAILER");
             ifcPSE = new PropertySetEntry("Pset_TrackElementTypeDerailer.AppliedLineLoad", "AppliedLineLoad");
             ifcPSE.PropertyName = "AppliedLineLoad";
             ifcPSE.PropertyType = PropertyType.MassPerLength;
@@ -98493,7 +98492,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetTrackElementTypeSleeper.EntityTypes.Add(IFCEntityType.IfcTrackElement);
             propertySetTrackElementTypeSleeper.EntityTypes.Add(IFCEntityType.IfcTrackElementType);
             propertySetTrackElementTypeSleeper.ObjectType = "IfcTrackElement";
-            propertySetTrackElementTypeSleeper.PredefinedType = "SLEEPER";
+            propertySetTrackElementTypeSleeper.PredefinedTypes.Add("SLEEPER");
             ifcPSE = new PropertySetEntry("Pset_TrackElementTypeSleeper.InstalledCondition", "InstalledCondition");
             ifcPSE.PropertyName = "InstalledCondition";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -98581,7 +98580,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTractionPowerSystem.EntityTypes.Add(IFCEntityType.IfcDistributionSystem);
             propertySetTractionPowerSystem.ObjectType = "IfcDistributionSystem";
-            propertySetTractionPowerSystem.PredefinedType = "ELECTRICAL";
+            propertySetTractionPowerSystem.PredefinedTypes.Add("ELECTRICAL");
             ifcPSE = new PropertySetEntry("Pset_TractionPowerSystem.PowerSupplyMode", "PowerSupplyMode");
             ifcPSE.PropertyName = "PowerSupplyMode";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -98637,7 +98636,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetTrafficCalmingDeviceCommon.EntityTypes.Add(IFCEntityType.IfcElementAssembly);
             propertySetTrafficCalmingDeviceCommon.EntityTypes.Add(IFCEntityType.IfcElementAssemblyType);
             propertySetTrafficCalmingDeviceCommon.ObjectType = "IfcElementAssembly";
-            propertySetTrafficCalmingDeviceCommon.PredefinedType = "TRAFFIC_CALMING_DEVICE";
+            propertySetTrafficCalmingDeviceCommon.PredefinedTypes.Add("TRAFFIC_CALMING_DEVICE");
             ifcPSE = new PropertySetEntry("Pset_TrafficCalmingDeviceCommon.TypeDesignation", "TypeDesignation");
             ifcPSE.PropertyName = "TypeDesignation";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -99229,7 +99228,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTransitionSectionCommon.EntityTypes.Add(IFCEntityType.IfcEarthworksFill);
             propertySetTransitionSectionCommon.ObjectType = "IfcEarthworksFill";
-            propertySetTransitionSectionCommon.PredefinedType = "TRANSITIONSECTION";
+            propertySetTransitionSectionCommon.PredefinedTypes.Add("TRANSITIONSECTION");
             ifcPSE = new PropertySetEntry("Pset_TransitionSectionCommon.NominalLength", "NominalLength");
             ifcPSE.PropertyName = "NominalLength";
             ifcPSE.PropertyType = PropertyType.NonNegativeLength;
@@ -99455,7 +99454,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTransportElementElevator.EntityTypes.Add(IFCEntityType.IfcTransportElement);
             propertySetTransportElementElevator.ObjectType = "IfcTransportElement";
-            propertySetTransportElementElevator.PredefinedType = "ELEVATOR";
+            propertySetTransportElementElevator.PredefinedTypes.Add("ELEVATOR");
             ifcPSE = new PropertySetEntry("Pset_TransportElementElevator.ClearWidth", "ClearWidth");
             ifcPSE.PropertyName = "ClearWidth";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -99485,7 +99484,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTransportElementElevator.EntityTypes.Add(IFCEntityType.IfcTransportElement);
             propertySetTransportElementElevator.ObjectType = "IfcTransportElement";
-            propertySetTransportElementElevator.PredefinedType = "ELEVATOR";
+            propertySetTransportElementElevator.PredefinedTypes.Add("ELEVATOR");
             ifcPSE = new PropertySetEntry("Pset_TransportElementElevator.FireFightingLift", "FireFightingLift");
             ifcPSE.PropertyName = "FireFightingLift";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -99537,7 +99536,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetTransportElementElevator.EntityTypes.Add(IFCEntityType.IfcTransportElement);
             propertySetTransportElementElevator.EntityTypes.Add(IFCEntityType.IfcTransportElementType);
             propertySetTransportElementElevator.ObjectType = "IfcTransportElement";
-            propertySetTransportElementElevator.PredefinedType = "ELEVATOR";
+            propertySetTransportElementElevator.PredefinedTypes.Add("ELEVATOR");
             ifcPSE = new PropertySetEntry("Pset_TransportElementElevator.FireFightingLift", "FireFightingLift");
             ifcPSE.PropertyName = "FireFightingLift";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -99589,7 +99588,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetTransportEquipmentOTN.EntityTypes.Add(IFCEntityType.IfcCommunicationsAppliance);
             propertySetTransportEquipmentOTN.EntityTypes.Add(IFCEntityType.IfcCommunicationsApplianceType);
             propertySetTransportEquipmentOTN.ObjectType = "IfcCommunicationsAppliance";
-            propertySetTransportEquipmentOTN.PredefinedType = "TRANSPORTEQUIPMENT";
+            propertySetTransportEquipmentOTN.PredefinedTypes.Add("TRANSPORTEQUIPMENT");
             ifcPSE = new PropertySetEntry("Pset_TransportEquipmentOTN.SingleChannelAveragePower", "SingleChannelAveragePower");
             ifcPSE.PropertyName = "SingleChannelAveragePower";
             ifcPSE.PropertyType = PropertyType.Power;
@@ -99665,7 +99664,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTrenchExcavationCommon.EntityTypes.Add(IFCEntityType.IfcEarthworksCut);
             propertySetTrenchExcavationCommon.ObjectType = "IfcEarthworksCut";
-            propertySetTrenchExcavationCommon.PredefinedType = "TRENCH";
+            propertySetTrenchExcavationCommon.PredefinedTypes.Add("TRENCH");
             ifcPSE = new PropertySetEntry("Pset_TrenchExcavationCommon.NominalDepth", "NominalDepth");
             ifcPSE.PropertyName = "NominalDepth";
             ifcPSE.PropertyType = PropertyType.NonNegativeLength;
@@ -100266,7 +100265,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTubeBundleTypeFinned.EntityTypes.Add(IFCEntityType.IfcTubeBundleType);
             propertySetTubeBundleTypeFinned.ObjectType = "IfcTubeBundleType";
-            propertySetTubeBundleTypeFinned.PredefinedType = "FINNED";
+            propertySetTubeBundleTypeFinned.PredefinedTypes.Add("FINNED");
             ifcPSE = new PropertySetEntry("Pset_TubeBundleTypeFinned.Spacing", "Spacing");
             ifcPSE.PropertyName = "Spacing";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -100345,7 +100344,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTubeBundleTypeFinned.EntityTypes.Add(IFCEntityType.IfcTubeBundleType);
             propertySetTubeBundleTypeFinned.ObjectType = "IfcTubeBundleType";
-            propertySetTubeBundleTypeFinned.PredefinedType = "FINNED";
+            propertySetTubeBundleTypeFinned.PredefinedTypes.Add("FINNED");
             ifcPSE = new PropertySetEntry("Pset_TubeBundleTypeFinned.Spacing", "Spacing");
             ifcPSE.PropertyName = "Spacing";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -100424,7 +100423,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetTubeBundleTypeFinned.EntityTypes.Add(IFCEntityType.IfcTubeBundle);
             propertySetTubeBundleTypeFinned.ObjectType = "IfcTubeBundle";
-            propertySetTubeBundleTypeFinned.PredefinedType = "FINNED";
+            propertySetTubeBundleTypeFinned.PredefinedTypes.Add("FINNED");
             ifcPSE = new PropertySetEntry("Pset_TubeBundleTypeFinned.Spacing", "Spacing");
             ifcPSE.PropertyName = "Spacing";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -100511,7 +100510,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetTubeBundleTypeFinned.EntityTypes.Add(IFCEntityType.IfcTubeBundle);
             propertySetTubeBundleTypeFinned.EntityTypes.Add(IFCEntityType.IfcTubeBundleType);
             propertySetTubeBundleTypeFinned.ObjectType = "IfcTubeBundle";
-            propertySetTubeBundleTypeFinned.PredefinedType = "FINNED";
+            propertySetTubeBundleTypeFinned.PredefinedTypes.Add("FINNED");
             ifcPSE = new PropertySetEntry("Pset_TubeBundleTypeFinned.Spacing", "Spacing");
             ifcPSE.PropertyName = "Spacing";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -100664,7 +100663,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetUnitaryControlElementBaseStationController.EntityTypes.Add(IFCEntityType.IfcUnitaryControlElement);
             propertySetUnitaryControlElementBaseStationController.EntityTypes.Add(IFCEntityType.IfcUnitaryControlElementType);
             propertySetUnitaryControlElementBaseStationController.ObjectType = "IfcUnitaryControlElement";
-            propertySetUnitaryControlElementBaseStationController.PredefinedType = "BASESTATIONCONTROLLER";
+            propertySetUnitaryControlElementBaseStationController.PredefinedTypes.Add("BASESTATIONCONTROLLER");
             ifcPSE = new PropertySetEntry("Pset_UnitaryControlElementBaseStationController.NumberOfInterfaces", "NumberOfInterfaces");
             ifcPSE.PropertyName = "NumberOfInterfaces";
             ifcPSE.PropertyArgumentType = PropertyType.Label;
@@ -100895,7 +100894,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetUnitaryControlElementTypeControlPanel.EntityTypes.Add(IFCEntityType.IfcUnitaryControlElement);
             propertySetUnitaryControlElementTypeControlPanel.EntityTypes.Add(IFCEntityType.IfcUnitaryControlElementType);
             propertySetUnitaryControlElementTypeControlPanel.ObjectType = "IfcUnitaryControlElement";
-            propertySetUnitaryControlElementTypeControlPanel.PredefinedType = "CONTROLPANEL";
+            propertySetUnitaryControlElementTypeControlPanel.PredefinedTypes.Add("CONTROLPANEL");
             ifcPSE = new PropertySetEntry("Pset_UnitaryControlElementTypeControlPanel.NominalCurrent", "NominalCurrent");
             ifcPSE.PropertyName = "NominalCurrent";
             ifcPSE.PropertyType = PropertyType.ElectricCurrent;
@@ -100957,7 +100956,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetUnitaryControlElementTypeIndicatorPanel.EntityTypes.Add(IFCEntityType.IfcUnitaryControlElement);
             propertySetUnitaryControlElementTypeIndicatorPanel.ObjectType = "IfcUnitaryControlElement";
-            propertySetUnitaryControlElementTypeIndicatorPanel.PredefinedType = "INDICATORPANEL";
+            propertySetUnitaryControlElementTypeIndicatorPanel.PredefinedTypes.Add("INDICATORPANEL");
             ifcPSE = new PropertySetEntry("Pset_UnitaryControlElementTypeIndicatorPanel.Application", "Application");
             ifcPSE.PropertyName = "Application";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -100975,7 +100974,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetUnitaryControlElementTypeIndicatorPanel.EntityTypes.Add(IFCEntityType.IfcUnitaryControlElement);
             propertySetUnitaryControlElementTypeIndicatorPanel.EntityTypes.Add(IFCEntityType.IfcUnitaryControlElementType);
             propertySetUnitaryControlElementTypeIndicatorPanel.ObjectType = "IfcUnitaryControlElement";
-            propertySetUnitaryControlElementTypeIndicatorPanel.PredefinedType = "INDICATORPANEL";
+            propertySetUnitaryControlElementTypeIndicatorPanel.PredefinedTypes.Add("INDICATORPANEL");
             ifcPSE = new PropertySetEntry("Pset_UnitaryControlElementTypeIndicatorPanel.UnitaryApplication", "UnitaryApplication");
             ifcPSE.PropertyName = "UnitaryApplication";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -101004,7 +101003,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetUnitaryControlElementTypeThermostat.EntityTypes.Add(IFCEntityType.IfcUnitaryControlElement);
             propertySetUnitaryControlElementTypeThermostat.ObjectType = "IfcUnitaryControlElement";
-            propertySetUnitaryControlElementTypeThermostat.PredefinedType = "THERMOSTAT";
+            propertySetUnitaryControlElementTypeThermostat.PredefinedTypes.Add("THERMOSTAT");
             ifcPSE = new PropertySetEntry("Pset_UnitaryControlElementTypeThermostat.TemperatureSetPoint", "TemperatureSetPoint");
             ifcPSE.PropertyName = "TemperatureSetPoint";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -101021,7 +101020,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetUnitaryControlElementTypeThermostat.EntityTypes.Add(IFCEntityType.IfcUnitaryControlElement);
             propertySetUnitaryControlElementTypeThermostat.EntityTypes.Add(IFCEntityType.IfcUnitaryControlElementType);
             propertySetUnitaryControlElementTypeThermostat.ObjectType = "IfcUnitaryControlElement";
-            propertySetUnitaryControlElementTypeThermostat.PredefinedType = "THERMOSTAT";
+            propertySetUnitaryControlElementTypeThermostat.PredefinedTypes.Add("THERMOSTAT");
             ifcPSE = new PropertySetEntry("Pset_UnitaryControlElementTypeThermostat.TemperatureSetPoint", "TemperatureSetPoint");
             ifcPSE.PropertyName = "TemperatureSetPoint";
             ifcPSE.PropertyValueType = PropertyValueType.BoundedValue;
@@ -101049,7 +101048,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetUnitaryEquipmentTypeAirConditioningUnit.EntityTypes.Add(IFCEntityType.IfcUnitaryEquipmentType);
             propertySetUnitaryEquipmentTypeAirConditioningUnit.ObjectType = "IfcUnitaryEquipmentType";
-            propertySetUnitaryEquipmentTypeAirConditioningUnit.PredefinedType = "AIRCONDITIONINGUNIT";
+            propertySetUnitaryEquipmentTypeAirConditioningUnit.PredefinedTypes.Add("AIRCONDITIONINGUNIT");
             ifcPSE = new PropertySetEntry("Pset_UnitaryEquipmentTypeAirConditioningUnit.SensibleCoolingCapacity", "SensibleCoolingCapacity");
             ifcPSE.PropertyName = "SensibleCoolingCapacity";
             ifcPSE.PropertyType = PropertyType.Power;
@@ -101127,7 +101126,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetUnitaryEquipmentTypeAirConditioningUnit.EntityTypes.Add(IFCEntityType.IfcUnitaryEquipmentType);
             propertySetUnitaryEquipmentTypeAirConditioningUnit.ObjectType = "IfcUnitaryEquipmentType";
-            propertySetUnitaryEquipmentTypeAirConditioningUnit.PredefinedType = "AIRCONDITIONINGUNIT";
+            propertySetUnitaryEquipmentTypeAirConditioningUnit.PredefinedTypes.Add("AIRCONDITIONINGUNIT");
             ifcPSE = new PropertySetEntry("Pset_UnitaryEquipmentTypeAirConditioningUnit.SensibleCoolingCapacity", "SensibleCoolingCapacity");
             ifcPSE.PropertyName = "SensibleCoolingCapacity";
             ifcPSE.PropertyType = PropertyType.Power;
@@ -101205,7 +101204,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetUnitaryEquipmentTypeAirConditioningUnit.EntityTypes.Add(IFCEntityType.IfcUnitaryEquipment);
             propertySetUnitaryEquipmentTypeAirConditioningUnit.ObjectType = "IfcUnitaryEquipment";
-            propertySetUnitaryEquipmentTypeAirConditioningUnit.PredefinedType = "AIRCONDITIONINGUNIT";
+            propertySetUnitaryEquipmentTypeAirConditioningUnit.PredefinedTypes.Add("AIRCONDITIONINGUNIT");
             ifcPSE = new PropertySetEntry("Pset_UnitaryEquipmentTypeAirConditioningUnit.SensibleCoolingCapacity", "SensibleCoolingCapacity");
             ifcPSE.PropertyName = "SensibleCoolingCapacity";
             ifcPSE.PropertyType = PropertyType.Power;
@@ -101302,7 +101301,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetUnitaryEquipmentTypeAirConditioningUnit.EntityTypes.Add(IFCEntityType.IfcUnitaryEquipment);
             propertySetUnitaryEquipmentTypeAirConditioningUnit.EntityTypes.Add(IFCEntityType.IfcUnitaryEquipmentType);
             propertySetUnitaryEquipmentTypeAirConditioningUnit.ObjectType = "IfcUnitaryEquipment";
-            propertySetUnitaryEquipmentTypeAirConditioningUnit.PredefinedType = "AIRCONDITIONINGUNIT";
+            propertySetUnitaryEquipmentTypeAirConditioningUnit.PredefinedTypes.Add("AIRCONDITIONINGUNIT");
             ifcPSE = new PropertySetEntry("Pset_UnitaryEquipmentTypeAirConditioningUnit.SensibleCoolingCapacity", "SensibleCoolingCapacity");
             ifcPSE.PropertyName = "SensibleCoolingCapacity";
             ifcPSE.PropertyType = PropertyType.Power;
@@ -101393,7 +101392,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetUnitaryEquipmentTypeAirHandler.EntityTypes.Add(IFCEntityType.IfcUnitaryEquipmentType);
             propertySetUnitaryEquipmentTypeAirHandler.ObjectType = "IfcUnitaryEquipmentType";
-            propertySetUnitaryEquipmentTypeAirHandler.PredefinedType = "AIRHANDLER";
+            propertySetUnitaryEquipmentTypeAirHandler.PredefinedTypes.Add("AIRHANDLER");
             ifcPSE = new PropertySetEntry("Pset_UnitaryEquipmentTypeAirHandler.AirHandlerConstruction", "AirHandlerConstruction");
             ifcPSE.PropertyName = "AirHandlerConstruction";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -101427,7 +101426,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetUnitaryEquipmentTypeAirHandler.EntityTypes.Add(IFCEntityType.IfcUnitaryEquipmentType);
             propertySetUnitaryEquipmentTypeAirHandler.ObjectType = "IfcUnitaryEquipmentType";
-            propertySetUnitaryEquipmentTypeAirHandler.PredefinedType = "AIRHANDLER";
+            propertySetUnitaryEquipmentTypeAirHandler.PredefinedTypes.Add("AIRHANDLER");
             ifcPSE = new PropertySetEntry("Pset_UnitaryEquipmentTypeAirHandler.AirHandlerConstruction", "AirHandlerConstruction");
             ifcPSE.PropertyName = "AirHandlerConstruction";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -101461,7 +101460,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetUnitaryEquipmentTypeAirHandler.EntityTypes.Add(IFCEntityType.IfcUnitaryEquipment);
             propertySetUnitaryEquipmentTypeAirHandler.ObjectType = "IfcUnitaryEquipment";
-            propertySetUnitaryEquipmentTypeAirHandler.PredefinedType = "AIRHANDLER";
+            propertySetUnitaryEquipmentTypeAirHandler.PredefinedTypes.Add("AIRHANDLER");
             ifcPSE = new PropertySetEntry("Pset_UnitaryEquipmentTypeAirHandler.AirHandlerConstruction", "AirHandlerConstruction");
             ifcPSE.PropertyName = "AirHandlerConstruction";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -101502,7 +101501,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetUnitaryEquipmentTypeAirHandler.EntityTypes.Add(IFCEntityType.IfcUnitaryEquipment);
             propertySetUnitaryEquipmentTypeAirHandler.EntityTypes.Add(IFCEntityType.IfcUnitaryEquipmentType);
             propertySetUnitaryEquipmentTypeAirHandler.ObjectType = "IfcUnitaryEquipment";
-            propertySetUnitaryEquipmentTypeAirHandler.PredefinedType = "AIRHANDLER";
+            propertySetUnitaryEquipmentTypeAirHandler.PredefinedTypes.Add("AIRHANDLER");
             ifcPSE = new PropertySetEntry("Pset_UnitaryEquipmentTypeAirHandler.AirHandlerConstruction", "AirHandlerConstruction");
             ifcPSE.PropertyName = "AirHandlerConstruction";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -101960,7 +101959,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeAirRelease.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeAirRelease.ObjectType = "IfcValveType";
-            propertySetValveTypeAirRelease.PredefinedType = "AIRRELEASE";
+            propertySetValveTypeAirRelease.PredefinedTypes.Add("AIRRELEASE");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeAirRelease.IsAutomatic", "IsAutomatic");
             ifcPSE.PropertyName = "IsAutomatic";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -101974,7 +101973,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeAirRelease.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeAirRelease.ObjectType = "IfcValveType";
-            propertySetValveTypeAirRelease.PredefinedType = "AIRRELEASE";
+            propertySetValveTypeAirRelease.PredefinedTypes.Add("AIRRELEASE");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeAirRelease.IsAutomatic", "IsAutomatic");
             ifcPSE.PropertyName = "IsAutomatic";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -101988,7 +101987,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeAirRelease.EntityTypes.Add(IFCEntityType.IfcValve);
             propertySetValveTypeAirRelease.ObjectType = "IfcValve";
-            propertySetValveTypeAirRelease.PredefinedType = "AIRRELEASE";
+            propertySetValveTypeAirRelease.PredefinedTypes.Add("AIRRELEASE");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeAirRelease.IsAutomatic", "IsAutomatic");
             ifcPSE.PropertyName = "IsAutomatic";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -102005,7 +102004,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetValveTypeAirRelease.EntityTypes.Add(IFCEntityType.IfcValve);
             propertySetValveTypeAirRelease.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeAirRelease.ObjectType = "IfcValve";
-            propertySetValveTypeAirRelease.PredefinedType = "AIRRELEASE";
+            propertySetValveTypeAirRelease.PredefinedTypes.Add("AIRRELEASE");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeAirRelease.IsAutomatic", "IsAutomatic");
             ifcPSE.PropertyName = "IsAutomatic";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -102434,7 +102433,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeDrawOffCock.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeDrawOffCock.ObjectType = "IfcValveType";
-            propertySetValveTypeDrawOffCock.PredefinedType = "DRAWOFFCOCK";
+            propertySetValveTypeDrawOffCock.PredefinedTypes.Add("DRAWOFFCOCK");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeDrawOffCock.HasHoseUnion", "HasHoseUnion");
             ifcPSE.PropertyName = "HasHoseUnion";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -102448,7 +102447,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeDrawOffCock.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeDrawOffCock.ObjectType = "IfcValveType";
-            propertySetValveTypeDrawOffCock.PredefinedType = "DRAWOFFCOCK";
+            propertySetValveTypeDrawOffCock.PredefinedTypes.Add("DRAWOFFCOCK");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeDrawOffCock.HasHoseUnion", "HasHoseUnion");
             ifcPSE.PropertyName = "HasHoseUnion";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -102462,7 +102461,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeDrawOffCock.EntityTypes.Add(IFCEntityType.IfcValve);
             propertySetValveTypeDrawOffCock.ObjectType = "IfcValve";
-            propertySetValveTypeDrawOffCock.PredefinedType = "DRAWOFFCOCK";
+            propertySetValveTypeDrawOffCock.PredefinedTypes.Add("DRAWOFFCOCK");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeDrawOffCock.HasHoseUnion", "HasHoseUnion");
             ifcPSE.PropertyName = "HasHoseUnion";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -102479,7 +102478,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetValveTypeDrawOffCock.EntityTypes.Add(IFCEntityType.IfcValve);
             propertySetValveTypeDrawOffCock.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeDrawOffCock.ObjectType = "IfcValve";
-            propertySetValveTypeDrawOffCock.PredefinedType = "DRAWOFFCOCK";
+            propertySetValveTypeDrawOffCock.PredefinedTypes.Add("DRAWOFFCOCK");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeDrawOffCock.HasHoseUnion", "HasHoseUnion");
             ifcPSE.PropertyName = "HasHoseUnion";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -102506,7 +102505,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeFaucet.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeFaucet.ObjectType = "IfcValveType";
-            propertySetValveTypeFaucet.PredefinedType = "FAUCET";
+            propertySetValveTypeFaucet.PredefinedTypes.Add("FAUCET");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeFaucet.FaucetType", "FaucetType");
             ifcPSE.PropertyName = "FaucetType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -102558,7 +102557,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeFaucet.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeFaucet.ObjectType = "IfcValveType";
-            propertySetValveTypeFaucet.PredefinedType = "FAUCET";
+            propertySetValveTypeFaucet.PredefinedTypes.Add("FAUCET");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeFaucet.FaucetType", "FaucetType");
             ifcPSE.PropertyName = "FaucetType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -102610,7 +102609,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeFaucet.EntityTypes.Add(IFCEntityType.IfcValve);
             propertySetValveTypeFaucet.ObjectType = "IfcValve";
-            propertySetValveTypeFaucet.PredefinedType = "FAUCET";
+            propertySetValveTypeFaucet.PredefinedTypes.Add("FAUCET");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeFaucet.FaucetType", "FaucetType");
             ifcPSE.PropertyName = "FaucetType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -102673,7 +102672,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetValveTypeFaucet.EntityTypes.Add(IFCEntityType.IfcValve);
             propertySetValveTypeFaucet.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeFaucet.ObjectType = "IfcValve";
-            propertySetValveTypeFaucet.PredefinedType = "FAUCET";
+            propertySetValveTypeFaucet.PredefinedTypes.Add("FAUCET");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeFaucet.FaucetType", "FaucetType");
             ifcPSE.PropertyName = "FaucetType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -102738,7 +102737,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeFlushing.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeFlushing.ObjectType = "IfcValveType";
-            propertySetValveTypeFlushing.PredefinedType = "FLUSHING";
+            propertySetValveTypeFlushing.PredefinedTypes.Add("FLUSHING");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeFlushing.FlushingRate", "FlushingRate");
             ifcPSE.PropertyName = "FlushingRate";
             ifcPSE.PropertyType = PropertyType.VolumetricFlowRate;
@@ -102768,7 +102767,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeFlushing.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeFlushing.ObjectType = "IfcValveType";
-            propertySetValveTypeFlushing.PredefinedType = "FLUSHING";
+            propertySetValveTypeFlushing.PredefinedTypes.Add("FLUSHING");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeFlushing.FlushingRate", "FlushingRate");
             ifcPSE.PropertyName = "FlushingRate";
             ifcPSE.PropertyType = PropertyType.VolumetricFlowRate;
@@ -102798,7 +102797,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeFlushing.EntityTypes.Add(IFCEntityType.IfcValve);
             propertySetValveTypeFlushing.ObjectType = "IfcValve";
-            propertySetValveTypeFlushing.PredefinedType = "FLUSHING";
+            propertySetValveTypeFlushing.PredefinedTypes.Add("FLUSHING");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeFlushing.FlushingRate", "FlushingRate");
             ifcPSE.PropertyName = "FlushingRate";
             ifcPSE.PropertyType = PropertyType.VolumetricFlowRate;
@@ -102835,7 +102834,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetValveTypeFlushing.EntityTypes.Add(IFCEntityType.IfcValve);
             propertySetValveTypeFlushing.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeFlushing.ObjectType = "IfcValve";
-            propertySetValveTypeFlushing.PredefinedType = "FLUSHING";
+            propertySetValveTypeFlushing.PredefinedTypes.Add("FLUSHING");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeFlushing.FlushingRate", "FlushingRate");
             ifcPSE.PropertyName = "FlushingRate";
             ifcPSE.PropertyType = PropertyType.VolumetricFlowRate;
@@ -102878,7 +102877,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeGasTap.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeGasTap.ObjectType = "IfcValveType";
-            propertySetValveTypeGasTap.PredefinedType = "GASTAP";
+            propertySetValveTypeGasTap.PredefinedTypes.Add("GASTAP");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeGasTap.HasHoseUnion", "HasHoseUnion");
             ifcPSE.PropertyName = "HasHoseUnion";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -102892,7 +102891,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeGasTap.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeGasTap.ObjectType = "IfcValveType";
-            propertySetValveTypeGasTap.PredefinedType = "GASTAP";
+            propertySetValveTypeGasTap.PredefinedTypes.Add("GASTAP");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeGasTap.HasHoseUnion", "HasHoseUnion");
             ifcPSE.PropertyName = "HasHoseUnion";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -102906,7 +102905,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeGasTap.EntityTypes.Add(IFCEntityType.IfcValve);
             propertySetValveTypeGasTap.ObjectType = "IfcValve";
-            propertySetValveTypeGasTap.PredefinedType = "GASTAP";
+            propertySetValveTypeGasTap.PredefinedTypes.Add("GASTAP");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeGasTap.HasHoseUnion", "HasHoseUnion");
             ifcPSE.PropertyName = "HasHoseUnion";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -102923,7 +102922,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetValveTypeGasTap.EntityTypes.Add(IFCEntityType.IfcValve);
             propertySetValveTypeGasTap.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeGasTap.ObjectType = "IfcValve";
-            propertySetValveTypeGasTap.PredefinedType = "GASTAP";
+            propertySetValveTypeGasTap.PredefinedTypes.Add("GASTAP");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeGasTap.HasHoseUnion", "HasHoseUnion");
             ifcPSE.PropertyName = "HasHoseUnion";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -102950,7 +102949,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeIsolating.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeIsolating.ObjectType = "IfcValveType";
-            propertySetValveTypeIsolating.PredefinedType = "ISOLATING";
+            propertySetValveTypeIsolating.PredefinedTypes.Add("ISOLATING");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeIsolating.IsNormallyOpen", "IsNormallyOpen");
             ifcPSE.PropertyName = "IsNormallyOpen";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -102974,7 +102973,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeIsolating.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeIsolating.ObjectType = "IfcValveType";
-            propertySetValveTypeIsolating.PredefinedType = "ISOLATING";
+            propertySetValveTypeIsolating.PredefinedTypes.Add("ISOLATING");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeIsolating.IsNormallyOpen", "IsNormallyOpen");
             ifcPSE.PropertyName = "IsNormallyOpen";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -102998,7 +102997,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeIsolating.EntityTypes.Add(IFCEntityType.IfcValve);
             propertySetValveTypeIsolating.ObjectType = "IfcValve";
-            propertySetValveTypeIsolating.PredefinedType = "ISOLATING";
+            propertySetValveTypeIsolating.PredefinedTypes.Add("ISOLATING");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeIsolating.IsNormallyOpen", "IsNormallyOpen");
             ifcPSE.PropertyName = "IsNormallyOpen";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -103027,7 +103026,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetValveTypeIsolating.EntityTypes.Add(IFCEntityType.IfcValve);
             propertySetValveTypeIsolating.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeIsolating.ObjectType = "IfcValve";
-            propertySetValveTypeIsolating.PredefinedType = "ISOLATING";
+            propertySetValveTypeIsolating.PredefinedTypes.Add("ISOLATING");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeIsolating.IsNormallyOpen", "IsNormallyOpen");
             ifcPSE.PropertyName = "IsNormallyOpen";
             ifcPSE.PropertyType = PropertyType.Boolean;
@@ -103064,7 +103063,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeMixing.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeMixing.ObjectType = "IfcValveType";
-            propertySetValveTypeMixing.PredefinedType = "MIXING";
+            propertySetValveTypeMixing.PredefinedTypes.Add("MIXING");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeMixing.MixerControl", "MixerControl");
             ifcPSE.PropertyName = "MixerControl";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -103088,7 +103087,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeMixing.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeMixing.ObjectType = "IfcValveType";
-            propertySetValveTypeMixing.PredefinedType = "MIXING";
+            propertySetValveTypeMixing.PredefinedTypes.Add("MIXING");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeMixing.MixerControl", "MixerControl");
             ifcPSE.PropertyName = "MixerControl";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -103112,7 +103111,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypeMixing.EntityTypes.Add(IFCEntityType.IfcValve);
             propertySetValveTypeMixing.ObjectType = "IfcValve";
-            propertySetValveTypeMixing.PredefinedType = "MIXING";
+            propertySetValveTypeMixing.PredefinedTypes.Add("MIXING");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeMixing.MixerControl", "MixerControl");
             ifcPSE.PropertyName = "MixerControl";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -103141,7 +103140,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetValveTypeMixing.EntityTypes.Add(IFCEntityType.IfcValve);
             propertySetValveTypeMixing.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypeMixing.ObjectType = "IfcValve";
-            propertySetValveTypeMixing.PredefinedType = "MIXING";
+            propertySetValveTypeMixing.PredefinedTypes.Add("MIXING");
             ifcPSE = new PropertySetEntry("Pset_ValveTypeMixing.MixerControl", "MixerControl");
             ifcPSE.PropertyName = "MixerControl";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -103178,7 +103177,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypePressureReducing.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypePressureReducing.ObjectType = "IfcValveType";
-            propertySetValveTypePressureReducing.PredefinedType = "PRESSUREREDUCING";
+            propertySetValveTypePressureReducing.PredefinedTypes.Add("PRESSUREREDUCING");
             ifcPSE = new PropertySetEntry("Pset_ValveTypePressureReducing.UpstreamPressure", "UpstreamPressure");
             ifcPSE.PropertyName = "UpstreamPressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -103200,7 +103199,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypePressureReducing.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypePressureReducing.ObjectType = "IfcValveType";
-            propertySetValveTypePressureReducing.PredefinedType = "PRESSUREREDUCING";
+            propertySetValveTypePressureReducing.PredefinedTypes.Add("PRESSUREREDUCING");
             ifcPSE = new PropertySetEntry("Pset_ValveTypePressureReducing.UpstreamPressure", "UpstreamPressure");
             ifcPSE.PropertyName = "UpstreamPressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -103222,7 +103221,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypePressureReducing.EntityTypes.Add(IFCEntityType.IfcValve);
             propertySetValveTypePressureReducing.ObjectType = "IfcValve";
-            propertySetValveTypePressureReducing.PredefinedType = "PRESSUREREDUCING";
+            propertySetValveTypePressureReducing.PredefinedTypes.Add("PRESSUREREDUCING");
             ifcPSE = new PropertySetEntry("Pset_ValveTypePressureReducing.UpstreamPressure", "UpstreamPressure");
             ifcPSE.PropertyName = "UpstreamPressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -103249,7 +103248,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetValveTypePressureReducing.EntityTypes.Add(IFCEntityType.IfcValve);
             propertySetValveTypePressureReducing.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypePressureReducing.ObjectType = "IfcValve";
-            propertySetValveTypePressureReducing.PredefinedType = "PRESSUREREDUCING";
+            propertySetValveTypePressureReducing.PredefinedTypes.Add("PRESSUREREDUCING");
             ifcPSE = new PropertySetEntry("Pset_ValveTypePressureReducing.UpstreamPressure", "UpstreamPressure");
             ifcPSE.PropertyName = "UpstreamPressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -103284,7 +103283,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypePressureRelief.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypePressureRelief.ObjectType = "IfcValveType";
-            propertySetValveTypePressureRelief.PredefinedType = "PRESSURERELIEF";
+            propertySetValveTypePressureRelief.PredefinedTypes.Add("PRESSURERELIEF");
             ifcPSE = new PropertySetEntry("Pset_ValveTypePressureRelief.ReliefPressure", "ReliefPressure");
             ifcPSE.PropertyName = "ReliefPressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -103298,7 +103297,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypePressureRelief.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypePressureRelief.ObjectType = "IfcValveType";
-            propertySetValveTypePressureRelief.PredefinedType = "PRESSURERELIEF";
+            propertySetValveTypePressureRelief.PredefinedTypes.Add("PRESSURERELIEF");
             ifcPSE = new PropertySetEntry("Pset_ValveTypePressureRelief.ReliefPressure", "ReliefPressure");
             ifcPSE.PropertyName = "ReliefPressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -103312,7 +103311,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetValveTypePressureRelief.EntityTypes.Add(IFCEntityType.IfcValve);
             propertySetValveTypePressureRelief.ObjectType = "IfcValve";
-            propertySetValveTypePressureRelief.PredefinedType = "PRESSURERELIEF";
+            propertySetValveTypePressureRelief.PredefinedTypes.Add("PRESSURERELIEF");
             ifcPSE = new PropertySetEntry("Pset_ValveTypePressureRelief.ReliefPressure", "ReliefPressure");
             ifcPSE.PropertyName = "ReliefPressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -103329,7 +103328,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetValveTypePressureRelief.EntityTypes.Add(IFCEntityType.IfcValve);
             propertySetValveTypePressureRelief.EntityTypes.Add(IFCEntityType.IfcValveType);
             propertySetValveTypePressureRelief.ObjectType = "IfcValve";
-            propertySetValveTypePressureRelief.PredefinedType = "PRESSURERELIEF";
+            propertySetValveTypePressureRelief.PredefinedTypes.Add("PRESSURERELIEF");
             ifcPSE = new PropertySetEntry("Pset_ValveTypePressureRelief.ReliefPressure", "ReliefPressure");
             ifcPSE.PropertyName = "ReliefPressure";
             ifcPSE.PropertyType = PropertyType.Pressure;
@@ -103356,7 +103355,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetVegetationCommon.EntityTypes.Add(IFCEntityType.IfcGeographicElement);
             propertySetVegetationCommon.ObjectType = "IfcGeographicElement";
-            propertySetVegetationCommon.PredefinedType = "VEGETATION";
+            propertySetVegetationCommon.PredefinedTypes.Add("VEGETATION");
             ifcPSE = new PropertySetEntry("Pset_VegetationCommon.BotanicalName", "BotanicalName");
             ifcPSE.PropertyName = "BotanicalName";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -103390,17 +103389,13 @@ namespace Revit.IFC.Export.Exporter
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Pset_VehicleAvailability"))
          {
             propertySetVehicleAvailability.EntityTypes.Add(IFCEntityType.IfcVehicle);
-            propertySetVehicleAvailability.EntityTypes.Add(IFCEntityType.IfcVehicle);
-            propertySetVehicleAvailability.EntityTypes.Add(IFCEntityType.IfcVehicle);
-            propertySetVehicleAvailability.EntityTypes.Add(IFCEntityType.IfcVehicle);
-            propertySetVehicleAvailability.EntityTypes.Add(IFCEntityType.IfcVehicle);
-            propertySetVehicleAvailability.EntityTypes.Add(IFCEntityType.IfcVehicleType);
-            propertySetVehicleAvailability.EntityTypes.Add(IFCEntityType.IfcVehicleType);
-            propertySetVehicleAvailability.EntityTypes.Add(IFCEntityType.IfcVehicleType);
-            propertySetVehicleAvailability.EntityTypes.Add(IFCEntityType.IfcVehicleType);
             propertySetVehicleAvailability.EntityTypes.Add(IFCEntityType.IfcVehicleType);
             propertySetVehicleAvailability.ObjectType = "IfcVehicle";
-            propertySetVehicleAvailability.PredefinedType = "VEHICLETRACKED";
+            propertySetVehicleAvailability.PredefinedTypes.Add("ROLLINGSTOCK");
+            propertySetVehicleAvailability.PredefinedTypes.Add("VEHICLEAIR");
+            propertySetVehicleAvailability.PredefinedTypes.Add("VEHICLEMARINE");
+            propertySetVehicleAvailability.PredefinedTypes.Add("VEHICLE");
+            propertySetVehicleAvailability.PredefinedTypes.Add("VEHICLETRACKED");
             ifcPSE = new PropertySetEntry("Pset_VehicleAvailability.VehicleAvailability", "VehicleAvailability");
             ifcPSE.PropertyName = "VehicleAvailability";
             ifcPSE.PropertyType = PropertyType.Ratio;
@@ -103444,7 +103439,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetVesselLineCommon.EntityTypes.Add(IFCEntityType.IfcMechanicalFastener);
             propertySetVesselLineCommon.EntityTypes.Add(IFCEntityType.IfcMechanicalFastenerType);
             propertySetVesselLineCommon.ObjectType = "IfcMechanicalFastener";
-            propertySetVesselLineCommon.PredefinedType = "ROPE";
+            propertySetVesselLineCommon.PredefinedTypes.Add("ROPE");
             ifcPSE = new PropertySetEntry("Pset_VesselLineCommon.LineIdentifier", "LineIdentifier");
             ifcPSE.PropertyName = "LineIdentifier";
             ifcPSE.PropertyType = PropertyType.Identifier;
@@ -103824,11 +103819,10 @@ namespace Revit.IFC.Export.Exporter
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Pset_VoltageInstrumentTransformer"))
          {
             propertySetVoltageInstrumentTransformer.EntityTypes.Add(IFCEntityType.IfcFlowInstrument);
-            propertySetVoltageInstrumentTransformer.EntityTypes.Add(IFCEntityType.IfcFlowInstrument);
-            propertySetVoltageInstrumentTransformer.EntityTypes.Add(IFCEntityType.IfcFlowInstrumentType);
             propertySetVoltageInstrumentTransformer.EntityTypes.Add(IFCEntityType.IfcFlowInstrumentType);
             propertySetVoltageInstrumentTransformer.ObjectType = "IfcFlowInstrument";
-            propertySetVoltageInstrumentTransformer.PredefinedType = "VOLTMETER";
+            propertySetVoltageInstrumentTransformer.PredefinedTypes.Add("COMBINED");
+            propertySetVoltageInstrumentTransformer.PredefinedTypes.Add("VOLTMETER");
             ifcPSE = new PropertySetEntry("Pset_VoltageInstrumentTransformer.AccuracyClass", "AccuracyClass");
             ifcPSE.PropertyName = "AccuracyClass";
             ifcPSE.PropertyType = PropertyType.Ratio;
@@ -104834,7 +104828,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWasteTerminalTypeFloorTrap.EntityTypes.Add(IFCEntityType.IfcWasteTerminalType);
             propertySetWasteTerminalTypeFloorTrap.ObjectType = "IfcWasteTerminalType";
-            propertySetWasteTerminalTypeFloorTrap.PredefinedType = "FLOORTRAP";
+            propertySetWasteTerminalTypeFloorTrap.PredefinedTypes.Add("FLOORTRAP");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeFloorTrap.NominalBodyLength", "NominalBodyLength");
             ifcPSE.PropertyName = "NominalBodyLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -104958,7 +104952,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWasteTerminalTypeFloorTrap.EntityTypes.Add(IFCEntityType.IfcWasteTerminal);
             propertySetWasteTerminalTypeFloorTrap.ObjectType = "IfcWasteTerminal";
-            propertySetWasteTerminalTypeFloorTrap.PredefinedType = "FLOORTRAP";
+            propertySetWasteTerminalTypeFloorTrap.PredefinedTypes.Add("FLOORTRAP");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeFloorTrap.NominalBodyLength", "NominalBodyLength");
             ifcPSE.PropertyName = "NominalBodyLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -105100,7 +105094,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetWasteTerminalTypeFloorTrap.EntityTypes.Add(IFCEntityType.IfcWasteTerminal);
             propertySetWasteTerminalTypeFloorTrap.EntityTypes.Add(IFCEntityType.IfcWasteTerminalType);
             propertySetWasteTerminalTypeFloorTrap.ObjectType = "IfcWasteTerminal";
-            propertySetWasteTerminalTypeFloorTrap.PredefinedType = "FLOORTRAP";
+            propertySetWasteTerminalTypeFloorTrap.PredefinedTypes.Add("FLOORTRAP");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeFloorTrap.NominalBodyLength", "NominalBodyLength");
             ifcPSE.PropertyName = "NominalBodyLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -105299,7 +105293,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWasteTerminalTypeFloorWaste.EntityTypes.Add(IFCEntityType.IfcWasteTerminalType);
             propertySetWasteTerminalTypeFloorWaste.ObjectType = "IfcWasteTerminalType";
-            propertySetWasteTerminalTypeFloorWaste.PredefinedType = "FLOORWASTE";
+            propertySetWasteTerminalTypeFloorWaste.PredefinedTypes.Add("FLOORWASTE");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeFloorWaste.NominalBodyLength", "NominalBodyLength");
             ifcPSE.PropertyName = "NominalBodyLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -105371,7 +105365,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWasteTerminalTypeFloorWaste.EntityTypes.Add(IFCEntityType.IfcWasteTerminal);
             propertySetWasteTerminalTypeFloorWaste.ObjectType = "IfcWasteTerminal";
-            propertySetWasteTerminalTypeFloorWaste.PredefinedType = "FLOORWASTE";
+            propertySetWasteTerminalTypeFloorWaste.PredefinedTypes.Add("FLOORWASTE");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeFloorWaste.NominalBodyLength", "NominalBodyLength");
             ifcPSE.PropertyName = "NominalBodyLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -105438,7 +105432,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetWasteTerminalTypeFloorWaste.EntityTypes.Add(IFCEntityType.IfcWasteTerminal);
             propertySetWasteTerminalTypeFloorWaste.EntityTypes.Add(IFCEntityType.IfcWasteTerminalType);
             propertySetWasteTerminalTypeFloorWaste.ObjectType = "IfcWasteTerminal";
-            propertySetWasteTerminalTypeFloorWaste.PredefinedType = "FLOORWASTE";
+            propertySetWasteTerminalTypeFloorWaste.PredefinedTypes.Add("FLOORWASTE");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeFloorWaste.NominalBodyLength", "NominalBodyLength");
             ifcPSE.PropertyName = "NominalBodyLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -105609,7 +105603,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWasteTerminalTypeGreaseInterceptor.EntityTypes.Add(IFCEntityType.IfcWasteTerminalType);
             propertySetWasteTerminalTypeGreaseInterceptor.ObjectType = "IfcWasteTerminalType";
-            propertySetWasteTerminalTypeGreaseInterceptor.PredefinedType = "GREASEINTERCEPTOR";
+            propertySetWasteTerminalTypeGreaseInterceptor.PredefinedTypes.Add("GREASEINTERCEPTOR");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeGreaseInterceptor.NominalBodyMaterial", "NominalBodyMaterial");
             ifcPSE.PropertyName = "NominalBodyMaterial";
             ifcPSE.PropertyType = PropertyType.IfcMaterial;
@@ -105836,7 +105830,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWasteTerminalTypeGullySump.EntityTypes.Add(IFCEntityType.IfcWasteTerminalType);
             propertySetWasteTerminalTypeGullySump.ObjectType = "IfcWasteTerminalType";
-            propertySetWasteTerminalTypeGullySump.PredefinedType = "GULLYSUMP";
+            propertySetWasteTerminalTypeGullySump.PredefinedTypes.Add("GULLYSUMP");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeGullySump.NominalSumpLength", "NominalSumpLength");
             ifcPSE.PropertyName = "NominalSumpLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -105946,7 +105940,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWasteTerminalTypeGullySump.EntityTypes.Add(IFCEntityType.IfcWasteTerminal);
             propertySetWasteTerminalTypeGullySump.ObjectType = "IfcWasteTerminal";
-            propertySetWasteTerminalTypeGullySump.PredefinedType = "GULLYSUMP";
+            propertySetWasteTerminalTypeGullySump.PredefinedTypes.Add("GULLYSUMP");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeGullySump.NominalSumpLength", "NominalSumpLength");
             ifcPSE.PropertyName = "NominalSumpLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -106059,7 +106053,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetWasteTerminalTypeGullySump.EntityTypes.Add(IFCEntityType.IfcWasteTerminal);
             propertySetWasteTerminalTypeGullySump.EntityTypes.Add(IFCEntityType.IfcWasteTerminalType);
             propertySetWasteTerminalTypeGullySump.ObjectType = "IfcWasteTerminal";
-            propertySetWasteTerminalTypeGullySump.PredefinedType = "GULLYSUMP";
+            propertySetWasteTerminalTypeGullySump.PredefinedTypes.Add("GULLYSUMP");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeGullySump.NominalSumpLength", "NominalSumpLength");
             ifcPSE.PropertyName = "NominalSumpLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -106281,7 +106275,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWasteTerminalTypeGullyTrap.EntityTypes.Add(IFCEntityType.IfcWasteTerminalType);
             propertySetWasteTerminalTypeGullyTrap.ObjectType = "IfcWasteTerminalType";
-            propertySetWasteTerminalTypeGullyTrap.PredefinedType = "GULLYTRAP";
+            propertySetWasteTerminalTypeGullyTrap.PredefinedTypes.Add("GULLYTRAP");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeGullyTrap.NominalBodyLength", "NominalBodyLength");
             ifcPSE.PropertyName = "NominalBodyLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -106399,7 +106393,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWasteTerminalTypeGullyTrap.EntityTypes.Add(IFCEntityType.IfcWasteTerminal);
             propertySetWasteTerminalTypeGullyTrap.ObjectType = "IfcWasteTerminal";
-            propertySetWasteTerminalTypeGullyTrap.PredefinedType = "GULLYTRAP";
+            propertySetWasteTerminalTypeGullyTrap.PredefinedTypes.Add("GULLYTRAP");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeGullyTrap.NominalBodyLength", "NominalBodyLength");
             ifcPSE.PropertyName = "NominalBodyLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -106521,7 +106515,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetWasteTerminalTypeGullyTrap.EntityTypes.Add(IFCEntityType.IfcWasteTerminal);
             propertySetWasteTerminalTypeGullyTrap.EntityTypes.Add(IFCEntityType.IfcWasteTerminalType);
             propertySetWasteTerminalTypeGullyTrap.ObjectType = "IfcWasteTerminal";
-            propertySetWasteTerminalTypeGullyTrap.PredefinedType = "GULLYTRAP";
+            propertySetWasteTerminalTypeGullyTrap.PredefinedTypes.Add("GULLYTRAP");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeGullyTrap.NominalBodyLength", "NominalBodyLength");
             ifcPSE.PropertyName = "NominalBodyLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -106713,7 +106707,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWasteTerminalTypeOilInterceptor.EntityTypes.Add(IFCEntityType.IfcWasteTerminalType);
             propertySetWasteTerminalTypeOilInterceptor.ObjectType = "IfcWasteTerminalType";
-            propertySetWasteTerminalTypeOilInterceptor.PredefinedType = "OILINTERCEPTOR";
+            propertySetWasteTerminalTypeOilInterceptor.PredefinedTypes.Add("OILINTERCEPTOR");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeOilInterceptor.BodyMaterial", "BodyMaterial");
             ifcPSE.PropertyName = "BodyMaterial";
             ifcPSE.PropertyType = PropertyType.IfcMaterial;
@@ -106893,7 +106887,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWasteTerminalTypePetrolInterceptor.EntityTypes.Add(IFCEntityType.IfcWasteTerminalType);
             propertySetWasteTerminalTypePetrolInterceptor.ObjectType = "IfcWasteTerminalType";
-            propertySetWasteTerminalTypePetrolInterceptor.PredefinedType = "PETROLINTERCEPTOR";
+            propertySetWasteTerminalTypePetrolInterceptor.PredefinedTypes.Add("PETROLINTERCEPTOR");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypePetrolInterceptor.BodyMaterial", "BodyMaterial");
             ifcPSE.PropertyName = "BodyMaterial";
             ifcPSE.PropertyType = PropertyType.IfcMaterial;
@@ -107065,7 +107059,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWasteTerminalTypeRoofDrain.EntityTypes.Add(IFCEntityType.IfcWasteTerminalType);
             propertySetWasteTerminalTypeRoofDrain.ObjectType = "IfcWasteTerminalType";
-            propertySetWasteTerminalTypeRoofDrain.PredefinedType = "ROOFDRAIN";
+            propertySetWasteTerminalTypeRoofDrain.PredefinedTypes.Add("ROOFDRAIN");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeRoofDrain.NominalBodyLength", "NominalBodyLength");
             ifcPSE.PropertyName = "NominalBodyLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -107137,7 +107131,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWasteTerminalTypeRoofDrain.EntityTypes.Add(IFCEntityType.IfcWasteTerminal);
             propertySetWasteTerminalTypeRoofDrain.ObjectType = "IfcWasteTerminal";
-            propertySetWasteTerminalTypeRoofDrain.PredefinedType = "ROOFDRAIN";
+            propertySetWasteTerminalTypeRoofDrain.PredefinedTypes.Add("ROOFDRAIN");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeRoofDrain.NominalBodyLength", "NominalBodyLength");
             ifcPSE.PropertyName = "NominalBodyLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -107204,7 +107198,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetWasteTerminalTypeRoofDrain.EntityTypes.Add(IFCEntityType.IfcWasteTerminal);
             propertySetWasteTerminalTypeRoofDrain.EntityTypes.Add(IFCEntityType.IfcWasteTerminalType);
             propertySetWasteTerminalTypeRoofDrain.ObjectType = "IfcWasteTerminal";
-            propertySetWasteTerminalTypeRoofDrain.PredefinedType = "ROOFDRAIN";
+            propertySetWasteTerminalTypeRoofDrain.PredefinedTypes.Add("ROOFDRAIN");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeRoofDrain.NominalBodyLength", "NominalBodyLength");
             ifcPSE.PropertyName = "NominalBodyLength";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -107300,7 +107294,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWasteTerminalTypeWasteDisposalUnit.EntityTypes.Add(IFCEntityType.IfcWasteTerminalType);
             propertySetWasteTerminalTypeWasteDisposalUnit.ObjectType = "IfcWasteTerminalType";
-            propertySetWasteTerminalTypeWasteDisposalUnit.PredefinedType = "WASTEDISPOSALUNIT";
+            propertySetWasteTerminalTypeWasteDisposalUnit.PredefinedTypes.Add("WASTEDISPOSALUNIT");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeWasteDisposalUnit.DrainConnectionSize", "DrainConnectionSize");
             ifcPSE.PropertyName = "DrainConnectionSize";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -107330,7 +107324,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWasteTerminalTypeWasteDisposalUnit.EntityTypes.Add(IFCEntityType.IfcWasteTerminal);
             propertySetWasteTerminalTypeWasteDisposalUnit.ObjectType = "IfcWasteTerminal";
-            propertySetWasteTerminalTypeWasteDisposalUnit.PredefinedType = "WASTEDISPOSALUNIT";
+            propertySetWasteTerminalTypeWasteDisposalUnit.PredefinedTypes.Add("WASTEDISPOSALUNIT");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeWasteDisposalUnit.DrainConnectionSize", "DrainConnectionSize");
             ifcPSE.PropertyName = "DrainConnectionSize";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -107367,7 +107361,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetWasteTerminalTypeWasteDisposalUnit.EntityTypes.Add(IFCEntityType.IfcWasteTerminal);
             propertySetWasteTerminalTypeWasteDisposalUnit.EntityTypes.Add(IFCEntityType.IfcWasteTerminalType);
             propertySetWasteTerminalTypeWasteDisposalUnit.ObjectType = "IfcWasteTerminal";
-            propertySetWasteTerminalTypeWasteDisposalUnit.PredefinedType = "WASTEDISPOSALUNIT";
+            propertySetWasteTerminalTypeWasteDisposalUnit.PredefinedTypes.Add("WASTEDISPOSALUNIT");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeWasteDisposalUnit.DrainConnectionSize", "DrainConnectionSize");
             ifcPSE.PropertyName = "DrainConnectionSize";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -107441,7 +107435,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWasteTerminalTypeWasteTrap.EntityTypes.Add(IFCEntityType.IfcWasteTerminalType);
             propertySetWasteTerminalTypeWasteTrap.ObjectType = "IfcWasteTerminalType";
-            propertySetWasteTerminalTypeWasteTrap.PredefinedType = "WASTETRAP";
+            propertySetWasteTerminalTypeWasteTrap.PredefinedTypes.Add("WASTETRAP");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeWasteTrap.WasteTrapType", "WasteTrapType");
             ifcPSE.PropertyName = "WasteTrapType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -107473,7 +107467,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWasteTerminalTypeWasteTrap.EntityTypes.Add(IFCEntityType.IfcWasteTerminal);
             propertySetWasteTerminalTypeWasteTrap.ObjectType = "IfcWasteTerminal";
-            propertySetWasteTerminalTypeWasteTrap.PredefinedType = "WASTETRAP";
+            propertySetWasteTerminalTypeWasteTrap.PredefinedTypes.Add("WASTETRAP");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeWasteTrap.WasteTrapType", "WasteTrapType");
             ifcPSE.PropertyName = "WasteTrapType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -107512,7 +107506,7 @@ namespace Revit.IFC.Export.Exporter
             propertySetWasteTerminalTypeWasteTrap.EntityTypes.Add(IFCEntityType.IfcWasteTerminal);
             propertySetWasteTerminalTypeWasteTrap.EntityTypes.Add(IFCEntityType.IfcWasteTerminalType);
             propertySetWasteTerminalTypeWasteTrap.ObjectType = "IfcWasteTerminal";
-            propertySetWasteTerminalTypeWasteTrap.PredefinedType = "WASTETRAP";
+            propertySetWasteTerminalTypeWasteTrap.PredefinedTypes.Add("WASTETRAP");
             ifcPSE = new PropertySetEntry("Pset_WasteTerminalTypeWasteTrap.WasteTrapType", "WasteTrapType");
             ifcPSE.PropertyName = "WasteTrapType";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -107557,7 +107551,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWaterStratumCommon.EntityTypes.Add(IFCEntityType.IfcGeotechnicalStratum);
             propertySetWaterStratumCommon.ObjectType = "IfcGeotechnicalStratum";
-            propertySetWaterStratumCommon.PredefinedType = "WATER";
+            propertySetWaterStratumCommon.PredefinedTypes.Add("WATER");
             ifcPSE = new PropertySetEntry("Pset_WaterStratumCommon.AnnualRange", "AnnualRange");
             ifcPSE.PropertyName = "AnnualRange";
             ifcPSE.PropertyType = PropertyType.PositiveLength;
@@ -107624,7 +107618,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWidth.EntityTypes.Add(IFCEntityType.IfcReferent);
             propertySetWidth.ObjectType = "IfcReferent";
-            propertySetWidth.PredefinedType = "WIDTHEVENT";
+            propertySetWidth.PredefinedTypes.Add("WIDTHEVENT");
             ifcPSE = new PropertySetEntry("Pset_Width.Side", "Side");
             ifcPSE.PropertyName = "Side";
             ifcPSE.PropertyType = PropertyType.Label;
@@ -108347,7 +108341,7 @@ namespace Revit.IFC.Export.Exporter
          {
             propertySetWiredCommunicationPortCommon.EntityTypes.Add(IFCEntityType.IfcDistributionPort);
             propertySetWiredCommunicationPortCommon.ObjectType = "IfcDistributionPort";
-            propertySetWiredCommunicationPortCommon.PredefinedType = "CABLE";
+            propertySetWiredCommunicationPortCommon.PredefinedTypes.Add("CABLE");
             ifcPSE = new PropertySetEntry("Pset_WiredCommunicationPortCommon.CommunicationStandard", "CommunicationStandard");
             ifcPSE.PropertyName = "CommunicationStandard";
             ifcPSE.PropertyType = PropertyType.Label;

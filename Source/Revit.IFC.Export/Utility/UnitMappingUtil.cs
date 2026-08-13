@@ -630,8 +630,7 @@ namespace Revit.IFC.Export.Utility
 
          if (!string.IsNullOrEmpty(userDefName))
          {
-            string capitalName = NamingUtil.RemoveSpaces(userDefName.ToUpper());
-            ExporterCacheManager.UnitsCache.RegisterUserDefinedUnit(capitalName, derivedUnitHnd);
+            ExporterCacheManager.UnitsCache.RegisterUserDefinedUnit(userDefName, derivedUnitHnd);
          }
 
          double scaleFactor = UnitUtils.ConvertFromInternalUnits(1.0, unitTypeId);
@@ -670,7 +669,11 @@ namespace Revit.IFC.Export.Utility
       {
          IFCAnyHandle auxiliaryUnit = null;
          if (ExporterCacheManager.UnitsCache.FindAuxiliaryUnit(unitTypeId, out auxiliaryUnit))
-            return auxiliaryUnit;
+         {
+            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(auxiliaryUnit))
+               return auxiliaryUnit;
+            ExporterCacheManager.UnitsCache.UnregisterAuxiliaryUnit(unitTypeId);
+         }
 
          Tuple<IFCSIUnitName, IFCSIPrefix?, IFCUnit> ifcAuxilaryValue = null;
          if (AuxiliaryUnitMapping.TryGetValue(unitTypeId, out ifcAuxilaryValue) == false)
@@ -913,6 +916,11 @@ namespace Revit.IFC.Export.Utility
          { SpecTypeId.MomentOfInertia, new DerivedAttributes(IFCDerivedUnitEnum.MomentOfInertiaUnit, null, new Dictionary<ForgeTypeId, DerivedInfo>() {
             { UnitTypeId.MetersToTheFourthPower, new DerivedInfo(null, true, new List<Tuple<ForgeTypeId, int>>() {
                Tuple.Create(UnitTypeId.Meters, 4) } )
+            } } )
+         },
+         { SpecTypeId.SectionModulus, new DerivedAttributes(IFCDerivedUnitEnum.SectionModulusUnit, null, new Dictionary<ForgeTypeId, DerivedInfo>() {
+            { UnitTypeId.CubicMeters, new DerivedInfo(null, true, new List<Tuple<ForgeTypeId, int>>() {
+               Tuple.Create(UnitTypeId.Meters, 3) } )
             } } )
          },
          { SpecTypeId.HeatTransferCoefficient, new DerivedAttributes(IFCDerivedUnitEnum.ThermalTransmittanceUnit, null, new Dictionary<ForgeTypeId, DerivedInfo>() {
@@ -1351,6 +1359,8 @@ namespace Revit.IFC.Export.Utility
          { "IfcModulusOfElasticityMeasure", SpecTypeId.Stress },
          { "IfcMoistureDiffusivityMeasure", SpecTypeId.Diffusivity },
          { "IfcMomentOfInertiaMeasure", SpecTypeId.MomentOfInertia },
+         { "IfcSectionModulusMeasure", SpecTypeId.SectionModulus },
+         { "IfcNonNegativeLengthMeasure", SpecTypeId.Length },
          { "IfcPlanarForceMeasure", SpecTypeId.AreaForce },
          { "IfcPlaneAngleMeasure", SpecTypeId.Angle },
          { "IfcPositiveLengthMeasure", SpecTypeId.Length },
@@ -1498,6 +1508,12 @@ namespace Revit.IFC.Export.Utility
          { PropertyType.NormalisedRatio, (StorageType.Double, [SpecTypeId.Number]) },
          { PropertyType.Numeric, (StorageType.Double, [SpecTypeId.Number]) },
          { PropertyType.PipingFriction, (StorageType.Double, [SpecTypeId.PipingFriction]) },
+         { PropertyType.NonNegativeLength, (StorageType.Double, [SpecTypeId.BarDiameter, SpecTypeId.CrackWidth, SpecTypeId.Displacement,
+            SpecTypeId.Distance, SpecTypeId.CableTraySize, SpecTypeId.ConduitSize, SpecTypeId.Length, SpecTypeId.DuctInsulationThickness,
+            SpecTypeId.DuctLiningThickness, SpecTypeId.DuctSize, SpecTypeId.HvacRoughness, SpecTypeId.PipeDimension,
+            SpecTypeId.PipeInsulationThickness, SpecTypeId.PipeSize, SpecTypeId.PipingRoughness, SpecTypeId.ReinforcementCover,
+            SpecTypeId.ReinforcementLength, SpecTypeId.ReinforcementSpacing, SpecTypeId.SectionDimension, SpecTypeId.SectionProperty,
+            SpecTypeId.WireDiameter, SpecTypeId.SurfaceAreaPerUnitLength]) },
          { PropertyType.PlanarForce, (StorageType.Double, [SpecTypeId.AreaForce]) },
          { PropertyType.PlaneAngle, (StorageType.Double, [SpecTypeId.Angle, SpecTypeId.Rotation, SpecTypeId.RotationAngle]) },
          { PropertyType.PositiveLength, (StorageType.Double, [SpecTypeId.BarDiameter, SpecTypeId.CrackWidth, SpecTypeId.Displacement,
@@ -1519,6 +1535,7 @@ namespace Revit.IFC.Export.Utility
          { PropertyType.RotationalLineSpringCoefficient, (StorageType.Double, [SpecTypeId.RotationalLineSpringCoefficient]) },
          { PropertyType.RotationalPointSpringCoefficient, (StorageType.Double, [SpecTypeId.RotationalPointSpringCoefficient]) },
          { PropertyType.SoundPower, (StorageType.Double, [SpecTypeId.ApparentPower, SpecTypeId.ElectricalPower, SpecTypeId.Wattage, SpecTypeId.CoolingLoad]) },
+         { PropertyType.SoundPowerLevel, (StorageType.Double, [SpecTypeId.Number]) },
          { PropertyType.SoundPressure, (StorageType.Double, [SpecTypeId.HvacPressure, SpecTypeId.PipingPressure, SpecTypeId.Stress]) },
          { PropertyType.SpecificHeatCapacity, (StorageType.Double, [SpecTypeId.SpecificHeat]) },
          { PropertyType.ThermalConductivity, (StorageType.Double, [SpecTypeId.ThermalConductivity]) },
@@ -1532,11 +1549,15 @@ namespace Revit.IFC.Export.Utility
          { PropertyType.Torque, (StorageType.Double, [SpecTypeId.Moment]) },
          { PropertyType.UnitWeight, (StorageType.Double, [SpecTypeId.UnitWeight]) },
          { PropertyType.VaporPermeability, (StorageType.Double, [SpecTypeId.Permeability]) },
-         { PropertyType.Volume, (StorageType.Double, [SpecTypeId.PipingVolume, SpecTypeId.ReinforcementVolume, SpecTypeId.SectionModulus, SpecTypeId.Volume]) },
+         { PropertyType.Volume, (StorageType.Double, [SpecTypeId.PipingVolume, SpecTypeId.ReinforcementVolume, SpecTypeId.Volume]) },
+         { PropertyType.SectionModulus, (StorageType.Double, [SpecTypeId.SectionModulus]) },
          { PropertyType.VolumetricFlowRate, (StorageType.Double, [SpecTypeId.AirFlow, SpecTypeId.Flow]) },
          { PropertyType.WarpingConstant, (StorageType.Double, [SpecTypeId.WarpingConstant]) },
 
          { PropertyType.ClassificationReference, (StorageType.String, []) }, // empty DataTypes allow any data type of the specified StorageType
+         { PropertyType.Date, (StorageType.String, [SpecTypeId.String.Text]) },
+         { PropertyType.DateTime, (StorageType.String, [SpecTypeId.String.Text]) },
+         { PropertyType.Duration, (StorageType.String, [SpecTypeId.String.Text]) },
          { PropertyType.Identifier, (StorageType.String, []) },
          { PropertyType.Label, (StorageType.String, []) },
          { PropertyType.Text, (StorageType.String, []) },

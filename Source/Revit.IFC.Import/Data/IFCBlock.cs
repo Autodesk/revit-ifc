@@ -54,7 +54,7 @@ namespace Revit.IFC.Import.Data
       protected override IList<GeometryObject> CreateGeometryInternal(
          IFCImportShapeEditScope shapeEditScope, Transform scaledLcs, string guid)
       {
-         if (XLength < MathUtil.Eps() || YLength < MathUtil.Eps() || ZLength < MathUtil.Eps())
+         if (XLength < MathUtil.Eps || YLength < MathUtil.Eps || ZLength < MathUtil.Eps)
             return null;
 
          Transform scaledExtrusionPosition = (scaledLcs == null) ? Transform.Identity : scaledLcs;

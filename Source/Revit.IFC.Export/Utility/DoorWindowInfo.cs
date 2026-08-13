@@ -19,13 +19,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Autodesk.Revit;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Exporter;
-using Revit.IFC.Export.Toolkit;
-using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
 
 namespace Revit.IFC.Export.Utility
@@ -122,62 +118,51 @@ namespace Revit.IFC.Export.Utility
          UserDefinedPartitioningType = null;
       }
 
-      private KeyValuePair<double, double> GetAdjustedEndParameters(Arc arc, bool flipped, double offset)
+      static readonly Dictionary<NamingUtil.IFCStringKey, string> ReverseDoorStyleOperations = new()
       {
-         double endParam0 = (flipped ? arc.GetEndParameter(1) : arc.GetEndParameter(0)) - offset;
-         double endParam1 = (flipped ? arc.GetEndParameter(0) : arc.GetEndParameter(1)) - offset;
-         double angle = endParam1 - endParam0;
-         endParam0 = MathUtil.PutInRange(endParam0, Math.PI, 2 * Math.PI);
-         endParam1 = endParam0 + angle;
+         { new NamingUtil.IFCStringKey("DOUBLESWINGLEFT"), "DOUBLE_SWING_RIGHT" },
+         { new NamingUtil.IFCStringKey("DOUBLESWINGRIGHT"), "DOUBLE_SWING_LEFT" },
+         { new NamingUtil.IFCStringKey("FOLDINGTOLEFT"), "FOLDING_TO_RIGHT" },
+         { new NamingUtil.IFCStringKey("FOLDINGTORIGHT"), "FOLDING_TO_LEFT"},
+         { new NamingUtil.IFCStringKey("SINGLESWINGLEFT"), "SINGLE_SWING_RIGHT"},
+         { new NamingUtil.IFCStringKey("SINGLESWINGRIGHT"), "SINGLE_SWING_LEFT" },
+         { new NamingUtil.IFCStringKey("SLIDINGTOLEFT"), "SLIDING_TO_RIGHT" },
+         { new NamingUtil.IFCStringKey("SLIDINGTORIGHT"), "SLIDING_TO_LEFT"}
+      };
 
-         return new KeyValuePair<double, double>(endParam0, endParam1);
-      }
+      static readonly Dictionary<NamingUtil.IFCStringKey, string> ReverseDoorStyleOperationsPre4Dot3 = new()
+      {
+         { new NamingUtil.IFCStringKey("DOUBLEDOORSINGLESWINGOPPOSITELEFT"), "DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_RIGHT" },
+         { new NamingUtil.IFCStringKey("DOUBLEDOORSINGLESWINGOPPOSITERIGHT"), "DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_LEFT" },
+         { new NamingUtil.IFCStringKey("DOUBLEPANELSINGLESWINGOPPOSITELEFT"), "DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_RIGHT" },
+         { new NamingUtil.IFCStringKey("DOUBLEPANELSINGLESWINGOPPOSITERIGHT"), "DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_LEFT"}
+      };
+
+      static readonly Dictionary<NamingUtil.IFCStringKey, string> ReverseDoorStyleOperations4Dot3 = new()
+      {
+         { new NamingUtil.IFCStringKey("DOUBLEDOORSINGLESWINGOPPOSITELEFT"), "DOUBLE_PANEL_SINGLE_SWING_OPPOSITE_RIGHT" },
+         { new NamingUtil.IFCStringKey("DOUBLEDOORSINGLESWINGOPPOSITERIGHT"), "DOUBLE_PANEL_SINGLE_SWING_OPPOSITE_LEFT" },
+         { new NamingUtil.IFCStringKey("DOUBLEPANELSINGLESWINGOPPOSITELEFT"), "DOUBLE_PANEL_SINGLE_SWING_OPPOSITE_RIGHT" },
+         { new NamingUtil.IFCStringKey("DOUBLEPANELSINGLESWINGOPPOSITERIGHT"), "DOUBLE_PANEL_SINGLE_SWING_OPPOSITE_LEFT"},
+         { new NamingUtil.IFCStringKey("LIFTINGVERTICALLEFT"), "LIFTING_VERTICAL_RIGHT" },
+         { new NamingUtil.IFCStringKey("LIFTINGVERTICALRIGHT"), "LIFTING_VERTICAL_LEFT"}
+      };
 
       private string ReverseDoorStyleOperation(string orig)
       {
-         bool exportAsOlderthanIFC4x3 = ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4x3;
-         string doorOrPanel = exportAsOlderthanIFC4x3 ? "DOOR" : "PANEL";
+         NamingUtil.IFCStringKey compName = new(orig);
+         if (ReverseDoorStyleOperations.TryGetValue(compName, out string reverse))
+            return reverse;
 
-         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, 
-            "DoubleDoorSingleSwingOppositeLeft", "DoublePanelSingleSwingOppositeLeft"))
-            return "DOUBLE_" + doorOrPanel + "_SINGLE_SWING_OPPOSITE_RIGHT";
-         
-         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, 
-            "DoubleDoorSingleSwingOppositeRight", "DoublePanelSingleSwingOppositeRight"))
-            return "DOUBLE_" + doorOrPanel + "_SINGLE_SWING_OPPOSITE_LEFT";
-         
-         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "DoubleSwingLeft"))
-            return "DOUBLE_SWING_RIGHT";
-         
-         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "DoubleSwingRight"))
-            return "DOUBLE_SWING_LEFT";
-         
-         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "FoldingToLeft"))
-            return "FOLDING_TO_RIGHT";
-         
-         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "FoldingToRight"))
-            return "FOLDING_TO_LEFT";
-         
-         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "SingleSwingLeft"))
-            return "SINGLE_SWING_RIGHT";
-         
-         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "SingleSwingRight"))
-            return "SINGLE_SWING_LEFT";
-         
-         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "SlidingToLeft"))
-            return "SLIDING_TO_RIGHT";
-         
-         if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "SlidingToRight"))
-            return "SLIDING_TO_LEFT";
-         
-         // New to IFC4.3.
-         if (!exportAsOlderthanIFC4x3)
+         if (ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4x3)
          {
-            if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "LiftingVerticalLeft"))
-               return "LIFTING_VERTICAL_RIGHT";
-
-            if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(orig, "LiftingVerticalRight"))
-               return "LIFTING_VERTICAL_LEFT";
+            if (ReverseDoorStyleOperationsPre4Dot3.TryGetValue(compName, out reverse))
+               return reverse;
+         }
+         else
+         {
+            if (ReverseDoorStyleOperations4Dot3.TryGetValue(compName, out reverse))
+               return reverse;
          }
 
          return orig;
@@ -252,7 +237,7 @@ namespace Revit.IFC.Export.Utility
 
          foreach (Arc arc in origArcs)
          {
-            Arc trfArc = arc.CreateTransformed(doorWindowTrf) as Arc;
+            Arc trfArc = GeometryUtil.CreateTransformedCurve(arc, doorWindowTrf) as Arc;
 
             // Filter only Arcs that is on XY plane and at the Z=0 of the Door/Window transform
             if (!(MathUtil.IsAlmostEqual(Math.Abs(trfArc.Normal.Z), 1.0) /*&& MathUtil.IsAlmostEqual(Math.Abs(trfArc.Center.Z), Math.Abs(doorWindowTrf.Origin.Z))*/))
@@ -449,6 +434,51 @@ namespace Revit.IFC.Export.Utility
          HasRealWallHost = ((wall != null) && (centerCurve != null) && ((centerCurve is Line) || (centerCurve is Arc)));
       }
 
+      static readonly Dictionary<NamingUtil.IFCStringKey, string> DoorTypes = new()
+      {
+         { new NamingUtil.IFCStringKey("DOUBLEDOORFOLDING"), "DOUBLE_DOOR_FOLDING" },
+         { new NamingUtil.IFCStringKey("DOUBLEDOORSINGLESWING"), "DOUBLE_DOOR_SINGLE_SWING" },
+         { new NamingUtil.IFCStringKey("DOUBLEDOORSINGLESWINGOPPOSITELEFT"), "DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_LEFT" },
+         { new NamingUtil.IFCStringKey("DOUBLEDOORSINGLESWINGOPPOSITERIGHT"), "DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_RIGHT" },
+         { new NamingUtil.IFCStringKey("DOUBLEDOORSLIDING"), "DOUBLE_DOOR_SLIDING" },
+         { new NamingUtil.IFCStringKey("DOUBLESWINGLEFT"), "DOUBLE_SWING_LEFT" },
+         { new NamingUtil.IFCStringKey("DOUBLESWINGRIGHT"), "DOUBLE_SWING_RIGHT" },
+         { new NamingUtil.IFCStringKey("DOUBLEDOORDOUBLESWING"), "DOUBLE_DOOR_DOUBLE_SWING" },
+         { new NamingUtil.IFCStringKey("FOLDINGTOLEFT"), "FOLDING_TO_LEFT" },
+         { new NamingUtil.IFCStringKey("FOLDINGTORIGHT"), "FOLDING_TO_RIGHT" },
+         { new NamingUtil.IFCStringKey("NOTDEFINED"), "NOTDEFINED" },
+         { new NamingUtil.IFCStringKey("REVOLVING"), "REVOLVING" },
+         { new NamingUtil.IFCStringKey("ROLLINGUP"), "ROLLINGUP" },
+         { new NamingUtil.IFCStringKey("SINGLESWINGLEFT"), "SINGLE_SWING_LEFT" },
+         { new NamingUtil.IFCStringKey("SINGLESWINGRIGHT"), "SINGLE_SWING_RIGHT" },
+         { new NamingUtil.IFCStringKey("SLIDINGTOLEFT"), "SLIDING_TO_LEFT" },
+         { new NamingUtil.IFCStringKey("SLIDINGTORIGHT"), "SLIDING_TO_RIGHT" },
+         { new NamingUtil.IFCStringKey("SWINGFIXEDLEFT"), "SWING_FIXED_LEFT" },
+         { new NamingUtil.IFCStringKey("SWINGFIXEDRIGHT"), "SWING_FIXED_RIGHT" },
+         { new NamingUtil.IFCStringKey("USERDEFINED"), "USERDEFINED" }
+      };
+
+      static readonly Dictionary<NamingUtil.IFCStringKey, string> DoorStyles = new()
+      {
+         { new NamingUtil.IFCStringKey("DOUBLEDOORFOLDING"), "DOUBLE_DOOR_FOLDING" },
+         { new NamingUtil.IFCStringKey("DOUBLEDOORSINGLESWING"), "DOUBLE_DOOR_SINGLE_SWING" },
+         { new NamingUtil.IFCStringKey("DOUBLEDOORSINGLESWINGOPPOSITELEFT"), "DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_LEFT" },
+         { new NamingUtil.IFCStringKey("DOUBLEDOORSINGLESWINGOPPOSITERIGHT"), "DOUBLE_DOOR_SINGLE_SWING_OPPOSITE_RIGHT" },
+         { new NamingUtil.IFCStringKey("DOUBLEDOORSLIDING"), "DOUBLE_DOOR_SLIDING" },
+         { new NamingUtil.IFCStringKey("DOUBLESWINGLEFT"), "DOUBLE_SWING_LEFT" },
+         { new NamingUtil.IFCStringKey("DOUBLESWINGRIGHT"), "DOUBLE_SWING_RIGHT" },
+         { new NamingUtil.IFCStringKey("FOLDINGTOLEFT"), "FOLDING_TO_LEFT" },
+         { new NamingUtil.IFCStringKey("FOLDINGTORIGHT"), "FOLDING_TO_RIGHT" },
+         { new NamingUtil.IFCStringKey("NOTDEFINED"), "NOTDEFINED" },
+         { new NamingUtil.IFCStringKey("REVOLVING"), "REVOLVING" },
+         { new NamingUtil.IFCStringKey("ROLLINGUP"), "ROLLINGUP" },
+         { new NamingUtil.IFCStringKey("SINGLESWINGLEFT"), "SINGLE_SWING_LEFT" },
+         { new NamingUtil.IFCStringKey("SINGLESWINGRIGHT"), "SINGLE_SWING_RIGHT" },
+         { new NamingUtil.IFCStringKey("SLIDINGTOLEFT"), "SLIDING_TO_LEFT" },
+         { new NamingUtil.IFCStringKey("SLIDINGTORIGHT"), "SLIDING_TO_RIGHT" },
+         { new NamingUtil.IFCStringKey("USERDEFINED"), "USERDEFINED" }
+      };
+
       private void CalculateDoorWindowInformation(ExporterIFC exporterIFC, FamilyInstance famInst,
           ElementId overrideLevelId, Transform trf)
       {
@@ -462,51 +492,50 @@ namespace Revit.IFC.Export.Utility
             if (doorType != null)
             {
                // Look at the "Operation" override first, then the built-in parameter.
-               ParameterUtil.GetStringValueFromElementOrSymbol(doorType, "Operation", out doorOperationType);
+               (_, doorOperationType) = ParameterUtil.GetStringValueFromElementOrSymbol(doorType, null, false, "Operation");
                if (string.IsNullOrWhiteSpace(doorOperationType))
-                  ParameterUtil.GetStringValueFromElement(doorType, BuiltInParameter.DOOR_OPERATION_TYPE, out doorOperationType);
+                  (_, doorOperationType) = ParameterUtil.GetStringValueFromElement(doorType, BuiltInParameter.DOOR_OPERATION_TYPE);
             }
 
-            DoorOperationTypeString = "NOTDEFINED";
+            DoorOperationTypeString = null;
             if (!string.IsNullOrWhiteSpace(doorOperationType))
             {
-               Type enumType = null;
+               NamingUtil.IFCStringKey compName = new(doorOperationType);
                if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
-                  enumType = typeof(Toolkit.IFC4.IFCDoorTypeOperation);
-               else
-                  enumType = typeof(Toolkit.IFCDoorStyleOperation);
-
-               foreach (Enum ifcDoorStyleOperation in Enum.GetValues(enumType))
                {
-                  string enumAsString = ifcDoorStyleOperation.ToString();
-                  if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(enumAsString, doorOperationType))
-                  {
-                     DoorOperationTypeString = enumAsString;
-                     break;
-                  }
+                  if (DoorTypes.TryGetValue(compName, out string doorTypeString))
+                     DoorOperationTypeString = doorTypeString;
+               }
+               else
+               {
+                  if (DoorStyles.TryGetValue(compName, out string doorStyleString))
+                     DoorOperationTypeString = doorStyleString;
                }
             }
 
-            if (DoorOperationTypeString == "NOTDEFINED")
+            if (DoorOperationTypeString == null)
             {
                // We are going to try to guess the hinge placement.
                DoorOperationTypeString = CalculateDoorOperationStyle(famInst, trf);
             }
             else
             {
-            if (FlippedX ^ FlippedY)
-               DoorOperationTypeString = ReverseDoorStyleOperation(DoorOperationTypeString);
+               if (FlippedX ^ FlippedY)
+                  DoorOperationTypeString = ReverseDoorStyleOperation(DoorOperationTypeString);
             }
 
-            if (String.Compare(DoorOperationTypeString, "USERDEFINED", true) == 0)
+            if (string.Compare(DoorOperationTypeString, "USERDEFINED", true) == 0)
             {
-               string userDefinedOperationType;
-               ParameterUtil.GetStringValueFromElementOrSymbol(doorType, "UserDefinedOperationType", out userDefinedOperationType);
+               (_, string userDefinedOperationType) = ParameterUtil.GetStringValueFromElementOrSymbol(doorType, null, false, 
+                  "UserDefinedOperationType");
                if (!string.IsNullOrEmpty(userDefinedOperationType))
                   UserDefinedOperationType = userDefinedOperationType;
                else
                   DoorOperationTypeString = "NOTDEFINED";         //re-set to NotDefined if operation type is set to UserDefined but the userDefinedOperationType parameter is empty!
             }
+
+            if (RepresentationUtil.DocumentMirrorState.IsExportingMirroredLink())
+               DoorOperationTypeString = ReverseDoorStyleOperation(DoorOperationTypeString);
          }
 
          if (HasRealWallHost)
@@ -541,7 +570,7 @@ namespace Revit.IFC.Export.Utility
                XYZ wallXDir = wallTrf.BasisX;
                XYZ wallYDir = wallZDir.CrossProduct(wallXDir);
 
-               double eps = MathUtil.Eps();
+               double eps = MathUtil.Eps;
 
                bboxCtr -= wallOrig;
                PosHingeSide = (bboxCtr.DotProduct(wallYDir) > -eps);

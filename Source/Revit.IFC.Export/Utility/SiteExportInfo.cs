@@ -19,6 +19,7 @@
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
+using System.Reflection;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -55,13 +56,13 @@ namespace Revit.IFC.Export.Utility
       /// Helper method to indicate if IFC File is using the "Default" IfcSite.
       /// </summary>
       /// <returns>True if using "Default" IfcSite, false otherwise.</returns>
-      public bool UsingDefaultSite() => IsSiteExported() && SiteElementId == ElementId.InvalidElementId;
+      public bool UsingDefaultSite() => IsSiteExported() && MathUtil.IsInvalidElementId(SiteElementId);
 
       /// <summary>
       /// Helper method to indicate if IFC File is using an IfcSite corresponding to an Element (i.e., not the "Default" IfcSite).
       /// </summary>
       /// <returns>True if corresponds to an Element, false otherwise.</returns>
-      public bool UsingElementSite() => IsSiteExported() && SiteElementId != ElementId.InvalidElementId;
+      public bool UsingElementSite() => IsSiteExported() && !MathUtil.IsInvalidElementId(SiteElementId);
 
       /// <summary>
       /// Convenience Function to indicate whether the given ElementId is the SiteElementId (positive identificatioN) or not.

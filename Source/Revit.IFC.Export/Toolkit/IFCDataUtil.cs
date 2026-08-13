@@ -17,15 +17,14 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Export.Utility;
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace Revit.IFC.Export.Toolkit
 {
@@ -85,6 +84,314 @@ namespace Revit.IFC.Export.Toolkit
             value = value.Remove(maxStrLen);
          }
          return IFCData.CreateStringOfType(value, "IfcText");
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcURIReference.
+      /// </summary>
+      /// <param name="value">The URI string.</param>
+      /// <returns>The IFCData object, or null if the value is null/empty.</returns>
+      public static IFCData CreateAsURIReference(string value)
+      {
+         if (string.IsNullOrEmpty(value))
+            return null;
+
+         return IFCData.CreateStringOfType(value, "IfcURIReference");
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcDate.
+      /// Validates against the XML Schema xs:date lexical format (ISO 8601).
+      /// </summary>
+      /// <param name="value">The date string (e.g. "2026-05-14", "2026-05-14Z", "2026-05-14+02:00").</param>
+      /// <returns>The IFCData object, or null if the value is null/empty or not a valid IfcDate format.</returns>
+      public static IFCData CreateAsDate(string value)
+      {
+         if (string.IsNullOrEmpty(value))
+            return null;
+
+         if (!IsValidIfcDate(value))
+            return null;
+
+         return IFCData.CreateStringOfType(value, "IfcDate");
+      }
+
+      /// <summary>
+      /// Validates a string against the XML Schema Part 2 xs:date lexical format.
+      /// Format: '-'? yyyy '-' mm '-' dd zzzzzz?
+      /// where zzzzzz is 'Z' or [+-]hh:mm.
+      /// </summary>
+      private static bool IsValidIfcDate(string value)
+      {
+         int i = 0;
+
+         if (!ParseDatePortion(value, ref i))
+            return false;
+
+         if (i < value.Length && !IsValidTimeZoneSuffix(value, ref i))
+            return false;
+
+         return i == value.Length;
+      }
+
+      /// <summary>
+      /// Validates a string against the XML Schema Part 2 xs:dateTime lexical format.
+      /// Format: '-'? yyyy '-' mm '-' dd 'T' hh ':' mm ':' ss ('.' s+)? zzzzzz?
+      /// </summary>
+      private static bool IsValidIfcDateTime(string value)
+      {
+         int i = 0;
+         int len = value.Length;
+
+         if (!ParseDatePortion(value, ref i))
+            return false;
+
+         if (i >= len || value[i] != 'T')
+            return false;
+         i++;
+
+         // hh: 00-24 (24 valid only for 24:00:00 per spec, but we don't enforce that constraint)
+         if (!TryParseTwoDigitInt(value, ref i, 0, 24))
+            return false;
+
+         if (i >= len || value[i] != ':')
+            return false;
+         i++;
+
+         // mm: 00-59
+         if (!TryParseTwoDigitInt(value, ref i, 0, 59))
+            return false;
+
+         if (i >= len || value[i] != ':')
+            return false;
+         i++;
+
+         // ss: 00-59
+         if (!TryParseTwoDigitInt(value, ref i, 0, 59))
+            return false;
+
+         // Optional fractional seconds: '.' followed by one or more digits
+         if (i < len && value[i] == '.')
+         {
+            i++;
+            int fracStart = i;
+            while (i < len && value[i] >= '0' && value[i] <= '9')
+               i++;
+            if (i == fracStart)
+               return false;
+         }
+
+         if (i < len && !IsValidTimeZoneSuffix(value, ref i))
+            return false;
+
+         return i == len;
+      }
+
+      /// <summary>
+      /// Parses the date portion: '-'? yyyy '-' mm '-' dd.
+      /// Shared by IsValidIfcDate and IsValidIfcDateTime.
+      /// </summary>
+      private static bool ParseDatePortion(string value, ref int i)
+      {
+         int len = value.Length;
+
+         if (i < len && value[i] == '-')
+            i++;
+
+         int yearStart = i;
+         while (i < len && value[i] >= '0' && value[i] <= '9')
+            i++;
+         if (i - yearStart < 4)
+            return false;
+
+         if (i >= len || value[i] != '-')
+            return false;
+         i++;
+
+         if (!TryParseTwoDigitInt(value, ref i, 1, 12))
+            return false;
+
+         if (i >= len || value[i] != '-')
+            return false;
+         i++;
+
+         if (!TryParseTwoDigitInt(value, ref i, 1, 31))
+            return false;
+
+         return true;
+      }
+
+      /// <summary>
+      /// Parses exactly two ASCII digits at position i, validates the value
+      /// is within [min, max], and advances i by 2. Returns false on failure.
+      /// </summary>
+      private static bool TryParseTwoDigitInt(string value, ref int i, int min, int max)
+      {
+         if (i + 2 > value.Length)
+            return false;
+
+         int d1 = value[i] - '0';
+         int d2 = value[i + 1] - '0';
+         if (d1 < 0 || d1 > 9 || d2 < 0 || d2 > 9)
+            return false;
+
+         int result = d1 * 10 + d2;
+         if (result < min || result > max)
+            return false;
+
+         i += 2;
+         return true;
+      }
+
+      /// <summary>
+      /// Validates an optional timezone suffix: 'Z' or [+-]hh:mm (minutes 00-59).
+      /// Advances i past the suffix. Returns false if the suffix is present but malformed.
+      /// </summary>
+      private static bool IsValidTimeZoneSuffix(string value, ref int i)
+      {
+         if (value[i] == 'Z')
+         {
+            i++;
+            return true;
+         }
+
+         if (value[i] == '+' || value[i] == '-')
+         {
+            i++;
+            if (!TryParseTwoDigitInt(value, ref i, 0, 14))
+               return false;
+            if (i >= value.Length || value[i] != ':')
+               return false;
+            i++;
+            if (!TryParseTwoDigitInt(value, ref i, 0, 59))
+               return false;
+            return true;
+         }
+
+         return false;
+      }
+
+      /// <summary>
+      /// Validates a string against the XML Schema Part 2 xs:duration lexical format (ISO 8601).
+      /// Format: '-'? 'P' (nY)? (nM)? (nD)? ('T' (nH)? (nM)? (n('.'n+)?S)?)?
+      /// At least one component must be present; if 'T' is present, at least one time component must follow.
+      /// </summary>
+      private static bool IsValidIfcDuration(string value)
+      {
+         int i = 0;
+         int len = value.Length;
+
+         if (i < len && value[i] == '-')
+            i++;
+
+         if (i >= len || value[i] != 'P')
+            return false;
+         i++;
+
+         bool hasAnyComponent = false;
+
+         if (TryParseDurationComponent(value, ref i, 'Y'))
+            hasAnyComponent = true;
+
+         if (TryParseDurationComponent(value, ref i, 'M'))
+            hasAnyComponent = true;
+
+         if (TryParseDurationComponent(value, ref i, 'D'))
+            hasAnyComponent = true;
+
+         if (i < len && value[i] == 'T')
+         {
+            i++;
+            bool hasTimeComponent = false;
+
+            if (TryParseDurationComponent(value, ref i, 'H'))
+               hasTimeComponent = true;
+
+            if (TryParseDurationComponent(value, ref i, 'M'))
+               hasTimeComponent = true;
+
+            if (TryParseDurationComponent(value, ref i, 'S', allowFraction: true))
+               hasTimeComponent = true;
+
+            if (!hasTimeComponent)
+               return false;
+
+            hasAnyComponent = true;
+         }
+
+         return hasAnyComponent && i == len;
+      }
+
+      /// <summary>
+      /// Tries to parse a duration component: one or more digits, an optional fractional part
+      /// (if allowFraction is true), followed by the specified designator character.
+      /// Restores the position if the component is not found.
+      /// </summary>
+      private static bool TryParseDurationComponent(string value, ref int i, char designator, bool allowFraction = false)
+      {
+         int len = value.Length;
+         int saved = i;
+
+         int digitStart = i;
+         while (i < len && value[i] >= '0' && value[i] <= '9')
+            i++;
+         if (i == digitStart)
+            return false;
+
+         if (allowFraction && i < len && value[i] == '.')
+         {
+            i++;
+            int fracStart = i;
+            while (i < len && value[i] >= '0' && value[i] <= '9')
+               i++;
+            if (i == fracStart)
+            {
+               i = saved;
+               return false;
+            }
+         }
+
+         if (i >= len || value[i] != designator)
+         {
+            i = saved;
+            return false;
+         }
+         i++;
+         return true;
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcDateTime.
+      /// Validates against the XML Schema xs:dateTime lexical format (ISO 8601).
+      /// </summary>
+      /// <param name="value">The date-time string (e.g. "2026-05-15T19:59:00", "2026-05-15T19:59:00.123Z").</param>
+      /// <returns>The IFCData object, or null if the value is null/empty or not a valid IfcDateTime format.</returns>
+      public static IFCData CreateAsDateTime(string value)
+      {
+         if (string.IsNullOrEmpty(value))
+            return null;
+
+         if (!IsValidIfcDateTime(value))
+            return null;
+
+         return IFCData.CreateStringOfType(value, "IfcDateTime");
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcDuration.
+      /// Validates against the XML Schema Part 2 xs:duration lexical format (ISO 8601).
+      /// </summary>
+      /// <param name="value">The duration string (e.g. "P1Y2M3DT4H5M6S").</param>
+      /// <returns>The IFCData object, or null if the value is null/empty or not a valid IfcDuration format.</returns>
+      public static IFCData CreateAsDuration(string value)
+      {
+         if (string.IsNullOrEmpty(value))
+            return null;
+
+         if (!IsValidIfcDuration(value))
+            return null;
+
+         return IFCData.CreateStringOfType(value, "IfcDuration");
       }
 
       /// <summary>
@@ -167,12 +474,16 @@ namespace Revit.IFC.Export.Toolkit
 
       /// <summary>
       /// Creates an IFCData object as IfcNormalisedRatioMeasure.
+      /// Returns null if the value is outside the valid IFC range [0.0, 1.0] (WR1).
       /// </summary>
       /// <param name="value">The double value.</param>
-      /// <returns>The IFCData object.</returns>
+      /// <returns>The IFCData object, or null if the value violates the WR1 constraint.</returns>
       public static IFCData CreateAsNormalisedRatioMeasure(double value)
       {
-         return CreateAsMeasureWithUnit(value, "IfcNormalisedRatioMeasure");
+         if (value < -MathUtil.Eps || value > 1.0 + MathUtil.Eps)
+            return null;
+
+         return CreateAsMeasureWithUnit(Math.Clamp(value, 0.0, 1.0), "IfcNormalisedRatioMeasure");
       }
 
       /// <summary>
@@ -189,9 +500,12 @@ namespace Revit.IFC.Export.Toolkit
       /// Creates an IFCData object as IfcPositiveRatioMeasure.
       /// </summary>
       /// <param name="value">The double value.</param>
-      /// <returns>The IFCData object.</returns>
+      /// <returns>The IFCData object, or null if the value violates the WR1 constraint.</returns>
       public static IFCData CreateAsPositiveRatioMeasure(double value)
       {
+         if (value < MathUtil.Eps)
+            return null;
+
          return CreateAsMeasureWithUnit(value, "IfcPositiveRatioMeasure");
       }
 
@@ -216,13 +530,26 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
+      /// Creates an IFCData object as IfcNonNegativeLengthMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsNonNegativeLengthMeasure(double value)
+      {
+         if (value > -MathUtil.Eps)
+            return CreateAsMeasureWithUnit(Math.Max(value, 0.0), "IfcNonNegativeLengthMeasure");
+         else
+            return null;
+      }
+
+      /// <summary>
       /// Creates an IFCData object as IfcPositiveLengthMeasure.
       /// </summary>
       /// <param name="value">The double value.</param>
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsPositiveLengthMeasure(double value)
       {
-         if (value > MathUtil.Eps())
+         if (value > MathUtil.Eps)
             return CreateAsMeasureWithUnit(value, "IfcPositiveLengthMeasure");
          else
             return null;
@@ -235,7 +562,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateAsPositivePlaneAngleMeasure(double value)
       {
-         if (value > MathUtil.Eps())
+         if (value > MathUtil.Eps)
             return CreateAsMeasureWithUnit(value, "IfcPositivePlaneAngleMeasure");
          else
             return null;
@@ -448,6 +775,16 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
+      /// Creates an IFCData object as IfcSoundPowerLevelMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsSoundPowerLevelMeasure(double value)
+      {
+         return CreateAsMeasureWithUnit(value, "IfcSoundPowerLevelMeasure");
+      }
+
+      /// <summary>
       /// Creates an IFCData object as IfcSoundPressureMeasure.
       /// </summary>
       /// <param name="value">The double value.</param>
@@ -591,9 +928,12 @@ namespace Revit.IFC.Export.Toolkit
       /// Creates an IFCData object as IfcHeatingValueMeasure.
       /// </summary>
       /// <param name="value">The double value.</param>
-      /// <returns>The IFCData object.</returns>
+      /// <returns>The IFCData object, or null if the value violates the WR1 constraint.</returns>
       public static IFCData CreateAsHeatingValueMeasure(double value)
       {
+         if (value < MathUtil.Eps)
+            return null;
+
          return CreateAsMeasureWithUnit(value, "IfcHeatingValueMeasure");
       }
 
@@ -625,6 +965,16 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCData CreateAsMomentOfInertiaMeasure(double value)
       {
          return CreateAsMeasureWithUnit(value, "IfcMomentOfInertiaMeasure");
+      }
+
+      /// <summary>
+      /// Creates an IFCData object as IfcSectionModulusMeasure.
+      /// </summary>
+      /// <param name="value">The double value.</param>
+      /// <returns>The IFCData object.</returns>
+      public static IFCData CreateAsSectionModulusMeasure(double value)
+      {
+         return CreateAsMeasureWithUnit(value, "IfcSectionModulusMeasure");
       }
 
       /// <summary>
@@ -725,16 +1075,11 @@ namespace Revit.IFC.Export.Toolkit
          {
             case PropertyType.PositiveRatio:
                {
-                  if (value < MathUtil.Eps())
-                     return null;
-
                   ratioData = CreateAsPositiveRatioMeasure(value);
                   break;
                }
             case PropertyType.NormalisedRatio:
                {
-                  if (value < -MathUtil.Eps() || value > 1.0 + MathUtil.Eps())
-                     return null;
 
                   ratioData = CreateAsNormalisedRatioMeasure(value);
                   break;
@@ -861,20 +1206,29 @@ namespace Revit.IFC.Export.Toolkit
          return IFCData.CreateIntegerOfType(value, type);
       }
 
+      private static Dictionary<Type, Dictionary<NamingUtil.IFCStringKey, string>> EnumStrings = [];
 
       public static string ValidateEnumeratedValue(string value, Type propertyEnumerationType)
       {
-         if (propertyEnumerationType != null && propertyEnumerationType.IsEnum && !string.IsNullOrEmpty(value))
+         if (propertyEnumerationType == null || !propertyEnumerationType.IsEnum || string.IsNullOrEmpty(value))
+            return null;
+
+         ref Dictionary<NamingUtil.IFCStringKey, string> enumStrings = 
+            ref CollectionsMarshal.GetValueRefOrAddDefault(EnumStrings, propertyEnumerationType, out bool exists);
+         if (!exists)
          {
+            enumStrings = new();
             foreach (object enumeratedValue in Enum.GetValues(propertyEnumerationType))
             {
-               string enumValue = enumeratedValue.ToString();
-               if (NamingUtil.IsEqualIgnoringCaseSpacesAndUnderscores(value, enumValue))
-               {
-                  return enumValue;
-               }
+               string originalString = enumeratedValue.ToString();
+               NamingUtil.IFCStringKey keyString = new(originalString);
+               enumStrings[keyString] = originalString;
             }
          }
+
+         NamingUtil.IFCStringKey compValue = new(value);
+         if (enumStrings.TryGetValue(compValue, out string enumValue))
+            return enumValue;
 
          return null;
       }
@@ -888,15 +1242,14 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateThermodynamicTemperatureMeasureFromElement(Element element, string parameterName)
       {
-         IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
+         (EvaluatedParameter param, double propertyValue) = ParameterUtil.GetDoubleValueFromElement(element, parameterName);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
                propertyValue = UnitUtil.ScaleThermodynamicTemperature(propertyValue);
-            data = CreateAsThermodynamicTemperatureMeasure(propertyValue);
+            return CreateAsThermodynamicTemperatureMeasure(propertyValue);
          }
-         return data;
+         return null;
       }
 
       /// <summary>
@@ -907,15 +1260,14 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateDynamicViscosityMeasureFromElement(Element element, string parameterName)
       {
-         IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
+         (EvaluatedParameter param, double propertyValue) = ParameterUtil.GetDoubleValueFromElement(element, parameterName);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
                propertyValue = UnitUtil.ScaleDynamicViscosity(propertyValue);
-            data = CreateAsDynamicViscosityMeasure(propertyValue);
+            return CreateAsDynamicViscosityMeasure(propertyValue);
          }
-         return data;
+         return null;
       }
 
       /// <summary>
@@ -926,15 +1278,14 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateHeatingValueMeasureFromElement(Element element, string parameterName)
       {
-         IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
+         (EvaluatedParameter param, double propertyValue) = ParameterUtil.GetDoubleValueFromElement(element, parameterName);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
                propertyValue = UnitUtil.ScaleHeatingValue(propertyValue);
-            data = CreateAsHeatingValueMeasure(propertyValue);
+            return CreateAsHeatingValueMeasure(propertyValue);
          }
-         return data;
+         return null;
       }
 
       /// <summary>
@@ -945,15 +1296,14 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateIsothermalMoistureCapacityMeasureFromElement(Element element, string parameterName)
       {
-         IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
+         (EvaluatedParameter param, double propertyValue) = ParameterUtil.GetDoubleValueFromElement(element, parameterName);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
                propertyValue = UnitUtil.ScaleIsothermalMoistureCapacity(propertyValue);
-            data = CreateAsIsothermalMoistureCapacityMeasure(propertyValue);
+            return CreateAsIsothermalMoistureCapacityMeasure(propertyValue);
          }
-         return data;
+         return null;
       }
 
       /// <summary>
@@ -964,15 +1314,14 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreatePositiveLengthMeasureFromElement(Element element, string parameterName)
       {
-         IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
+         (EvaluatedParameter param, double propertyValue) = ParameterUtil.GetDoubleValueFromElement(element, parameterName);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
                propertyValue = UnitUtil.ScaleLength(propertyValue);
-            data = CreateAsPositiveLengthMeasure(propertyValue);
+            return CreateAsPositiveLengthMeasure(propertyValue);
          }
-         return data;
+         return null;
       }
 
       /// <summary>
@@ -983,13 +1332,12 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateRatioMeasureFromElement(Element element, string parameterName, PropertyType propertyType)
       {
-         IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
+         (EvaluatedParameter param, double propertyValue) = ParameterUtil.GetDoubleValueFromElement(element, parameterName);
          if (param != null)
          {
-            data = CreateRatioMeasureDataCommon(propertyValue, propertyType);
+            return CreateRatioMeasureDataCommon(propertyValue, propertyType);
          }
-         return data;
+         return null;
       }
 
       /// <summary>
@@ -1000,15 +1348,14 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateMassDensityMeasureFromElement(Element element, string parameterName)
       {
-         IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
+         (EvaluatedParameter param, double propertyValue) = ParameterUtil.GetDoubleValueFromElement(element, parameterName);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
                propertyValue = UnitUtil.ScaleMassDensity(propertyValue);
-            data = CreateAsMassDensityMeasure(propertyValue);
+            return CreateAsMassDensityMeasure(propertyValue);
          }
-         return data;
+         return null;
       }
 
       /// <summary>
@@ -1019,15 +1366,14 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateModulusOfElasticityMeasureFromElement(Element element, string parameterName)
       {
-         IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
+         (EvaluatedParameter param, double propertyValue) = ParameterUtil.GetDoubleValueFromElement(element, parameterName);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
                propertyValue = UnitUtil.ScaleModulusOfElasticity(propertyValue);
-            data = CreateAsModulusOfElasticityMeasure(propertyValue);
+            return CreateAsModulusOfElasticityMeasure(propertyValue);
          }
-         return data;
+         return null;
       }
 
       /// <summary>
@@ -1038,15 +1384,14 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateMoistureDiffusivityMeasureFromElement(Element element, string parameterName)
       {
-         IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
+         (EvaluatedParameter param, double propertyValue) = ParameterUtil.GetDoubleValueFromElement(element, parameterName);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
                propertyValue = UnitUtil.ScaleMoistureDiffusivity(propertyValue);
-            data = CreateAsMoistureDiffusivityMeasure(propertyValue);
+            return CreateAsMoistureDiffusivityMeasure(propertyValue);
          }
-         return data;
+         return null;
       }
 
       /// <summary>
@@ -1057,15 +1402,14 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateIonConcentrationMeasureFromElement(Element element, string parameterName)
       {
-         IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
+         (EvaluatedParameter param, double propertyValue) = ParameterUtil.GetDoubleValueFromElement(element, parameterName);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
                propertyValue = UnitUtil.ScaleIonConcentration(propertyValue);
-            data = CreateAsIonConcentrationMeasure(propertyValue);
+            return CreateAsIonConcentrationMeasure(propertyValue);
          }
-         return data;
+         return null;
       }
 
       /// <summary>
@@ -1076,15 +1420,14 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateVaporPermeabilityMeasureFromElement(Element element, string parameterName)
       {
-         IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
+         (EvaluatedParameter param, double propertyValue) = ParameterUtil.GetDoubleValueFromElement(element, parameterName);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
                propertyValue = UnitUtil.ScaleVaporPermeability(propertyValue);
-            data = CreateAsVaporPermeabilityMeasure(propertyValue);
+            return CreateAsVaporPermeabilityMeasure(propertyValue);
          }
-         return data;
+         return null;
       }
 
       /// <summary>
@@ -1095,15 +1438,14 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateThermalExpansionCoefficientMeasureFromElement(Element element, string parameterName)
       {
-         IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
+         (EvaluatedParameter param, double propertyValue) = ParameterUtil.GetDoubleValueFromElement(element, parameterName);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
                propertyValue = UnitUtil.ScaleThermalExpansionCoefficient(propertyValue);
-            data = CreateAsThermalExpansionCoefficientMeasure(propertyValue);
+            return CreateAsThermalExpansionCoefficientMeasure(propertyValue);
          }
-         return data;
+         return null;
       }
 
       /// <summary>
@@ -1114,15 +1456,14 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreatePressureMeasureFromElement(Element element, string parameterName)
       {
-         IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
+         (EvaluatedParameter param, double propertyValue) = ParameterUtil.GetDoubleValueFromElement(element, parameterName);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
                propertyValue = UnitUtil.ScalePressure(propertyValue);
-            data = CreateAsPressureMeasure(propertyValue);
+            return CreateAsPressureMeasure(propertyValue);
          }
-         return data;
+         return null;
       }
 
       /// <summary>
@@ -1133,15 +1474,14 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateSpecificHeatCapacityMeasureFromElement(Element element, string parameterName)
       {
-         IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
+         (EvaluatedParameter param, double propertyValue) = ParameterUtil.GetDoubleValueFromElement(element, parameterName);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
                propertyValue = UnitUtil.ScaleSpecificHeatCapacity(propertyValue);
-            data = CreateAsSpecificHeatCapacityMeasure(propertyValue);
+            return CreateAsSpecificHeatCapacityMeasure(propertyValue);
          }
-         return data;
+         return null;
       }
 
       /// <summary>
@@ -1152,15 +1492,14 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateThermalConductivityMeasureFromElement(Element element, string parameterName)
       {
-         IFCData data = null;
-         Parameter param = ParameterUtil.GetDoubleValueFromElement(element, parameterName, out double propertyValue);
+         (EvaluatedParameter param, double propertyValue) = ParameterUtil.GetDoubleValueFromElement(element, parameterName);
          if (param != null)
          {
             if (!ParameterUtil.ParameterDataTypeIsEqualTo(param, SpecTypeId.Number))
                propertyValue = UnitUtil.ScaleThermalConductivity(propertyValue);
-            data = CreateAsThermalConductivityMeasure(propertyValue);
+            return CreateAsThermalConductivityMeasure(propertyValue);
          }
-         return data;
+         return null;
       }
 
       /// <summary>
@@ -1171,11 +1510,8 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateTextFromElement(Element element, string parameterName)
       {
-         IFCData data = null;
-         Parameter param = ParameterUtil.GetStringValueFromElement(element, parameterName, out string propertyValue);
-         if (param != null)
-            data = CreateAsText(propertyValue);
-         return data;
+         (_, string propertyValue) = ParameterUtil.GetStringValueFromElement(element, false, parameterName);
+         return propertyValue != null ? CreateAsText(propertyValue) : null;
       }
 
       /// <summary>
@@ -1187,8 +1523,8 @@ namespace Revit.IFC.Export.Toolkit
       public static IFCData CreateBooleanFromElement(Element element, string parameterName)
       {
          IFCData data = null;
-         Parameter param = ParameterUtil.GetIntValueFromElement(element, parameterName, out int propertyValue);
-         if (param != null)
+         (EvaluatedParameter parameter, int propertyValue) = ParameterUtil.GetIntValueFromElement(element, parameterName);
+         if (parameter != null)
             data = CreateAsBoolean(propertyValue != 0);         
          return data;
       }
@@ -1201,25 +1537,17 @@ namespace Revit.IFC.Export.Toolkit
       /// <returns>The IFCData object.</returns>
       public static IFCData CreateLabelFromElement(Element element, string parameterName, PropertyValueType valueType, Type propertyEnumerationType)
       {
-         IFCData data = null;
-         if (ParameterUtil.GetStringValueFromElement(element, parameterName, out string propertyValue) != null)
+         (_, string propertyValue) = ParameterUtil.GetStringValueFromElement(element, false, parameterName);
+         if (string.IsNullOrEmpty(propertyValue))
+            return null;
+
+         if (valueType == PropertyValueType.EnumeratedValue)
          {
-            if (!string.IsNullOrEmpty(propertyValue))
-            {
-               if (valueType == PropertyValueType.EnumeratedValue)
-               {
-                  propertyValue = ValidateEnumeratedValue(propertyValue, propertyEnumerationType);
-                  data = IFCData.CreateEnumeration(propertyValue);
-               }
-               else
-               {
-                  data = CreateAsLabel(propertyValue);
-               }
-            }
+            propertyValue = ValidateEnumeratedValue(propertyValue, propertyEnumerationType);
+            return IFCData.CreateEnumeration(propertyValue);
          }
-         return data;
+
+         return CreateAsLabel(propertyValue);
       }
-
-
    }
 }

@@ -69,13 +69,16 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Area, entryMap.CompatibleRevitParameterName, "IfcQtyGrossSurfaceArea") != null)
+         if (ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName,
+            entryMap.CompatibleRevitParameterName, "IfcQtyGrossSurfaceArea") is double area)
          {
-            m_Area = UnitUtil.ScaleArea(m_Area);
-            if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+            if (area > MathUtil.Eps * MathUtil.Eps)
+            {
+               m_Area = UnitUtil.ScaleArea(area);
                return true;
+            }
          }
 
          if (extrusionCreationData == null)
@@ -88,7 +91,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          // As such, we have to unscale the length units, and then rescale to the area units.
          double length = UnitUtil.UnscaleLength(extrusionCreationData.ScaledLength);
          double perimeter = UnitUtil.UnscaleLength(extrusionCreationData.ScaledOuterPerimeter);
-         if (length > MathUtil.Eps() && perimeter > MathUtil.Eps())
+         if (length > MathUtil.Eps && perimeter > MathUtil.Eps)
          {
             m_Area = UnitUtil.ScaleArea(perimeter * length) + 2 * extrudedArea;
             return true;

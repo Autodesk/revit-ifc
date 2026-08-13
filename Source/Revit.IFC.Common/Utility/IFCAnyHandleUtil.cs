@@ -17,14 +17,15 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
+using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.IFC;
+
+using Revit.IFC.Common.Enums;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Autodesk.Revit.DB.IFC;
-using Autodesk.Revit.DB;
-using Revit.IFC.Common.Enums;
-using Autodesk.Revit.DB.Visual;
+using System.Xml.Linq;
 
 namespace Revit.IFC.Common.Utility
 {
@@ -126,7 +127,7 @@ namespace Revit.IFC.Common.Utility
          //   To find that out for sure the code below calculates exact recoded length.
 
          // check if encoding is required
-         Char[] charsThatMustBeEscaped = { '\\', '\'', '\r', '\n', '\t' };
+         char[] charsThatMustBeEscaped = { '\\', '\'', '\r', '\n', '\t' };
          bool needRecoding = str.Any(ch => (ch & 0xFF80) != 0 || charsThatMustBeEscaped.Contains(ch));
 
          if (!needRecoding)
@@ -137,7 +138,7 @@ namespace Revit.IFC.Common.Utility
 
          for (int i = 0; i < inputStrLen; i++)
          {
-            Char ch = str[i];
+            char ch = str[i];
 
             // handle unicode
             if (ch > 255)
@@ -206,7 +207,7 @@ namespace Revit.IFC.Common.Utility
             D3
          };
          public PointDimension Dimensionality { get; protected set; } = PointDimension.NotSet;
-         public List<PointBase> Points { get; protected set; } = new List<PointBase>();
+         public List<PointBase> Points { get; protected set; } = [];
          public int Count { get { return Points.Count; } }
          public PointBase Last() { return Points.Last(); }
          public PointBase this[int key]
@@ -288,9 +289,26 @@ namespace Revit.IFC.Common.Utility
             Points.InsertRange(index, list.Points);
          }
       }
-      static Dictionary<IFCEntityType, string> m_sIFCEntityTypeToNames = new Dictionary<IFCEntityType, string>();
 
-      static Dictionary<string, IFCEntityType> m_sIFCEntityNameToTypes = new Dictionary<string, IFCEntityType>();
+      class IFCEntityTypeInfoForVersion
+      {
+         public bool? IsTypeEntity { get; set; } = null;
+
+         public (IFCEntityType, IFCEntityType)? MatchingPair { get; set; } = null;
+      }
+
+      class IFCEntityTypeInfo
+      {
+         public IFCEntityTypeInfo() { }
+
+         public string Name { get; set; } = null;
+
+         public IFCEntityTypeInfoForVersion[] ByVersion { get; set; } = new IFCEntityTypeInfoForVersion[Enum.GetNames<IFCSchemaFileVersion>().Length];
+      }
+
+      static IFCEntityTypeInfo[] sIFCEntityTypeInfo = new IFCEntityTypeInfo[Enum.GetNames<IFCEntityType>().Length];
+
+      static Dictionary<string, IFCEntityType> m_sIFCEntityNameToTypes = [];
 
       /// <summary>
       /// Event is fired when code reduces length of string to maximal allowed size.
@@ -301,12 +319,66 @@ namespace Revit.IFC.Common.Utility
       public static event Notify IFCStringTooLongWarn;
       private static void OnIFCStringTooLongWarn(int stepID, string attrName, string val, int reducedToSize)
       {
-         string warnMsg = String.Format("IFC warning: Size of string \"{0}\" was reduced to {1} and assigned to attribute \"{2}\" of IFC entity {3}", val, reducedToSize, attrName, stepID);
+         string warnMsg = string.Format("IFC warning: Size of string \"{0}\" was reduced to {1} and assigned to attribute \"{2}\" of IFC entity {3}", val, reducedToSize, attrName, stepID);
          IFCStringTooLongWarn?.Invoke(warnMsg);
       }
       public static void EventClear()
       {
          IFCStringTooLongWarn = null;
+      }
+
+      /// <summary>
+      /// Get valid IFC entity type by using the official IFC schema (using the XML schema). It checks the non-abstract valid entity. 
+      /// If it is found to be abstract, it will try to find its supertype until it finds a non-abstract type.  
+      /// </summary>
+      /// <param name="entityType">the IFC entity type to check</param>
+      /// <returns>return the appropriate IFCEntityType enumeration or Unknown</returns>
+      public static IFCEntityType GetValidIFCEntityType(IFCEntityType entityType, IfcSchemaEntityTree ifcEntitySchemaTree, IFCVersion ifcVersion)
+      {
+         if ((ifcEntitySchemaTree?.IfcEntityDict?.Count ?? 0) == 0)
+            throw new Exception("Unable to locate IFC Schema xsd file! Make sure the relevant xsd " + ifcVersion + " exists.");
+
+         string entityTypeName = GetIFCEntityTypeName(entityType);
+         IfcSchemaEntityNode node = ifcEntitySchemaTree.Find(entityTypeName);
+
+         if (node == null)
+            return IFCEntityType.UnKnown;
+
+         IFCEntityType ret = IFCEntityType.UnKnown;
+         if (!node.IsAbstract)
+         {
+            // Only IfcProduct or IfcTypeProduct can be assigned for export type
+            if ((node.IsSubTypeOf(IFCEntityType.IfcObject, true) &&
+               (node.IsSubTypeOf(IFCEntityType.IfcProduct, true) || node.IsSubTypeOf(IFCEntityType.IfcGroup, false)))
+               || node.IsSubTypeOf(IFCEntityType.IfcProject, false)
+               || IsTypeObjectEntity(node.EntityType, ifcEntitySchemaTree)
+               || node.EntityType == IFCEntityType.IfcMaterial)
+            {
+               ret = entityType;
+            }
+         }
+         else
+         {
+            node = IfcSchemaEntityTree.FindNonAbsSuperType(ifcEntitySchemaTree, entityType,
+               IFCEntityType.IfcProduct, IFCEntityType.IfcTypeProduct, IFCEntityType.IfcGroup, IFCEntityType.IfcProject);
+            if (node != null && Enum.TryParse(node.Name, true, out IFCEntityType ifcType))
+               ret = ifcType;
+         }
+
+         return ret;
+      }
+
+      /// <summary>
+      /// Get valid IFC entity type by name by using the official IFC schema (using the XML schema). It checks the non-abstract valid entity. 
+      /// If it is found to be abstract, it will try to find its supertype until it finds a non-abstract type.  
+      /// </summary>
+      /// <param name="entityTypeName">the IFC entity type (string) to check</param>
+      /// <returns>return the appropriate IFCEntityType enumeration or Unknown</returns>
+      public static IFCEntityType GetValidIFCEntityType(string entityTypeName, IfcSchemaEntityTree ifcEntitySchemaTree, IFCVersion ifcVersion)
+      {
+         if (!Enum.TryParse(entityTypeName, true, out IFCEntityType entityType))
+            return IFCEntityType.UnKnown;
+         return GetValidIFCEntityType(entityType, ifcEntitySchemaTree, ifcVersion);
       }
 
       /// <summary>
@@ -316,13 +388,107 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The name.</returns>
       public static string GetIFCEntityTypeName(IFCEntityType entityType)
       {
-         string entityTypeName;
-         if (!m_sIFCEntityTypeToNames.TryGetValue(entityType, out entityTypeName))
+         IFCEntityTypeInfo entityInfo = sIFCEntityTypeInfo[(int)entityType] ??= new();
+         return entityInfo.Name ??= entityType.ToString();
+      }
+
+      public static bool IsTypeObjectEntity(IFCEntityType entityType, IfcSchemaEntityTree theTree)
+      {
+         IFCEntityTypeInfo entityInfo = sIFCEntityTypeInfo[(int)entityType] ??= new();
+         IFCEntityTypeInfoForVersion entityInfoForVersion = entityInfo.ByVersion[(int)theTree.SchemaFileVersion] ??= new();
+         return entityInfoForVersion.IsTypeEntity ??= theTree.IsSubTypeOf(entityType, IFCEntityType.IfcTypeObject);
+      }
+
+      public static bool IsTypeObjectEntity(IFCAnyHandle typeObjHandle, IfcSchemaEntityTree theTree)
+      {
+         IFCEntityType entityType = GetEntityType(typeObjHandle);
+         return IsTypeObjectEntity(entityType, theTree);
+      }
+
+      public static (IFCEntityType, IFCEntityType) GetMatchingPair(IFCEntityType entityType, IfcSchemaEntityTree theTree, IFCVersion ifcVersion)
+      {
+         IFCEntityTypeInfo entityInfo = sIFCEntityTypeInfo[(int)entityType] ??= new();
+         IFCEntityTypeInfoForVersion entityInfoForVersion = entityInfo.ByVersion[(int)theTree.SchemaFileVersion] ??= new();
+         (IFCEntityType, IFCEntityType)? matchingPair = entityInfoForVersion.MatchingPair;
+         if (matchingPair != null)
+            return matchingPair.Value;
+
+         IFCEntityType? instanceEntityType = null;
+         IFCEntityType? typeEntityType = null;
+
+         string entityTypeName = GetIFCEntityTypeName(entityType);
+         if (IsTypeObjectEntity(entityType, theTree))
          {
-            entityTypeName = entityType.ToString();
-            m_sIFCEntityTypeToNames[entityType] = entityTypeName;
+            int removeFrom = entityTypeName.Length - ((entityType is IFCEntityType.IfcDoorStyle or IFCEntityType.IfcWindowStyle) ? 5 : 4);
+
+            // Get the instance
+            string instName = entityTypeName.Remove(removeFrom);
+            IfcSchemaEntityNode node = theTree.Find(instName);
+            if (node?.IsAbstract ?? true)
+            {
+               // If not found, try non-abstract supertype derived from the type
+               node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(theTree, ifcVersion, instName);
+            }
+
+            instanceEntityType = node?.EntityType ?? IFCEntityType.UnKnown;
+
+            // Set the type
+            typeEntityType = GetValidIFCEntityType(entityType, theTree, ifcVersion);
+            if (typeEntityType == IFCEntityType.UnKnown)
+            {
+               node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(theTree, ifcVersion, entityTypeName);
+               typeEntityType = node?.EntityType ?? IFCEntityType.UnKnown;
+            }
          }
-         return entityTypeName;
+         else
+         {
+            // set the instance
+            instanceEntityType = GetValidIFCEntityType(entityType, theTree, ifcVersion);
+            if (instanceEntityType == IFCEntityType.UnKnown)
+            {
+               // If not found, try non-abstract supertype derived from the type
+               IfcSchemaEntityNode node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(theTree, ifcVersion, entityTypeName);
+               instanceEntityType = node?.EntityType ?? IFCEntityType.UnKnown;
+            }
+
+            // set the type pair
+            bool exportAsOlderThan4 = OptionsUtil.ExportAsOlderThanIFC4(ifcVersion);
+            if (exportAsOlderThan4)
+            {
+               if (entityType == IFCEntityType.IfcDoor)
+                  typeEntityType = IFCEntityType.IfcDoorStyle;
+               else if (entityType == IFCEntityType.IfcWindow)
+                  typeEntityType = IFCEntityType.IfcWindowStyle;
+            }
+
+            typeEntityType ??= GetValidIFCEntityType(GetIFCEntityTypeName(entityType) + "Type", theTree, ifcVersion);
+
+            if (typeEntityType == IFCEntityType.UnKnown)
+            {
+               // If the type name is not found, likely it does not have the pair at this level,
+               // needs to get the supertype of the instance to get the type pair
+               IList<IfcSchemaEntityNode> instNodes = IfcSchemaEntityTree.FindAllSuperTypes(theTree, entityTypeName,
+                  IFCEntityType.IfcProduct, IFCEntityType.IfcGroup);
+               foreach (IfcSchemaEntityNode instNode in instNodes)
+               {
+                  string typeName = IfcSchemaEntityTree.GetTypeNameFromInstance(instNode.EntityType, exportAsOlderThan4);
+                  IfcSchemaEntityNode node = theTree.Find(typeName) ?? IfcSchemaEntityTree.FindNonAbsInstanceSuperType(theTree, ifcVersion, typeName);
+
+                  if (node?.IsAbstract ?? true)
+                     continue;
+
+                  typeEntityType = node.EntityType;
+                  break;
+               }
+            }
+         }
+
+         instanceEntityType ??= IFCEntityType.UnKnown;
+         typeEntityType ??= IFCEntityType.UnKnown;
+
+         (IFCEntityType, IFCEntityType) retVal = (instanceEntityType.Value, typeEntityType.Value);
+         entityInfoForVersion.MatchingPair = retVal;
+         return retVal;
       }
 
       /// <summary>
@@ -332,13 +498,15 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The type.</returns>
       public static IFCEntityType GetIFCEntityTypeFromName(string entityTypeName)
       {
-         IFCEntityType entityType;
-         if (!m_sIFCEntityNameToTypes.TryGetValue(entityTypeName, out entityType))
+         if (m_sIFCEntityNameToTypes.TryGetValue(entityTypeName, out IFCEntityType entityType))
+            return entityType;
+
+         if (!Enum.TryParse(entityTypeName, true, out entityType))
          {
-            entityType = (IFCEntityType)Enum.Parse(typeof(IFCEntityType), entityTypeName, true);
-            m_sIFCEntityNameToTypes[entityTypeName] = entityType;
+            entityType = IFCEntityType.UnKnown;
          }
-         return entityType;
+
+         return m_sIFCEntityNameToTypes[entityTypeName] = entityType;
       }
 
       /// <summary>
@@ -349,8 +517,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateInstance(IFCFile file, IFCEntityType type)
       {
-         IFCAnyHandle hnd = file.CreateInstance(GetIFCEntityTypeName(type));
-         return hnd;
+         return file.CreateInstance(GetIFCEntityTypeName(type));
       }
 
       /// <summary>
@@ -362,7 +529,7 @@ namespace Revit.IFC.Common.Utility
       {
          if (value == null)
             return;
-         IFCAnyHandleUtil.SetAttribute(handle, "Name", value);
+         SetAttribute(handle, "Name", value);
       }
 
       /// <summary>
@@ -382,9 +549,9 @@ namespace Revit.IFC.Common.Utility
          }
          else
          {
-            for (int ii = 0; ii < types.Length; ii++)
+            foreach (string type in types)
             {
-               if (handle.IsSubTypeOf(types[ii]))
+               if (handle.IsSubTypeOf(type))
                   return;
             }
          }
@@ -408,9 +575,9 @@ namespace Revit.IFC.Common.Utility
          }
          else
          {
-            for (int ii = 0; ii < types.Length; ii++)
+            foreach (IFCEntityType type in types)
             {
-               if (IsSubTypeOf(handle, types[ii]))
+               if (IsSubTypeOf(handle, type))
                   return;
             }
          }
@@ -432,22 +599,32 @@ namespace Revit.IFC.Common.Utility
 
             return;
          }
-         else
+
+         foreach (IFCAnyHandle handle in handles)
          {
-            foreach (IFCAnyHandle handle in handles)
+            bool foundIsSubType = false;
+            
+            foreach (IFCEntityType type in types)
             {
-               bool foundIsSubType = false;
-               for (int ii = 0; ii < types.Length; ii++)
+               if (IsSubTypeOf(handle, type))
                {
-                  if (IsSubTypeOf(handle, types[ii]))
-                     foundIsSubType = true;
+                  foundIsSubType = true;
+                  break;
                }
-               if (!foundIsSubType)
-                  throw new ArgumentException("Contains invalid handle.", "handles");
             }
+
+            if (!foundIsSubType)
+               throw new ArgumentException("Contains invalid handle.", "handles");
          }
       }
 
+      /// <summary>
+      /// Validates if all the handles in the collection are the instances of the desired entity type.
+      /// </summary>
+      /// <param name="handles">The handles.</param>
+      /// <param name="nullAllowed">True if allow handles to be null, false if not.</param>
+      /// <param name="badEntries">The collection of handles that are not of the desired entity type, or null if none.</param>
+      /// <param name="types">The entity types.</param>
       public static void ValidateSubTypeOf(ICollection<IFCAnyHandle> handles, bool nullAllowed, out ICollection<IFCAnyHandle> badEntries, params IFCEntityType[] types)
       {
          badEntries = null;
@@ -458,25 +635,24 @@ namespace Revit.IFC.Common.Utility
 
             return;
          }
-         else
+
+         foreach (IFCAnyHandle handle in handles)
          {
-            int count = 0;
-            foreach (IFCAnyHandle handle in handles)
+            bool foundIsSubType = false;
+            
+            foreach (IFCEntityType type in types)
             {
-               bool foundIsSubType = false;
-               for (int ii = 0; ii < types.Length; ii++)
+               if (IsSubTypeOf(handle, type))
                {
-                  if (IsSubTypeOf(handle, types[ii]))
-                     foundIsSubType = true;
+                  foundIsSubType = true;
+                  break;
                }
-               count++;
-               if (!foundIsSubType)
-               {
-                  //throw new ArgumentException("Contains invalid handle.", "handles");
-                  if (badEntries == null)
-                     badEntries = new HashSet<IFCAnyHandle>();
-                  badEntries.Add(handle);
-               }
+            }
+            
+            if (!foundIsSubType)
+            {
+               badEntries ??= [];
+               badEntries.Add(handle);
             }
          }
       }
@@ -493,21 +669,21 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, string value)
       {
-         if (String.IsNullOrEmpty(name))
+         if (value == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
          // This allows you to set empty strings, which may not always be intended, but should be allowed.
-         if (value != null)
+         int maxStrLen = IFCLimits.CalculateMaxAllowedSize(value);
+         if (value.Length > maxStrLen)
          {
-            int maxStrLen = IFCLimits.CalculateMaxAllowedSize(value);
-            if (value.Length > maxStrLen)
-            {
-               OnIFCStringTooLongWarn(handle.StepId, name, value, maxStrLen);
-               value = value.Remove(maxStrLen);
-            }
-
-            handle.SetAttribute(name, IFCData.CreateString(value));
+            OnIFCStringTooLongWarn(handle.StepId, name, value, maxStrLen);
+            value = value.Remove(maxStrLen);
          }
+
+         handle.SetAttribute(name, IFCData.CreateString(value));
       }
 
       /// <summary>
@@ -522,20 +698,48 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, Enum value)
       {
-         if (String.IsNullOrEmpty(name))
+         if (value == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (value != null)
-            handle.SetAttribute(name, IFCData.CreateEnumeration(value.ToString()));
+         handle.SetAttribute(name, IFCData.CreateEnumeration(value.ToString()));
+      }
+
+      /// <summary>
+      /// Sets enumeration attribute for the handle.
+      /// </summary>
+      /// <remarks>
+      /// If value is null or empty, the attribute will be unset.
+      /// </remarks>
+      /// <param name="handle">The handle.</param>
+      /// <param name="name">The attribute name.</param>
+      /// <param name="value">The enumeration value.</param>
+      /// <exception cref="ArgumentException">If the name is null or empty.</exception>
+      public static void SetEnumAttribute(IFCAnyHandle handle, string name, string value)
+      {
+         if (value == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
+            throw new ArgumentException("The name is empty.", "name");
+
+         handle.SetAttribute(name, IFCData.CreateEnumeration(value));
       }
 
       public static void SetAttribute(IFCAnyHandle handle, string name, string value, bool forEnum)
       {
-         if (String.IsNullOrEmpty(name))
+         if (value == null || !forEnum)
+            return;
+
+         if (IsNullOrHasNoValue(handle))
+            throw new ArgumentNullException("handle");
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (value != null && forEnum)
-            handle.SetAttribute(name, IFCData.CreateEnumeration(value));
+         handle.SetAttribute(name, IFCData.CreateEnumeration(value));
       }
 
       /// <summary>
@@ -550,7 +754,7 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, IFCLogical value)
       {
-         if (String.IsNullOrEmpty(name))
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
          handle.SetAttribute(name, IFCData.CreateLogical(value));
@@ -568,11 +772,13 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, IFCLogical? value)
       {
-         if (String.IsNullOrEmpty(name))
+         if (value == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (value != null)
-            handle.SetAttribute(name, IFCData.CreateLogical((IFCLogical)value));
+         handle.SetAttribute(name, IFCData.CreateLogical((IFCLogical)value));
       }
 
       /// <summary>
@@ -587,7 +793,7 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, IFCAnyHandle value)
       {
-         if (String.IsNullOrEmpty(name))
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
          if (!IsNullOrHasNoValue(value))
@@ -603,7 +809,7 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, double value)
       {
-         if (String.IsNullOrEmpty(name))
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
          handle.SetAttribute(name, value);
@@ -621,11 +827,13 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, double? value)
       {
-         if (String.IsNullOrEmpty(name))
+         if (value == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (value != null)
-            handle.SetAttribute(name, (double)value);
+         handle.SetAttribute(name, (double)value);
       }
 
       /// <summary>
@@ -637,7 +845,7 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, bool value)
       {
-         if (String.IsNullOrEmpty(name))
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
          handle.SetAttribute(name, value);
@@ -655,11 +863,13 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, bool? value)
       {
-         if (String.IsNullOrEmpty(name))
+         if (value == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (value != null)
-            handle.SetAttribute(name, (bool)value);
+         handle.SetAttribute(name, (bool)value);
       }
 
       /// <summary>
@@ -671,7 +881,7 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, int value)
       {
-         if (String.IsNullOrEmpty(name))
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
          handle.SetAttribute(name, value);
@@ -689,11 +899,13 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, int? value)
       {
-         if (String.IsNullOrEmpty(name))
+         if (value == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (value != null)
-            handle.SetAttribute(name, (int)value);
+         handle.SetAttribute(name, (int)value);
       }
 
       /// <summary>
@@ -709,16 +921,16 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the collection contains null object.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, IList<IFCAnyHandle> values)
       {
-         if (String.IsNullOrEmpty(name))
+         if (values == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (values != null)
-         {
-            if (values.Contains(null))
-               throw new ArgumentException("The collection contains null values.", "values");
+         if (values.Contains(null))
+            throw new ArgumentException("The collection contains null values.", "values");
 
-            handle.SetAttribute(name, values);
-         }
+         handle.SetAttribute(name, values);
       }
 
       /// <summary>
@@ -733,13 +945,13 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, IList<int> values)
       {
-         if (String.IsNullOrEmpty(name))
+         if (values == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (values != null)
-         {
-            handle.SetAttribute(name, values);
-         }
+         handle.SetAttribute(name, values);
       }
 
       /// <summary>
@@ -754,13 +966,13 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, IList<double> values)
       {
-         if (String.IsNullOrEmpty(name))
+         if (values == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (values != null)
-         {
-            handle.SetAttribute(name, values);
-         }
+         handle.SetAttribute(name, values);
       }
 
       /// <summary>
@@ -772,40 +984,36 @@ namespace Revit.IFC.Common.Utility
       public static void SetAttribute(IFCAnyHandle handle, string name, IList<IList<double>> values,
           int? outerListMin, int? outerListMax, int? innerListMin, int? innerListMax)
       {
-         if (String.IsNullOrEmpty(name))
+         if (values == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (values != null)
+         if (outerListMax != null && values.Count > outerListMax)
+            throw new ArgumentException("The outer List is larger than max. bound");
+         if (outerListMin != null && values.Count < outerListMin)
+            throw new ArgumentException("The outer List is less than min. bound");
+
+         IFCAggregate outerList = handle.CreateAggregateAttribute(name);
+
+         foreach (List<double> valuesItem in values)
          {
-            if (outerListMax != null)
-               if (values.Count > outerListMax)
-                  throw new ArgumentException("The outer List is larger than max. bound");
-            if (outerListMin != null)
-               if (values.Count < outerListMin)
-                  throw new ArgumentException("The outer List is less than min. bound");
+            if (innerListMax != null && valuesItem.Count > innerListMax)
+               throw new ArgumentException("The inner List is larger than max. bound");
+            if (innerListMin != null && valuesItem.Count < innerListMin)
+               throw new ArgumentException("The inner List is less than min. bound");
 
-            IFCAggregate outerList = handle.CreateAggregateAttribute(name);
+            IFCAggregate innerList = outerList.AddAggregate();
 
-            foreach (List<double> valuesItem in values)
+            foreach (double Dvalue in valuesItem)
             {
-               if (innerListMax != null)
-                  if (valuesItem.Count > innerListMax)
-                     throw new ArgumentException("The inner List is larger than max. bound");
-               if (innerListMin != null)
-                  if (valuesItem.Count < innerListMin)
-                     throw new ArgumentException("The inner List is less than min. bound");
-
-               IFCAggregate innerList = outerList.AddAggregate();
-
-               foreach (double Dvalue in valuesItem)
+               try
                {
-                  try
-                  {
-                     innerList.Add(IFCData.CreateDouble(Dvalue));
-                  }
-                  catch
-                  {
-                  }
+                  innerList.Add(IFCData.CreateDouble(Dvalue));
+               }
+               catch
+               {
                }
             }
          }
@@ -820,22 +1028,22 @@ namespace Revit.IFC.Common.Utility
       public static void SetAttribute(IFCAnyHandle handle, string name, IFCAnyHandleUtil.IfcPointList pointList,
           int? outerListMin, int? outerListMax)
       {
-         if (String.IsNullOrEmpty(name))
+         if (pointList == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (pointList != null)
+         if (outerListMax != null && pointList.Count > outerListMax)
+            throw new ArgumentException("The outer List is larger than max. bound");
+         if (outerListMin != null && pointList.Count < outerListMin)
+            throw new ArgumentException("The outer List is less than min. bound");
+
+         IFCAggregate outerList = handle.CreateAggregateAttribute(name);
+
+         switch (pointList.Dimensionality)
          {
-            if (outerListMax != null)
-               if (pointList.Count > outerListMax)
-                  throw new ArgumentException("The outer List is larger than max. bound");
-            if (outerListMin != null)
-               if (pointList.Count < outerListMin)
-                  throw new ArgumentException("The outer List is less than min. bound");
-
-            IFCAggregate outerList = handle.CreateAggregateAttribute(name);
-
-            if (pointList.Dimensionality == IfcPointList.PointDimension.D3)
-            {
+            case IfcPointList.PointDimension.D3:
                foreach (PointBase point in pointList.Points)
                {
                   Point3D point3D = point as Point3D;
@@ -846,9 +1054,8 @@ namespace Revit.IFC.Common.Utility
                   innerList.Add(IFCData.CreateDouble(xyz.Y));
                   innerList.Add(IFCData.CreateDouble(xyz.Z));
                }
-            }
-            else if (pointList.Dimensionality == IfcPointList.PointDimension.D2)
-            {
+               break;
+            case IfcPointList.PointDimension.D2:
                foreach (PointBase point in pointList.Points)
                {
                   Point2D point2D = point as Point2D;
@@ -858,8 +1065,8 @@ namespace Revit.IFC.Common.Utility
                   innerList.Add(IFCData.CreateDouble(uv.U));
                   innerList.Add(IFCData.CreateDouble(uv.V));
                }
-            }
-            else
+               break;
+            default:
                throw new ArgumentException("Incorrect point dimension requirement");
          }
       }
@@ -875,42 +1082,38 @@ namespace Revit.IFC.Common.Utility
       /// <param name="innerListMin">the the array list lower bound for the inner list</param>
       /// <param name="innerListMax">the the array list upper bound for the inner list</param>
       public static void SetAttribute(IFCAnyHandle handle, string name, IList<IList<int>> values,
-                  int? outerListMin, int? outerListMax, int? innerListMin, int? innerListMax)
+         int? outerListMin, int? outerListMax, int? innerListMin, int? innerListMax)
       {
-         if (String.IsNullOrEmpty(name))
+         if (values == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (values != null)
+         if (outerListMax != null && values.Count > outerListMax)
+            throw new ArgumentException("The outer List is larger than max. bound");
+         if (outerListMin != null && values.Count < outerListMin)
+            throw new ArgumentException("The outer List is less than min. bound");
+
+         IFCAggregate outerList = handle.CreateAggregateAttribute(name);
+
+         foreach (IList<int> valuesItem in values)
          {
-            if (outerListMax != null)
-               if (values.Count > outerListMax)
-                  throw new ArgumentException("The outer List is larger than max. bound");
-            if (outerListMin != null)
-               if (values.Count < outerListMin)
-                  throw new ArgumentException("The outer List is less than min. bound");
+            if (innerListMax != null && valuesItem.Count > innerListMax)
+               throw new ArgumentException("The inner List is larger than max. bound");
+            if (innerListMin != null && valuesItem.Count < innerListMin)
+               throw new ArgumentException("The inner List is less than min. bound");
 
-            IFCAggregate outerList = handle.CreateAggregateAttribute(name);
+            IFCAggregate innerList = outerList.AddAggregate();
 
-            foreach (IList<int> valuesItem in values)
+            foreach (int Ivalue in valuesItem)
             {
-               if (innerListMax != null)
-                  if (valuesItem.Count > innerListMax)
-                     throw new ArgumentException("The inner List is larger than max. bound");
-               if (innerListMin != null)
-                  if (valuesItem.Count < innerListMin)
-                     throw new ArgumentException("The inner List is less than min. bound");
-
-               IFCAggregate innerList = outerList.AddAggregate();
-
-               foreach (int Ivalue in valuesItem)
+               try
                {
-                  try
-                  {
-                     innerList.Add(IFCData.CreateInteger(Ivalue));
-                  }
-                  catch
-                  {
-                  }
+                  innerList.Add(IFCData.CreateInteger(Ivalue));
+               }
+               catch
+               {
                }
             }
          }
@@ -929,39 +1132,35 @@ namespace Revit.IFC.Common.Utility
       public static void SetAttribute(IFCAnyHandle handle, string name, IList<IList<IFCAnyHandle>> values,
           int? outerListMin, int? outerListMax, int? innerListMin, int? innerListMax)
       {
-         if (String.IsNullOrEmpty(name))
+         if (values == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (values != null)
+         if (outerListMax != null && values.Count > outerListMax)
+            throw new ArgumentException("The outer List is larger than max. bound");
+         if (outerListMin != null && values.Count < outerListMin)
+            throw new ArgumentException("The outer List is less than min. bound");
+
+         IFCAggregate outerList = handle.CreateAggregateAttribute(name);
+
+         foreach (List<IFCAnyHandle> valuesItem in values)
          {
-            if (outerListMax != null)
-               if (values.Count > outerListMax)
-                  throw new ArgumentException("The outer List is larger than max. bound");
-            if (outerListMin != null)
-               if (values.Count < outerListMin)
-                  throw new ArgumentException("The outer List is less than min. bound");
+            if (innerListMax != null && valuesItem.Count > innerListMax)
+               throw new ArgumentException("The inner List is larger than max. bound");
+            if (innerListMin != null && valuesItem.Count < innerListMin)
+               throw new ArgumentException("The inner List is less than min. bound");
 
-            IFCAggregate outerList = handle.CreateAggregateAttribute(name);
+            IFCAggregate innerList = outerList.AddAggregate();
 
-            foreach (List<IFCAnyHandle> valuesItem in values)
+            foreach (IFCAnyHandle AHvalue in valuesItem)
             {
-               if (innerListMax != null)
-                  if (valuesItem.Count > innerListMax)
-                     throw new ArgumentException("The inner List is larger than max. bound");
-               if (innerListMin != null)
-                  if (valuesItem.Count < innerListMin)
-                     throw new ArgumentException("The inner List is less than min. bound");
-
-               IFCAggregate innerList = outerList.AddAggregate();
-
-               foreach (IFCAnyHandle AHvalue in valuesItem)
+               try
                {
-                  try
-                  {
-                     innerList.Add(IFCData.CreateIFCAnyHandle(AHvalue));
-                  }
-                  catch { }
+                  innerList.Add(IFCData.CreateIFCAnyHandle(AHvalue));
                }
+               catch { }
             }
          }
       }
@@ -978,13 +1177,13 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, IList<string> values)
       {
-         if (String.IsNullOrEmpty(name))
+         if (values == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (values != null)
-         {
-            handle.SetAttribute(name, values);
-         }
+         handle.SetAttribute(name, values);
       }
 
       /// <summary>
@@ -999,22 +1198,22 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, IList<IFCData> values)
       {
-         if (String.IsNullOrEmpty(name))
+         if (values == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (values != null)
-         {
-            if (values.Contains(null))
-               throw new ArgumentException("The collection contains null values.", "values");
+         if (values.Contains(null))
+            throw new ArgumentException("The collection contains null values.", "values");
 
-            IFCAggregate aggregateAttribute = handle.CreateAggregateAttribute(name);
-            if (aggregateAttribute != null)
-            {
-               foreach (IFCData value in values)
-               {
-                  aggregateAttribute.Add(value);
-               }
-            }
+         IFCAggregate aggregateAttribute = handle.CreateAggregateAttribute(name);
+         if (aggregateAttribute == null)
+            return;
+
+         foreach (IFCData value in values)
+         {
+            aggregateAttribute.Add(value);
          }
       }
 
@@ -1031,16 +1230,16 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the collection contains null object.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, ISet<IFCAnyHandle> values)
       {
-         if (String.IsNullOrEmpty(name))
+         if (values == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (values != null)
-         {
-            if (values.Contains(null))
-               throw new ArgumentException("The collection contains null values.", "values");
+         if (values.Contains(null))
+            throw new ArgumentException("The collection contains null values.", "values");
 
-            handle.SetAttribute(name, values);
-         }
+         handle.SetAttribute(name, values);
       }
 
       /// <summary>
@@ -1055,13 +1254,13 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, ISet<int> values)
       {
-         if (String.IsNullOrEmpty(name))
+         if (values == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (values != null)
-         {
-            handle.SetAttribute(name, values);
-         }
+         handle.SetAttribute(name, values);
       }
 
       /// <summary>
@@ -1076,13 +1275,13 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, ISet<double> values)
       {
-         if (String.IsNullOrEmpty(name))
+         if (values == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (values != null)
-         {
-            handle.SetAttribute(name, values);
-         }
+         handle.SetAttribute(name, values);
       }
 
       /// <summary>
@@ -1097,13 +1296,13 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, ISet<string> values)
       {
-         if (String.IsNullOrEmpty(name))
+         if (values == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (values != null)
-         {
-            handle.SetAttribute(name, values);
-         }
+         handle.SetAttribute(name, values);
       }
 
       /// <summary>
@@ -1118,22 +1317,22 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, ISet<IFCData> values)
       {
-         if (String.IsNullOrEmpty(name))
+         if (values == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (values != null)
-         {
-            if (values.Contains(null))
-               throw new ArgumentException("The collection contains null values.", "values");
+         if (values.Contains(null))
+            throw new ArgumentException("The collection contains null values.", "values");
 
-            IFCAggregate aggregateAttribute = handle.CreateAggregateAttribute(name);
-            if (aggregateAttribute != null)
-            {
-               foreach (IFCData value in values)
-               {
-                  aggregateAttribute.Add(value);
-               }
-            }
+         IFCAggregate aggregateAttribute = handle.CreateAggregateAttribute(name);
+         if (aggregateAttribute == null)
+            return;
+
+         foreach (IFCData value in values)
+         {
+            aggregateAttribute.Add(value);
          }
       }
 
@@ -1149,13 +1348,13 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException">If the name is null or empty.</exception>
       public static void SetAttribute(IFCAnyHandle handle, string name, IFCData value)
       {
-         if (String.IsNullOrEmpty(name))
+         if (value == null)
+            return;
+
+         if (string.IsNullOrEmpty(name))
             throw new ArgumentException("The name is empty.", "name");
 
-         if (value != null)
-         {
-            handle.SetAttribute(name, value);
-         }
+         handle.SetAttribute(name, value);
       }
 
       /// <summary>
@@ -1170,23 +1369,28 @@ namespace Revit.IFC.Common.Utility
          if (IsNullOrHasNoValue(handle))
             throw new ArgumentException("Invalid handle.");
 
-         IFCData ifcData = handle.GetAttribute(name);
-
-         T aggregateAttribute = default(T);
-
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         try
          {
+            IFCData ifcData = handle.GetAttribute(name);
+            if (!ifcData.HasValue)
+               return default;
+
             IFCAggregate aggregate = ifcData.AsAggregate();
-            if (aggregate != null)
+            if (aggregate == null)
+               return default;
+
+            T aggregateAttribute = new();
+            foreach (IFCData val in aggregate)
             {
-               aggregateAttribute = new T();
-               foreach (IFCData val in aggregate)
-               {
-                  aggregateAttribute.Add(val);
-               }
+               aggregateAttribute.Add(val);
             }
+            return aggregateAttribute;
          }
-         return aggregateAttribute;
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
+
+         return default;
       }
 
       /// <summary>
@@ -1201,26 +1405,28 @@ namespace Revit.IFC.Common.Utility
          if (IsNullOrHasNoValue(handle))
             throw new ArgumentException("Invalid handle.");
 
-         IFCData ifcData = handle.GetAttribute(name);
-
-         T aggregateAttribute = default(T);
-
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         try
          {
+            IFCData ifcData = handle.GetAttribute(name);
+            if (!ifcData.HasValue)
+               return default;
+
             IFCAggregate aggregate = ifcData.AsAggregate();
-            if (aggregate != null)
+            if (aggregate == null)
+               return default;
+
+            T aggregateAttribute = new();
+            foreach (IFCData val in aggregate)
             {
-               aggregateAttribute = new T();
-               foreach (IFCData val in aggregate)
-               {
-                  if (val.PrimitiveType == IFCDataPrimitiveType.Integer)
-                  {
-                     aggregateAttribute.Add(val.AsInteger());
-                  }
-               }
+               aggregateAttribute.Add(val.AsInteger());
             }
+            return aggregateAttribute;
          }
-         return aggregateAttribute;
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
+
+         return default;
       }
 
       /// <summary>
@@ -1235,26 +1441,29 @@ namespace Revit.IFC.Common.Utility
          if (IsNullOrHasNoValue(handle))
             throw new ArgumentException("Invalid handle.");
 
-         IFCData ifcData = handle.GetAttribute(name);
-
-         T aggregateAttribute = default(T);
-
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         try
          {
+            IFCData ifcData = handle.GetAttribute(name);
+            if (!ifcData.HasValue)
+               return default;
+
             IFCAggregate aggregate = ifcData.AsAggregate();
-            if (aggregate != null)
+            if (aggregate == null)
+               return default;
+
+            T aggregateAttribute = new();
+            foreach (IFCData val in aggregate)
             {
-               aggregateAttribute = new T();
-               foreach (IFCData val in aggregate)
-               {
-                  if (val.PrimitiveType == IFCDataPrimitiveType.Double)
-                  {
-                     aggregateAttribute.Add(val.AsDouble());
-                  }
-               }
+               aggregateAttribute.Add(val.AsDouble());
             }
+
+            return aggregateAttribute;
          }
-         return aggregateAttribute;
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
+
+         return default;
       }
 
       /// <summary>
@@ -1269,26 +1478,28 @@ namespace Revit.IFC.Common.Utility
          if (IsNullOrHasNoValue(handle))
             throw new ArgumentException("Invalid handle.");
 
-         IFCData ifcData = handle.GetAttribute(name);
-
-         T aggregateAttribute = default(T);
-
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         try
          {
+            IFCData ifcData = handle.GetAttribute(name);
+            if (!ifcData.HasValue)
+               return default;
+
             IFCAggregate aggregate = ifcData.AsAggregate();
-            if (aggregate != null)
+            if (aggregate == null)
+               return default;
+
+            T aggregateAttribute = new();
+            foreach (IFCData val in aggregate)
             {
-               aggregateAttribute = new T();
-               foreach (IFCData val in aggregate)
-               {
-                  if (val.PrimitiveType == IFCDataPrimitiveType.String)
-                  {
-                     aggregateAttribute.Add(val.AsString());
-                  }
-               }
+               aggregateAttribute.Add(val.AsString());
             }
+            return aggregateAttribute;
          }
-         return aggregateAttribute;
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
+
+         return default;
       }
 
       /// <summary>
@@ -1300,26 +1511,28 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The collection of attribute values.</returns>
       public static T GetValidAggregateInstanceAttribute<T>(IFCAnyHandle handle, string name) where T : ICollection<IFCAnyHandle>, new()
       {
-         IFCData ifcData = handle.GetAttribute(name);
-
-         T aggregateAttribute = default(T);
-
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         try
          {
+            IFCData ifcData = handle.GetAttribute(name);
+            if (!ifcData.HasValue)
+               return default;
+
             IFCAggregate aggregate = ifcData.AsAggregate();
-            if (aggregate != null)
+            if (aggregate == null)
+               return default;
+
+            T aggregateAttribute = new();
+            foreach (IFCData val in aggregate)
             {
-               aggregateAttribute = new T();
-               foreach (IFCData val in aggregate)
-               {
-                  if (val.PrimitiveType == IFCDataPrimitiveType.Instance)
-                  {
-                     aggregateAttribute.Add(val.AsInstance());
-                  }
-               }
+               aggregateAttribute.Add(val.AsInstance());
             }
+            return aggregateAttribute;
          }
-         return aggregateAttribute;
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
+
+         return default;
       }
 
       /// <summary>
@@ -1351,9 +1564,7 @@ namespace Revit.IFC.Common.Utility
          // throw an InvalidOperationException here anyway, so this seems
          // like a redundant step.
 
-         IFCEntityType entityType = GetIFCEntityTypeFromName(handle.TypeName);
-
-         return entityType;
+         return GetIFCEntityTypeFromName(handle.TypeName);
       }
 
       /// <summary>
@@ -1366,10 +1577,14 @@ namespace Revit.IFC.Common.Utility
          if (!IsSubTypeOf(handle, IFCEntityType.IfcObject))
             return null;
 
-         IFCData ifcData = handle.GetAttribute("ObjectType");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.String)
-            return ifcData.AsString();
-
+         try
+         {
+            return handle.GetAttribute("ObjectType").AsString();
+         }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
+            
          return null;
       }
 
@@ -1380,29 +1595,32 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The list of coordinates.</returns>
       public static IList<double> GetCoordinates(IFCAnyHandle cartesianPoint)
       {
-         IList<double> coordinates = null;
-
          if (!IsSubTypeOf(cartesianPoint, IFCEntityType.IfcCartesianPoint))
             throw new ArgumentException("Not an IfcCartesianPoint handle.");
 
-         IFCData ifcData = cartesianPoint.GetAttribute("Coordinates");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         try
          {
+            IFCData ifcData = cartesianPoint.GetAttribute("Coordinates");
+            if (!ifcData.HasValue)
+               return [];
+
             IFCAggregate aggregate = ifcData.AsAggregate();
-            if (aggregate != null && aggregate.Count > 0)
+            if ((aggregate?.Count ?? 0) == 0)
+               return [];
+
+            List<double> coordinates = [];
+            foreach (IFCData val in aggregate)
             {
-               coordinates = new List<double>();
-               foreach (IFCData val in aggregate)
-               {
-                  if (val.PrimitiveType == IFCDataPrimitiveType.Double)
-                  {
-                     coordinates.Add(val.AsDouble());
-                  }
-               }
+               coordinates.Add(val.AsDouble());
             }
+            return coordinates;
          }
 
-         return coordinates;
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
+
+         return [];
       }
 
       /// <summary>
@@ -1415,11 +1633,13 @@ namespace Revit.IFC.Common.Utility
       {
          try
          {
-            IFCData ifcData = hnd.GetAttribute(name);
-            if (ifcData.PrimitiveType == IFCDataPrimitiveType.Instance)
-               return ifcData.AsInstance();
+            IFCData data = hnd.GetAttribute(name);
+            if (data.HasValue)
+               return data.AsInstance();
          }
-         catch { }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
 
          return null;
       }
@@ -1451,11 +1671,13 @@ namespace Revit.IFC.Common.Utility
 
          try
          {
-            IFCData ifcData = hnd.GetAttribute(name);
-            if (ifcData.PrimitiveType == IFCDataPrimitiveType.String)
-               return ifcData.AsString();
+            IFCData data = hnd.GetAttribute(name);
+            if (data.HasValue)
+               return data.AsString();
          }
-         catch { }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
 
          return null;
       }
@@ -1473,11 +1695,13 @@ namespace Revit.IFC.Common.Utility
 
          try
          {
-            IFCData ifcData = hnd.GetAttribute(name);
-            if (ifcData.PrimitiveType == IFCDataPrimitiveType.Integer)
-               return ifcData.AsInteger();
+            IFCData data = hnd.GetAttribute(name);
+            if (data.HasValue)
+               return data.AsInteger();
          }
-         catch { }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
 
          return null;
       }
@@ -1495,11 +1719,13 @@ namespace Revit.IFC.Common.Utility
 
          try
          {
-            IFCData ifcData = hnd.GetAttribute(name);
-            if (ifcData.PrimitiveType == IFCDataPrimitiveType.Double)
-               return ifcData.AsDouble();
+            IFCData data = hnd.GetAttribute(name);
+            if (data.HasValue)
+               return data.AsDouble();
          }
-         catch { }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
 
          return null;
       }
@@ -1517,11 +1743,13 @@ namespace Revit.IFC.Common.Utility
 
          try
          {
-            IFCData ifcData = hnd.GetAttribute(name);
-            if (ifcData.PrimitiveType == IFCDataPrimitiveType.Boolean)
-               return ifcData.AsBoolean();
+            IFCData data = hnd.GetAttribute(name);
+            if (data.HasValue)
+               return data.AsBoolean();
          }
-         catch { }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
 
          return null;
       }
@@ -1539,11 +1767,13 @@ namespace Revit.IFC.Common.Utility
 
          try
          {
-            IFCData ifcData = hnd.GetAttribute(name);
-            if (ifcData.PrimitiveType == IFCDataPrimitiveType.Logical)
-               return ifcData.AsLogical();
+            IFCData data = hnd.GetAttribute(name);
+            if (data.HasValue)
+               return data.AsLogical();
          }
-         catch { }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
 
          return null;
       }
@@ -1565,11 +1795,13 @@ namespace Revit.IFC.Common.Utility
 
          try
          {
-            IFCData ifcData = hnd.GetAttribute(name);
-            if (ifcData.PrimitiveType == IFCDataPrimitiveType.Enumeration)
-               return ifcData.AsString();
+            IFCData data = hnd.GetAttribute(name);
+            if (data.HasValue)
+               return data.AsString();
          }
-         catch { }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
 
          return null;
       }
@@ -1594,10 +1826,14 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The IfcObjectPlacement.</returns>
       public static IFCAnyHandle GetObjectPlacement(IFCAnyHandle product)
       {
-         if (!IsSubTypeOf(product, IFCEntityType.IfcProduct))
+         try
+         {
+            return GetInstanceAttribute(product, "ObjectPlacement");
+         }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
             throw new ArgumentException("Not an IfcProduct handle.");
-
-         return GetInstanceAttribute(product, "ObjectPlacement");
+         }
       }
 
       /// <summary>
@@ -1607,24 +1843,29 @@ namespace Revit.IFC.Common.Utility
       /// <returns>True if it has, false if not.</returns>
       public static bool HasRelDecomposes(IFCAnyHandle objectHandle)
       {
-         if (!IsSubTypeOf(objectHandle, IFCEntityType.IfcObject) &&
-             !IsSubTypeOf(objectHandle, IFCEntityType.IfcTypeObject))
-            throw new ArgumentException("The operation is not valid for this handle.");
+         IFCData ifcData = null;
 
-         IFCData ifcData = objectHandle.GetAttribute("Decomposes");
+         try
+         {
+            ifcData = objectHandle.GetAttribute("Decomposes");
+         }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+            throw new ArgumentException("The operation is not valid for this handle.");
+         }
 
          if (!ifcData.HasValue)
             return false;
-         else if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+
+         try
          {
             IFCAggregate aggregate = ifcData.AsAggregate();
-            if (aggregate != null && aggregate.Count > 0)
-               return true;
-            else
-               return false;
+            return (aggregate?.Count ?? 0) > 0;
          }
-
-         throw new InvalidOperationException("Failed to get decomposes.");
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+            throw new InvalidOperationException("Failed to get decomposes.");
+         }
       }
 
       /// <summary>
@@ -1634,27 +1875,35 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The collection of IfcRelDecomposes.</returns>
       public static HashSet<IFCAnyHandle> GetRelDecomposes(IFCAnyHandle objectHandle)
       {
-         if (!IsSubTypeOf(objectHandle, IFCEntityType.IfcObject) &&
-             !IsSubTypeOf(objectHandle, IFCEntityType.IfcTypeObject))
-            throw new ArgumentException("The operation is not valid for this handle.");
+         IFCData ifcData = null;
 
-         HashSet<IFCAnyHandle> decomposes = new HashSet<IFCAnyHandle>();
-         IFCData ifcData = objectHandle.GetAttribute("IsDecomposedBy");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         try
          {
-            IFCAggregate aggregate = ifcData.AsAggregate();
-            if (aggregate != null && aggregate.Count > 0)
-            {
-               foreach (IFCData val in aggregate)
-               {
-                  if (val.PrimitiveType == IFCDataPrimitiveType.Instance)
-                  {
-                     decomposes.Add(val.AsInstance());
-                  }
-               }
-            }
+            ifcData = objectHandle.GetAttribute("IsDecomposedBy");
          }
-         return decomposes;
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+            throw new InvalidOperationException("The operation is not valid for this handle.");
+         }
+
+         try
+         {
+            IFCAggregate aggregate = ifcData.HasValue ? ifcData.AsAggregate() : null;
+            if ((aggregate?.Count ?? 0) == 0)
+               return [];
+
+            HashSet<IFCAnyHandle> decomposes = [];
+            foreach (IFCData val in aggregate)
+            {
+               decomposes.Add(val.AsInstance());
+            }
+            return decomposes;
+         }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
+
+         return [];
       }
 
       /// <summary>
@@ -1664,26 +1913,36 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The collection of IfcMaterialDefinitionRepresentation.</returns>
       public static HashSet<IFCAnyHandle> GetHasRepresentation(IFCAnyHandle objectHandle)
       {
-         if (!IsSubTypeOf(objectHandle, IFCEntityType.IfcMaterial))
-            throw new ArgumentException("The operation is not valid for this handle.");
-
-         HashSet<IFCAnyHandle> hasRepresentation = new HashSet<IFCAnyHandle>();
-         IFCData ifcData = objectHandle.GetAttribute("HasRepresentation");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         IFCData ifcData = null;
+         try
          {
-            IFCAggregate aggregate = ifcData.AsAggregate();
-            if (aggregate != null && aggregate.Count > 0)
-            {
-               foreach (IFCData val in aggregate)
-               {
-                  if (val.PrimitiveType == IFCDataPrimitiveType.Instance)
-                  {
-                     hasRepresentation.Add(val.AsInstance());
-                  }
-               }
-            }
+            ifcData = objectHandle.GetAttribute("HasRepresentation");
          }
-         return hasRepresentation;
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+            throw new ArgumentException("The operation is not valid for this handle.");
+         }
+
+         try
+         {
+            IFCAggregate aggregate = ifcData.HasValue ? ifcData.AsAggregate() : null;
+            if ((aggregate?.Count ?? 0) == 0)
+               return [];
+
+            HashSet<IFCAnyHandle> hasRepresentation = [];
+
+            foreach (IFCData val in aggregate)
+            {
+               hasRepresentation.Add(val.AsInstance());
+            }
+
+            return hasRepresentation;
+         }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
+
+         return [];
       }
 
       /// <summary>
@@ -1693,15 +1952,25 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The representation handle.</returns>
       public static IFCAnyHandle GetRepresentation(IFCAnyHandle productHandle)
       {
-         if (!IsSubTypeOf(productHandle, IFCEntityType.IfcProduct))
+         IFCData ifcData = null;
+         
+         try
+         {
+            ifcData = productHandle.GetAttribute("Representation");
+         }
+         catch (Exception ex) when(ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
             throw new ArgumentException("The operation is not valid for this handle.");
+         }
 
-         IFCData ifcData = productHandle.GetAttribute("Representation");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Instance)
+         try
          {
             return ifcData.AsInstance();
          }
-
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
+         
          return null;
       }
 
@@ -1712,13 +1981,23 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The ContextOfItems handle.</returns>
       public static IFCAnyHandle GetContextOfItems(IFCAnyHandle representation)
       {
-         if (!IsSubTypeOf(representation, IFCEntityType.IfcRepresentation))
-            throw new ArgumentException("The operation is not valid for this handle.");
+         IFCData ifcData = null;
 
-         IFCData ifcData = representation.GetAttribute("ContextOfItems");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Instance)
+         try
+         {
+            ifcData = representation.GetAttribute("ContextOfItems");
+         }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+            throw new ArgumentException("The operation is not valid for this handle.");
+         }
+
+         try
          {
             return ifcData.AsInstance();
+         }
+         catch (Exception ex) when(ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
          }
 
          return null;
@@ -1731,13 +2010,23 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The RepresentationIdentifier string.</returns>
       public static string GetRepresentationIdentifier(IFCAnyHandle representation)
       {
-         if (!IsSubTypeOf(representation, IFCEntityType.IfcRepresentation))
-            throw new ArgumentException("The operation is not valid for this handle.");
+         IFCData ifcData = null;
 
-         IFCData ifcData = representation.GetAttribute("RepresentationIdentifier");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.String)
+         try
+         {
+            ifcData = representation.GetAttribute("RepresentationIdentifier");
+         }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+            throw new ArgumentException("The operation is not valid for this handle.");
+         }
+
+         try
          {
             return ifcData.AsString();
+         }
+         catch (Exception ex) when(ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
          }
 
          return null;
@@ -1750,13 +2039,23 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The RepresentationType string.</returns>
       public static string GetRepresentationType(IFCAnyHandle representation)
       {
-         if (!IsSubTypeOf(representation, IFCEntityType.IfcRepresentation))
-            throw new ArgumentException("The operation is not valid for this handle.");
+         IFCData ifcData = null;
 
-         IFCData ifcData = representation.GetAttribute("RepresentationType");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.String)
+         try
+         {
+            ifcData = representation.GetAttribute("RepresentationType");
+         }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+            throw new ArgumentException("The operation is not valid for this handle.");
+         }
+
+         try
          {
             return ifcData.AsString();
+         }
+         catch (Exception ex) when(ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
          }
 
          return null;
@@ -1770,31 +2069,40 @@ namespace Revit.IFC.Common.Utility
       /// <exception cref="ArgumentException"></exception>
       public static string GetBaseRepresentationType(IFCAnyHandle representation)
       {
-         if (!IsSubTypeOf(representation, IFCEntityType.IfcRepresentation))
-            throw new ArgumentException("The operation is not valid for this handle.");
+         IFCData ifcData = null;
 
-         IFCData ifcData = representation.GetAttribute("RepresentationType");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.String)
+         try
+         {
+            ifcData = representation.GetAttribute("RepresentationType");
+         }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+            throw new ArgumentException("The operation is not valid for this handle.");
+         }
+
+         try
          {
             string repType = ifcData.AsString();
-            if (repType.Equals("MappedRepresentation", StringComparison.InvariantCultureIgnoreCase))
-            {
-               HashSet<IFCAnyHandle> mapItems = GetItems(representation);
-               if (mapItems.Count > 0)
-               {
-                  // The mapped representation should be of the same type. Use the first one will suffice
-                  IFCAnyHandle mapSrc = GetInstanceAttribute(mapItems.First(), "MappingSource");
-                  if (!IsNullOrHasNoValue(mapSrc))
-                  {
-                     IFCAnyHandle mapRep = GetInstanceAttribute(mapSrc, "MappedRepresentation");
-                     if (!IsNullOrHasNoValue(mapRep))
-                     {
-                        repType = GetRepresentationType(mapRep);
-                     }
-                  }
-               }
-            }
-            return repType;
+            if (!repType.Equals("MappedRepresentation", StringComparison.InvariantCultureIgnoreCase))
+               return repType;
+
+            HashSet<IFCAnyHandle> mapItems = GetItems(representation);
+            if (mapItems.Count == 0)
+               return repType;
+
+            // The mapped representation should be of the same type. Use the first one will suffice
+            IFCAnyHandle mapSrc = GetInstanceAttribute(mapItems.First(), "MappingSource");
+            if (IsNullOrHasNoValue(mapSrc))
+               return repType;
+
+            IFCAnyHandle mapRep = GetInstanceAttribute(mapSrc, "MappedRepresentation");
+            if (IsNullOrHasNoValue(mapRep))
+               return repType;
+            
+            return GetRepresentationType(mapRep);
+         }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
          }
 
          return null;
@@ -1807,26 +2115,35 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The set of items.</returns>
       public static HashSet<IFCAnyHandle> GetItems(IFCAnyHandle representation)
       {
-         if (!IsSubTypeOf(representation, IFCEntityType.IfcRepresentation))
-            throw new ArgumentException("The operation is not valid for this handle.");
+         IFCData data = null;
 
-         HashSet<IFCAnyHandle> items = new HashSet<IFCAnyHandle>();
-         IFCData ifcData = representation.GetAttribute("Items");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         try
          {
-            IFCAggregate aggregate = ifcData.AsAggregate();
-            if (aggregate != null && aggregate.Count > 0)
-            {
-               foreach (IFCData val in aggregate)
-               {
-                  if (val.PrimitiveType == IFCDataPrimitiveType.Instance)
-                  {
-                     items.Add(val.AsInstance());
-                  }
-               }
-            }
+            data = representation.GetAttribute("Items");
          }
-         return items;
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+            throw new ArgumentException("The operation is not valid for this handle.");
+         }
+
+         try
+         {
+            IFCAggregate aggregate = data.HasValue ? data.AsAggregate() : null;
+            if ((aggregate?.Count ?? 0) == 0)
+               return [];
+
+            HashSet<IFCAnyHandle> items = [];
+            foreach (IFCData val in aggregate)
+            {
+               items.Add(val.AsInstance());
+            }
+            return items;
+         }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
+
+         return [];
       }
 
       /// <summary>
@@ -1836,26 +2153,38 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The list of representations.</returns>
       public static List<IFCAnyHandle> GetRepresentations(IFCAnyHandle representation)
       {
-         if (!IsSubTypeOf(representation, IFCEntityType.IfcProductRepresentation))
-            throw new ArgumentException("The operation is not valid for this handle.");
+         IFCData data = null;
 
-         List<IFCAnyHandle> representations = new List<IFCAnyHandle>();
-         IFCData ifcData = representation.GetAttribute("Representations");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         try
          {
-            IFCAggregate aggregate = ifcData.AsAggregate();
-            if (aggregate != null && aggregate.Count > 0)
-            {
-               foreach (IFCData val in aggregate)
-               {
-                  if (val.PrimitiveType == IFCDataPrimitiveType.Instance)
-                  {
-                     representations.Add(val.AsInstance());
-                  }
-               }
-            }
+            data = representation.GetAttribute("Representations");
          }
-         return representations;
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+            throw new ArgumentException("The operation is not valid for this handle.");
+         }
+
+         try
+         {
+            if (!data.HasValue)
+               return [];
+
+            IFCAggregate aggregate = data.AsAggregate();
+            if ((aggregate?.Count ?? 0) == 0)
+               return [];
+
+            List<IFCAnyHandle> representations = [];
+            foreach (IFCData val in aggregate)
+            {
+               representations.Add(val.AsInstance());
+            }
+            return representations;
+         }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
+         
+         return [];
       }
 
       /// <summary>
@@ -1865,28 +2194,35 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The list of representations.</returns>
       public static List<IFCAnyHandle> GetOpenings(IFCAnyHandle ifcElement)
       {
-         if (!IsSubTypeOf(ifcElement, IFCEntityType.IfcElement))
-            throw new ArgumentException("The operation is not valid for this handle.");
+         IFCData data = null;
 
-         List<IFCAnyHandle> openings = new List<IFCAnyHandle>();
-         IFCData ifcData = ifcElement.GetAttribute("HasOpenings");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.Aggregate)
+         try
          {
-            IFCAggregate aggregate = ifcData.AsAggregate();
-            if (aggregate != null && aggregate.Count > 0)
-            {
-               foreach (IFCData val in aggregate)
-               {
-                  if (val.PrimitiveType == IFCDataPrimitiveType.Instance)
-                  {
-                     IFCAnyHandle relVoidElement = val.AsInstance();
-                     IFCData openingElementData = relVoidElement.GetAttribute("RelatedOpeningElement");
-                     openings.Add(openingElementData.AsInstance());
-                  }
-               }
-            }
+            data = ifcElement.GetAttribute("HasOpenings");
          }
-         return openings;
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+            throw new ArgumentException("The operation is not valid for this handle.");
+         }
+
+         try
+         {
+            IFCAggregate aggregate = data.HasValue ? data.AsAggregate() : null;
+            if ((aggregate?.Count ?? 0) == 0)
+               return [];
+
+            List<IFCAnyHandle> openings = [];
+            foreach (IFCData val in aggregate)
+            {
+               openings.Add(val.AsInstance().GetAttribute("RelatedOpeningElement").AsInstance());
+            }
+            return openings;
+         }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+         }
+
+         return [];
       }
 
       /// <summary>
@@ -1899,10 +2235,18 @@ namespace Revit.IFC.Common.Utility
          if (representations == null)
             throw new ArgumentNullException("representations");
 
-         if (!IsSubTypeOf(productRepresentation, IFCEntityType.IfcProductRepresentation))
-            throw new ArgumentException("The operation is not valid for this handle.");
+         IFCData data = null;
 
-         IFCAggregate representationsAggr = productRepresentation.GetAttribute("Representations").AsAggregate();
+         try
+         {
+            data = productRepresentation.GetAttribute("Representations");
+         }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+            throw new ArgumentException("The operation is not valid for this handle.");
+         }
+
+         IFCAggregate representationsAggr = data.HasValue ? data.AsAggregate() : null;
          if (representationsAggr == null)
          {
             productRepresentation.SetAttribute("Representations", representations);
@@ -1919,17 +2263,27 @@ namespace Revit.IFC.Common.Utility
       /// <summary>
       /// Gets Name of an IfcProductDefinitionShape handle.
       /// </summary>
-      /// <param name="representation">The IfcProductDefinitionShape.</param>
+      /// <param name="productDefinitionShape">The IfcProductDefinitionShape.</param>
       /// <returns>The Name string.</returns>
       public static string GetProductDefinitionShapeName(IFCAnyHandle productDefinitionShape)
       {
-         if (!IsSubTypeOf(productDefinitionShape, IFCEntityType.IfcProductDefinitionShape))
-            throw new ArgumentException("The operation is not valid for this handle.");
+         IFCData data = null;
 
-         IFCData ifcData = productDefinitionShape.GetAttribute("Name");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.String)
+         try
          {
-            return ifcData.AsString();
+            data = productDefinitionShape.GetAttribute("Name");
+         }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+            throw new ArgumentException("The operation is not valid for this handle.");
+         }
+
+         try
+         {
+            return data.AsString();
+         }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
          }
 
          return null;
@@ -1942,13 +2296,23 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The Description string.</returns>
       public static string GetProductDefinitionShapeDescription(IFCAnyHandle productDefinitionShape)
       {
-         if (!IsSubTypeOf(productDefinitionShape, IFCEntityType.IfcProductDefinitionShape))
-            throw new ArgumentException("The operation is not valid for this handle.");
+         IFCData data = null;
 
-         IFCData ifcData = productDefinitionShape.GetAttribute("Description");
-         if (ifcData.PrimitiveType == IFCDataPrimitiveType.String)
+         try
          {
-            return ifcData.AsString();
+            data = productDefinitionShape.GetAttribute("Description");
+         }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+            throw new ArgumentException("The operation is not valid for this handle.");
+         }
+
+         try
+         {
+            return data.AsString();
+         }
+         catch (Exception ex) when(ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
          }
 
          return null;
@@ -1961,33 +2325,45 @@ namespace Revit.IFC.Common.Utility
       /// <returns>The list of representations.</returns>
       public static List<IFCAnyHandle> GetProductRepresentations(IFCAnyHandle productHandle)
       {
-         if (!IsSubTypeOf(productHandle, IFCEntityType.IfcProduct))
-            throw new ArgumentException("The operation is not valid for this handle.");
+         IFCAnyHandle representation = null;
 
-         IFCAnyHandle representation = GetRepresentation(productHandle);
-         if (!IsNullOrHasNoValue(representation))
+         try
          {
-            return GetRepresentations(representation);
+            representation = GetRepresentation(productHandle);
+         }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+            throw new ArgumentException("The operation is not valid for this handle.");
          }
 
-         return new List<IFCAnyHandle>();
+         if (IsNullOrHasNoValue(representation))
+            return [];
+         
+         return GetRepresentations(representation);
       }
 
       /// <summary>
       /// Adds representations to a product handle.
       /// </summary>
       /// <param name="productHandle">The product handle.</param>
-      /// <param name="productHandle">The collection of representation handles.</param>
+      /// <param name="representations">The collection of representation handles.</param>
       public static void AddProductRepresentations(IFCAnyHandle productHandle, IList<IFCAnyHandle> representations)
       {
-         if (!IsSubTypeOf(productHandle, IFCEntityType.IfcProduct))
-            throw new ArgumentException("The operation is not valid for this handle.");
+         IFCAnyHandle representation = null;
 
-         IFCAnyHandle representation = GetRepresentation(productHandle);
-         if (!IsNullOrHasNoValue(representation))
+         try
          {
-            AddRepresentations(representation, representations);
+            representation = GetRepresentation(productHandle);
          }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
+            throw new ArgumentException("The operation is not valid for this handle.");
+         }
+
+         if (IsNullOrHasNoValue(representation))
+            return;
+
+         AddRepresentations(representation, representations);
       }
 
       /// <summary>
@@ -2069,9 +2445,7 @@ namespace Revit.IFC.Common.Utility
       /// If so, we can avoid the call into native code.</remarks>
       public static bool IsValidSubTypeOf(IFCAnyHandle handle, IFCEntityType handleType, IFCEntityType type)
       {
-         if (handleType == type)
-            return true;
-         return handle.IsSubTypeOf(GetIFCEntityTypeName(type));
+         return handleType == type ? true : handle.IsSubTypeOf(GetIFCEntityTypeName(type));
       }
 
       /// <summary>
@@ -2084,11 +2458,14 @@ namespace Revit.IFC.Common.Utility
       public static void UpdateProject(IFCAnyHandle project, string projectName, string projectLongName,
           string projectStatus)
       {
-         if (IsSubTypeOf(project, IFCEntityType.IfcProject))
+         try
          {
             SetAttribute(project, "Name", projectName);
             SetAttribute(project, "LongName", projectLongName);
             SetAttribute(project, "Phase", projectStatus);
+         }
+         catch (Exception ex) when (ex is Autodesk.Revit.Exceptions.InapplicableDataException or Autodesk.Revit.Exceptions.ArgumentNullException)
+         {
          }
       }
 

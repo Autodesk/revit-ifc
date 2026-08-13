@@ -25,6 +25,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Exporter;
+using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Export.Toolkit;
 
 namespace Revit.IFC.Export.Utility
@@ -50,34 +51,33 @@ namespace Revit.IFC.Export.Utility
    /// <summary>
    /// Used to keep a cache of the created IfcUnits.
    /// </summary>
-   public class UnitsCache : Dictionary<string, IFCAnyHandle>
+   public class UnitsCache
    {
+      Dictionary<NamingUtil.IFCStringKey, IFCAnyHandle> UnitsByName { get; set; } = new();
+
       /// <summary>
       /// The dictionary mapping from Revit data type (SpecTypeId)
       /// to created ifc unit handle with convesion values (scale and offset). 
       /// </summary>
-      Dictionary<ForgeTypeId, UnitInfo> m_unitInfoTable =
-          new Dictionary<ForgeTypeId, UnitInfo>();
+      Dictionary<ForgeTypeId, UnitInfo> UnitInfoTable = [];
 
       /// <summary>
       /// The dictionary mapping from Revit unit (UnitTypeId) to created ifc handle. 
       /// These are the auxiliary unit handles that don't go to IfcUnitAssignment
       /// </summary>
-      Dictionary<ForgeTypeId, IFCAnyHandle> m_auxiliaryUnitCache = 
-         new Dictionary<ForgeTypeId, IFCAnyHandle>();
+      Dictionary<ForgeTypeId, IFCAnyHandle> AuxiliaryUnitCache = [];
 
       /// <summary>
       /// The dictionary mapping from a unit handle with exponent to IfcDerivedUnitElement handle. 
       /// </summary>
-      Dictionary<Tuple<IFCAnyHandle, int>, IFCAnyHandle> m_derivedUnitElementCache = 
-         new Dictionary<Tuple<IFCAnyHandle, int>, IFCAnyHandle>();
+      Dictionary<Tuple<IFCAnyHandle, int>, IFCAnyHandle> DerivedUnitElementCache = [];
 
       /// <summary>
       /// Finds UnitInfo in dictionary
       /// </summary>
       public bool FindUnitInfo(ForgeTypeId specTypeId, out UnitInfo unitInfo)
       {
-         return m_unitInfoTable.TryGetValue(specTypeId, out unitInfo);
+         return UnitInfoTable.TryGetValue(specTypeId, out unitInfo);
       }
 
       /// <summary>
@@ -85,7 +85,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public void RegisterUnitInfo(ForgeTypeId specTypeId, UnitInfo unitInfo)
       {
-         m_unitInfoTable[specTypeId] = unitInfo;
+         UnitInfoTable[specTypeId] = unitInfo;
       }
 
       /// <summary>
@@ -93,7 +93,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public void UnregisterUnitInfo(ForgeTypeId specTypeId)
       {
-         m_unitInfoTable.Remove(specTypeId);
+         UnitInfoTable.Remove(specTypeId);
       }
 
       /// <summary>
@@ -102,8 +102,8 @@ namespace Revit.IFC.Export.Utility
       /// <returns>Unit handles set</returns>
       public HashSet<IFCAnyHandle> GetUnitsToAssign()
       {
-         HashSet<IFCAnyHandle> unitSet = new HashSet<IFCAnyHandle>();
-         foreach (var unitInfo in m_unitInfoTable)
+         HashSet<IFCAnyHandle> unitSet = [];
+         foreach (var unitInfo in UnitInfoTable)
          {
             // Special case: SpecTypeId.ColorTemperature is mapped to SI IFCUnit.ThermoDynamicTemperatureUnit (Kelvin)
             // and mustn't be assigned to project to avoid conflict with ThermoDynamicTemperatureUnit of SpecTypeId.HvacTemperature
@@ -111,8 +111,7 @@ namespace Revit.IFC.Export.Utility
                continue;
 
             IFCAnyHandle unitHnd = unitInfo.Value?.Handle;
-            if (unitHnd != null)
-               unitSet.Add(unitHnd);
+            unitSet.AddIfNotNull(unitHnd);
          }
          return unitSet;
       }
@@ -123,7 +122,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public bool FindAuxiliaryUnit(ForgeTypeId unitTypeId, out IFCAnyHandle auxiliaryUnit)
       {
-         return m_auxiliaryUnitCache.TryGetValue(unitTypeId, out auxiliaryUnit);
+         return AuxiliaryUnitCache.TryGetValue(unitTypeId, out auxiliaryUnit);
       }
 
       /// <summary>
@@ -131,7 +130,15 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public void RegisterAuxiliaryUnit(ForgeTypeId unitTypeId, IFCAnyHandle auxiliaryUnit)
       {
-         m_auxiliaryUnitCache[unitTypeId] = auxiliaryUnit;
+         AuxiliaryUnitCache[unitTypeId] = auxiliaryUnit;
+      }
+
+      /// <summary>
+      /// Removes auxiliary unit from dictionary
+      /// </summary>
+      public void UnregisterAuxiliaryUnit(ForgeTypeId unitTypeId)
+      {
+         AuxiliaryUnitCache.Remove(unitTypeId);
       }
 
       /// <summary>
@@ -139,7 +146,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public bool FindDerivedUnitElement(Tuple<IFCAnyHandle, int> unitWithExponent, out IFCAnyHandle derivedUnit)
       {
-         return m_derivedUnitElementCache.TryGetValue(unitWithExponent, out derivedUnit);
+         return DerivedUnitElementCache.TryGetValue(unitWithExponent, out derivedUnit);
       }
 
       /// <summary>
@@ -147,7 +154,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public void RegisterDerivedUnit(Tuple<IFCAnyHandle, int> unitWithExponent, IFCAnyHandle derivedUnit)
       {
-         m_derivedUnitElementCache[unitWithExponent] = derivedUnit;
+         DerivedUnitElementCache[unitWithExponent] = derivedUnit;
       }
 
       /// <summary>
@@ -155,7 +162,9 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public IFCAnyHandle FindUserDefinedUnit(string unitName)
       {
-         return this.ContainsKey(unitName) ? this[unitName] : null;
+         NamingUtil.IFCStringKey unitKey = new(unitName);
+         UnitsByName.TryGetValue(unitKey, out IFCAnyHandle unitHandle);
+         return unitHandle;
       }
 
       /// <summary>
@@ -163,15 +172,26 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public void RegisterUserDefinedUnit(string unitName, IFCAnyHandle unitHnd)
       {
-         this[unitName] = unitHnd;
+         NamingUtil.IFCStringKey userKey = new(unitName);
+         UnitsByName[userKey] = unitHnd;
       }
 
-      public new void Clear()
+      static readonly NamingUtil.IFCStringKey CurrencyUnit = new("CURRENCY");
+
+      private bool? CurrencyUnitExists { get; set; } = null;
+
+      public bool HasCurrencyUnit()
       {
-         m_unitInfoTable.Clear();
-         m_auxiliaryUnitCache.Clear();
-         m_derivedUnitElementCache.Clear();
-         base.Clear();
+         CurrencyUnitExists ??= UnitsByName.ContainsKey(CurrencyUnit);
+         return CurrencyUnitExists.Value;
+      }
+
+      public void Clear()
+      {
+         UnitInfoTable.Clear();
+         AuxiliaryUnitCache.Clear();
+         DerivedUnitElementCache.Clear();
+         UnitsByName.Clear();
       }
 
       #region Scale/unscale methods

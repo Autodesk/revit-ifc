@@ -17,65 +17,49 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Autodesk.Revit.DB.IFC;
 
 namespace Revit.IFC.Export.Exporter
 {
    /// <summary>
-   /// Contains information about IFC property sets and IFC type elements.
+   /// Caches the ingredients needed to create IfcPropertySet handles for a Revit
+   /// ElementType. Stores pset names and reusable individual IfcProperty handles
+   /// rather than finished IfcPropertySet handles, because each IfcPropertySet
+   /// must be unique to one IfcTypeObject per the IFC spec.
    /// </summary>
    public class TypePropertyInfo
    {
-      bool m_assignedToType = false;
-      HashSet<IFCAnyHandle> m_PropertySets;
-      HashSet<IFCAnyHandle> m_Elements;
-
-      /// <summary>
-      /// Default constructor.
-      /// </summary>
-      protected TypePropertyInfo()
-      {
-      }
-
       /// <summary>
       /// The flag that determines if the type properties have been associated with an IfcTypeObject, and should not
       /// be associated with an IfcElement.
       /// </summary>
-      public bool AssignedToType
-      {
-         get { return m_assignedToType; }
-         set { m_assignedToType = value; }
-      }
+      public bool AssignedToType { get; set; }
 
       /// <summary>
-      /// Constructs a TypePropertyInfo objects.
+      /// The property set ingredients: each entry is a pset display name paired with
+      /// the individual IfcProperty handles that belong in that set. A fresh
+      /// IfcPropertySet handle is created from these ingredients for each consuming
+      /// IfcTypeObject.
       /// </summary>
-      /// <param name="propertySets">The property sets.</param>
-      /// <param name="elements">The elements.</param>
-      public TypePropertyInfo(ICollection<IFCAnyHandle> propertySets, ICollection<IFCAnyHandle> elements)
-      {
-         m_PropertySets = new HashSet<IFCAnyHandle>(propertySets);
-         m_Elements = new HashSet<IFCAnyHandle>(elements);
-      }
-
-      /// <summary>
-      /// The property sets.
-      /// </summary>
-      public HashSet<IFCAnyHandle> PropertySets
-      {
-         get { return m_PropertySets; }
-      }
+      public IList<(string PsetName, HashSet<IFCAnyHandle> Properties)> PropertyInputs { get; }
 
       /// <summary>
       /// The IFC elements.
       /// </summary>
-      public HashSet<IFCAnyHandle> Elements
+      public HashSet<IFCAnyHandle> Elements { get; }
+
+      /// <summary>
+      /// Constructs a TypePropertyInfo object.
+      /// </summary>
+      /// <param name="propertyInputs">The property set ingredients (name + individual property handles).</param>
+      /// <param name="elements">The IFC element handles.</param>
+      public TypePropertyInfo(
+         IList<(string PsetName, HashSet<IFCAnyHandle> Properties)> propertyInputs,
+         ICollection<IFCAnyHandle> elements)
       {
-         get { return m_Elements; }
+         PropertyInputs = propertyInputs;
+         Elements = new HashSet<IFCAnyHandle>(elements);
       }
    }
 }

@@ -55,7 +55,7 @@ namespace Revit.IFC.Export.Exporter
             {
                foreach (ElementId subElemId in allSubElements)
                {
-                  using (ProductWrapper productWrapper = ProductWrapper.Create(origWrapper))
+                  using (ProductWrapper productWrapper = ProductWrapper.Create(origWrapper, currSetter))
                   {
                      // This element has already been filtered out, don't look again.
                      if (!ExporterCacheManager.NonSpatialElements.Contains(subElemId))
@@ -83,11 +83,10 @@ namespace Revit.IFC.Export.Exporter
                         {
                            IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(subElem, out _);
 
-                           IFCAnyHandle currLocalPlacement = currSetter.LocalPlacement;
                            using (IFCExportBodyParams extraParams = new IFCExportBodyParams())
                            {
                               FamilyInstanceExporter.ExportFamilyInstanceAsMappedItem(exporterIFC,
-                                 subElem as FamilyInstance, exportType, productWrapper, ElementId.InvalidElementId, null, currLocalPlacement);
+                                 subElem as FamilyInstance, exportType, productWrapper, ElementId.InvalidElementId, null);
                            }
                         }
                         else if (subElem is CurtainGridLine)
@@ -147,7 +146,7 @@ namespace Revit.IFC.Export.Exporter
 
 
             // Export tessellated geometry when IFC4 Reference View is selected
-            if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView || ExporterCacheManager.ExportOptionsCache.ExportAs4General)
+            if (ExporterCacheManager.ExportOptionsCache.ExportAsReferenceView || ExporterCacheManager.ExportOptionsCache.ExportAs4General)
             {
                BodyExporterOptions bodyExporterOptions = new BodyExporterOptions(false, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
                IList<IFCAnyHandle> triFaceSet = BodyExporter.ExportBodyAsTessellatedFaceSet(exporterIFC, subElem, bodyExporterOptions, geomElem);
@@ -161,7 +160,7 @@ namespace Revit.IFC.Export.Exporter
                }
             }
             // Export AdvancedFace before use fallback BREP
-            else if (ExporterCacheManager.ExportOptionsCache.ExportAs4DesignTransferView || ExporterCacheManager.ExportOptionsCache.ExportAs4x3DesignTransferView)
+            else if (ExporterCacheManager.ExportOptionsCache.ExportAsDesignTransferView)
             {
                IFCAnyHandle advancedBRep = BodyExporter.ExportBodyAsAdvancedBrep(exporterIFC, subElem, geomElem);
                if (bodyItems.AddIfNotNull(advancedBRep))
@@ -197,13 +196,11 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle shapeRep;
 
          // Use tessellated geometry in Reference View
-         if ((ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView || ExporterCacheManager.ExportOptionsCache.ExportAs4General) && !useFallbackBREP)
+         if ((ExporterCacheManager.ExportOptionsCache.ExportAsReferenceView || ExporterCacheManager.ExportOptionsCache.ExportAs4General) && !useFallbackBREP)
          {
             shapeRep = RepresentationUtil.CreateTessellatedRep(exporterIFC, wallElement, catId, contextOfItems, bodyItems, null);
          }
-         else if ((ExporterCacheManager.ExportOptionsCache.ExportAs4DesignTransferView || ExporterCacheManager.ExportOptionsCache.ExportAs4x3DesignTransferView) 
-            && !useFallbackBREP)
-
+         else if (ExporterCacheManager.ExportOptionsCache.ExportAsDesignTransferView && !useFallbackBREP)
          {
             shapeRep = RepresentationUtil.CreateAdvancedBRepRep(exporterIFC, wallElement, catId, contextOfItems, bodyItems, null);
          }
@@ -298,6 +295,8 @@ namespace Revit.IFC.Export.Exporter
          {
             try
             {
+               IFCAnyHandle curtainWallTypeHnd = ExportType(file, element, exportType, wrapper);
+              
                Transform orientationTrf = Transform.Identity;
                IFCAnyHandle localPlacement = null;
 
@@ -310,7 +309,7 @@ namespace Revit.IFC.Export.Exporter
                IFCAnyHandle prodRepHnd = null;
                string elemGUID = GUIDUtil.CreateGUID(element);
                IFCAnyHandle elemHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportType,
-                  file, element, elemGUID, ownerHistory, localPlacement, prodRepHnd);
+                  file, element, curtainWallTypeHnd, elemGUID, ownerHistory, localPlacement, prodRepHnd);
 
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(elemHnd))
                   return;
@@ -335,13 +334,11 @@ namespace Revit.IFC.Export.Exporter
                   IFCInstanceExporter.CreateRelAggregates(file, guid, ownerHistory, null, null, elemHnd, relatedElementIdSet);
                }
 
-               ExportCurtainWallType(exporterIFC, wrapper, elemHnd, element);
                SpaceBoundingElementUtil.RegisterSpaceBoundingElementHandle(exporterIFC, elemHnd, element.Id, ElementId.InvalidElementId);
             }
             finally
             {
-               if (setter != null)
-                  setter.Dispose();
+               setter?.Dispose();
             }
          }
       }
@@ -373,7 +370,7 @@ namespace Revit.IFC.Export.Exporter
             if (element is Panel)
                hostPanelId = (element as Panel).FindHostPanel();
 
-            if (hostPanelId != ElementId.InvalidElementId)
+            if (!MathUtil.IsInvalidElementId(hostPanelId))
             {
                // If the host panel is itself a curtain wall, then we have to recursively collect its element ids.
                Element hostPanel = document.GetElement(hostPanelId);
@@ -615,36 +612,29 @@ namespace Revit.IFC.Export.Exporter
       /// </summary>
       /// <param name="exporterIFC">The exporter.</param>
       /// <param name="wrapper">The ProductWrapper class.</param>
-      /// <param name="elementHandle">The element handle.</param>
       /// <param name="element">The element.</param>
-      public static void ExportCurtainWallType(ExporterIFC exporterIFC, ProductWrapper wrapper, IFCAnyHandle elementHandle, Element element)
+      public static IFCAnyHandle ExportType(IFCFile file, Element element, IFCExportInfoPair exportType, ProductWrapper wrapper)
       {
-         if (elementHandle == null || element == null)
-            return;
+         if (element == null)
+            return null;
 
          Document doc = element.Document;
          ElementId typeElemId = element.GetTypeId();
          ElementType elementType = doc.GetElement(typeElemId) as ElementType;
          if (elementType == null)
-            return;
+            return null;
 
-         IFCExportInfoPair exportType = new IFCExportInfoPair(IFCEntityType.IfcCurtainWallType);
-         IFCAnyHandle wallType = ExporterCacheManager.ElementTypeToHandleCache.Find(elementType, exportType);
-         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(wallType))
+         IFCAnyHandle typeHnd = ExporterCacheManager.ElementTypeToHandleCache.Find(elementType, exportType);
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(typeHnd))
          {
-            ExporterCacheManager.TypeRelationsCache.Add(wallType, elementHandle);
-            return;
+            string elemElementType = NamingUtil.GetElementTypeOverride(elementType, null);
+
+            // Property sets will be set later.
+            typeHnd = IFCInstanceExporter.CreateGenericIFCType(exportType, elementType, null, file, null, null);
+            wrapper.RegisterHandleWithElementType(elementType, exportType, typeHnd, null);
          }
 
-         string elemElementType = NamingUtil.GetElementTypeOverride(elementType, null);
-
-         // Property sets will be set later.
-         wallType = IFCInstanceExporter.CreateCurtainWallType(exporterIFC.GetFile(), elementType,
-             null, null, null, elemElementType, (elemElementType != null) ? "USERDEFINED" : "NOTDEFINED");
-
-         wrapper.RegisterHandleWithElementType(elementType, exportType, wallType, null);
-
-         ExporterCacheManager.TypeRelationsCache.Add(wallType, elementHandle);
+         return typeHnd;
       }
    }
 }

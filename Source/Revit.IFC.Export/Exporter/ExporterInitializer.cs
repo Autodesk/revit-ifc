@@ -1,4 +1,4 @@
-﻿//
+//
 // BIM IFC library: this library works with Autodesk(R) Revit(R) to export IFC files containing model geometry.
 // Copyright (C) 2013  Autodesk, Inc.
 // 
@@ -25,9 +25,6 @@ using Revit.IFC.Export.Exporter.PropertySet.Calculators;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
-using System.Windows.Forms;
-using System.Reflection.PortableExecutable;
-using Autodesk.Revit.DB.IFC;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -53,7 +50,7 @@ namespace Revit.IFC.Export.Exporter
          propertySetProvisionForVoid.Name = "Pset_ProvisionForVoid";
 
          propertySetProvisionForVoid.EntityTypes.Add(IFCEntityType.IfcBuildingElementProxy);
-         propertySetProvisionForVoid.PredefinedType = "USERDEFINED";
+         propertySetProvisionForVoid.PredefinedTypes.Add("USERDEFINED");
          propertySetProvisionForVoid.ObjectType = "PROVISIONFORVOID";
 
          // The Shape value must be determined first, as other calculators will use the value stored.
@@ -589,7 +586,7 @@ namespace Revit.IFC.Export.Exporter
             string ifcPropertyName = property.IFCPropertyName;
             string revitParameterName = property.RevitPropertyName;            
             ElementId revitParameterId = property.RevitPropertyId;
-            if (string.IsNullOrEmpty(revitParameterName) && revitParameterId == ElementId.InvalidElementId)
+            if (string.IsNullOrEmpty(revitParameterName) && MathUtil.IsInvalidElementId(revitParameterId))
                revitParameterName = ifcPropertyName;
 
             BuiltInParameter revitBuiltInParameter = ParameterUtils.IsBuiltInParameter(revitParameterId) ?
@@ -759,9 +756,19 @@ namespace Revit.IFC.Export.Exporter
 
          ScheduleFieldType fieldType = field.FieldType;
 
-         return (fieldType == ScheduleFieldType.Instance ||
+         if (fieldType == ScheduleFieldType.Instance ||
             fieldType == ScheduleFieldType.ElementType ||
-            fieldType == ScheduleFieldType.CombinedParameter);
+            fieldType == ScheduleFieldType.CombinedParameter)
+            return true;
+
+         if (fieldType == ScheduleFieldType.ViewBased)
+         {
+            ElementId paramId = field.ParameterId;
+            return paramId == new ElementId(BuiltInParameter.ROOM_AREA) ||
+               paramId == new ElementId(BuiltInParameter.ROOM_PERIMETER);
+         }
+
+         return false;
       }
 
       /// <summary>
@@ -810,6 +817,14 @@ namespace Revit.IFC.Export.Exporter
             if (exportSchedule.GetValueOrDefault(IFCExportElement.Yes) == IFCExportElement.No)
                continue;
 
+            ScheduleDefinition definition = schedule.Definition;
+            if (definition == null)
+               continue;
+
+            int fieldCount = definition.GetFieldCount();
+            if (fieldCount == 0)
+               continue;
+
             PropertySetDescription customPSet = new();
 
             string scheduleName = NamingUtil.GetNameOverride(schedule, schedule.Name);
@@ -820,26 +835,18 @@ namespace Revit.IFC.Export.Exporter
             }
             customPSet.Name = scheduleName;
 
-            ScheduleDefinition definition = schedule.Definition;
-            if (definition == null)
-               continue;
-
             // The schedule will be responsible for determining which elements to actually export.
             // Note that this currently only works for schedules in the host document.
             customPSet.ViewScheduleId = schedule.Id;
             customPSet.EntityTypes.Add(IFCEntityType.IfcProduct);
 
-            int fieldCount = definition.GetFieldCount();
-            if (fieldCount == 0)
-               continue;
-
             HashSet<ElementId> containedElementIds = new();
-            FilteredElementCollector elementsInViewScheduleCollector = new(document, schedule.Id);
-            foreach (Element containedElement in elementsInViewScheduleCollector)
+            List<Element> elementsInViewSchedule = new FilteredElementCollector(document, schedule.Id).ToList();
+            foreach (Element containedElement in elementsInViewSchedule)
             {
                containedElementIds.Add(containedElement.Id);
                ElementId typeId = containedElement.GetTypeId();
-               if (typeId != ElementId.InvalidElementId)
+               if (!MathUtil.IsInvalidElementId(typeId))
                   containedElementIds.Add(typeId);
             }
             ExporterCacheManager.ViewScheduleElementCache.TryAdd(schedule.Id, containedElementIds);
@@ -883,16 +890,17 @@ namespace Revit.IFC.Export.Exporter
                         // we store builtInParameterId only if it is a proper member of the enumeration.
                         BuiltInParameter asBuiltInParameterId = (BuiltInParameter)parameterId.Value;
                         BuiltInParameter builtInParameterId =
-                            ParameterUtils.IsBuiltInParameter(parameterId) ? asBuiltInParameterId : BuiltInParameter.INVALID;
+                            ParameterUtils.IsBuiltInParameter(parameterId) ? (BuiltInParameter)parameterId.Value : BuiltInParameter.INVALID;
 
                         // We could cache the actual elements when we store the element ids.  However,
                         // this would almost certainly take more time than getting one of the first
                         // few elements in the collector.
-                        foreach (Element containedElement in elementsInViewScheduleCollector)
+                        foreach (Element containedElement in elementsInViewSchedule)
                         {
                            Parameter containedElementParameter = null;
 
-                           if (field.FieldType == ScheduleFieldType.Instance)
+                           if (field.FieldType == ScheduleFieldType.Instance ||
+                              field.FieldType == ScheduleFieldType.ViewBased)
                               containedElementParameter = containedElement.get_Parameter(asBuiltInParameterId);
 
                            // shared parameters can return ScheduleFieldType.Instance, even if they are type parameters, so take a look.
@@ -900,7 +908,7 @@ namespace Revit.IFC.Export.Exporter
                            {
                               ElementId containedElementTypeId = containedElement.GetTypeId();
                               Element containedElementType = null;
-                              if (containedElementTypeId != ElementId.InvalidElementId)
+                              if (!MathUtil.IsInvalidElementId(containedElementTypeId))
                               {
                                  if (!cachedElementTypes.TryGetValue(containedElementTypeId, out containedElementType))
                                  {
@@ -909,8 +917,7 @@ namespace Revit.IFC.Export.Exporter
                                  }
                               }
 
-                              if (containedElementType != null)
-                                 containedElementParameter = containedElementType.get_Parameter(asBuiltInParameterId);
+                              containedElementParameter = containedElementType?.get_Parameter(asBuiltInParameterId);
                            }
 
                            if (containedElementParameter != null)

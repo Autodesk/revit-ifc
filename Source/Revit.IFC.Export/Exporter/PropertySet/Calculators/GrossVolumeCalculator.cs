@@ -48,17 +48,21 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>True if the operation succeeded, false otherwise.</returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Volume, entryMap.CompatibleRevitParameterName, "IfcQtyGrossVolume") != null)
+         const double volumeEps = MathUtil.Eps * MathUtil.Eps * MathUtil.Eps;
+         if (ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, entryMap.CompatibleRevitParameterName, 
+            "IfcQtyGrossVolume") is double volume)
          {
-            m_Volume = UnitUtil.ScaleVolume(m_Volume);
-            if (m_Volume > MathUtil.Eps() * MathUtil.Eps() * MathUtil.Eps())
+            if (volume > volumeEps)
+            {
+               m_Volume = UnitUtil.ScaleVolume(volume);
                return true;
+            }
          }
 
          m_Volume = UnitUtil.ScaleVolume(CalculateSpatialElementGrossVolume(element as SpatialElement, extrusionCreationData));
-         if (m_Volume > MathUtil.Eps() * MathUtil.Eps() * MathUtil.Eps())
+         if (m_Volume > volumeEps)
             return true;
 
          if (extrusionCreationData == null)
@@ -70,7 +74,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          double area = UnitUtil.UnscaleArea(extrusionCreationData.ScaledArea);
          double length = UnitUtil.UnscaleLength(extrusionCreationData.ScaledLength);
          m_Volume = UnitUtil.ScaleVolume(area * length);
-         return (m_Volume > MathUtil.Eps() * MathUtil.Eps() * MathUtil.Eps());
+         return m_Volume > volumeEps;
       }
 
       private double CalculateSpatialElementGrossVolume(SpatialElement spatialElement, IFCExportBodyParams extrusionCreationData)

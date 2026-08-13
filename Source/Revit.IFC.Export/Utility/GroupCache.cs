@@ -44,7 +44,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>GroupInfo of the registered group</returns>
       public GroupInfo RegisterGroup(ElementId groupId, IFCAnyHandle groupHnd)
       {
-         GroupInfo groupInfo = GetOrGreateGroupInfo(groupId);
+         GroupInfo groupInfo = GetOrCreateGroupInfo(groupId);
          groupInfo.GroupHandle = groupHnd;
          this[groupId] = groupInfo;
          return groupInfo;
@@ -57,7 +57,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="type">The export type of the Group.</param>
       public void RegisterOrUpdateGroupType(ElementId groupId, IFCExportInfoPair type)
       {
-         GroupInfo groupInfo = GetOrGreateGroupInfo(groupId);
+         GroupInfo groupInfo = GetOrCreateGroupInfo(groupId);
          groupInfo.GroupType = type;
          this[groupId] = groupInfo;
       }
@@ -70,7 +70,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="elementHnd">The IFC handle of the element.</param>
       public void RegisterElement(ElementId groupId, IFCAnyHandle elementHnd)
       {
-         GroupInfo groupInfo = GetOrGreateGroupInfo(groupId);
+         GroupInfo groupInfo = GetOrCreateGroupInfo(groupId);
          groupInfo.ElementHandles.Add(elementHnd);
          this[groupId] = groupInfo;
       }
@@ -100,7 +100,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="groupId">Group.</param>
       public void SetExportFlag(ElementId groupId)
       {
-         GroupInfo groupInfo = GetOrGreateGroupInfo(groupId);
+         GroupInfo groupInfo = GetOrCreateGroupInfo(groupId);
          groupInfo.ExportFlag = true;
          this[groupId] = groupInfo;
       }
@@ -127,7 +127,7 @@ namespace Revit.IFC.Export.Utility
             (groupInfo?.ElementHandles?.Count ?? 0) == 0;
       }
 
-      private GroupInfo GetOrGreateGroupInfo(ElementId groupId)
+      private GroupInfo GetOrCreateGroupInfo(ElementId groupId)
       {
          if (!TryGetValue(groupId, out GroupInfo groupInfo))
          {
@@ -141,7 +141,7 @@ namespace Revit.IFC.Export.Utility
          if (elementHnds.Count == 0)
             return;
 
-         GroupInfo groupInfo = GetOrGreateGroupInfo(groupId);
+         GroupInfo groupInfo = GetOrCreateGroupInfo(groupId);
          groupInfo.ElementHandles.UnionWith(elementHnds);
          this[groupId] = groupInfo;
       }
