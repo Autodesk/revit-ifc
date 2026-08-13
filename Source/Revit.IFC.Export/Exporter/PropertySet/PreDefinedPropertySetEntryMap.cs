@@ -82,7 +82,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             data = CreateDataFromElementBase(file, element, RevitParameterName, propertyType, valueType, propertyEnumerationType);
 
          if (data == null && RevitBuiltInParameter != BuiltInParameter.INVALID)
-            data = CreateDataFromElementBase(file, element, LabelUtils.GetLabelFor(RevitBuiltInParameter), propertyType, valueType, propertyEnumerationType);
+            data = CreateDataFromElementBase(file, element, NamingUtil.GetSafeLabel(RevitBuiltInParameter), propertyType, valueType, propertyEnumerationType);
 
          if (data == null)
             data = CreateDataFromElementBase(file, element, CompatibleRevitParameterName, propertyType, valueType, propertyEnumerationType);
@@ -92,6 +92,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
       private static IList<IFCData> CreateDataFromElementBase(IFCFile file, Element element, string revitParamNameToUse, PropertyType propertyType, PropertyValueType valueType, Type propertyEnumerationType)
       {
+         if (string.IsNullOrEmpty(revitParamNameToUse))
+            return null;
+
          IList<IFCData> data = null;
 
          switch (valueType)

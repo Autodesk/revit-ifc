@@ -63,13 +63,16 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Depth, entryMap.CompatibleRevitParameterName, "IfcQtyDepth") != null)
+         if (ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName,
+            entryMap.CompatibleRevitParameterName, "IfcQtyDepth") is double depth)
          {
-            m_Depth = UnitUtil.ScaleLength(m_Depth);
-            if (m_Depth > MathUtil.Eps() * MathUtil.Eps())
+            if (depth > MathUtil.Eps)
+            {
+               m_Depth = UnitUtil.ScaleLength(depth);
                return true;
+            }
          }
 
          if (extrusionCreationData == null)
@@ -86,7 +89,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             m_Depth = extrusionCreationData.ScaledHeight;
          }
 
-         return (m_Depth > MathUtil.Eps());
+         return m_Depth > MathUtil.Eps;
       }
 
       /// <summary>

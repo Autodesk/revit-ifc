@@ -97,17 +97,23 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                continue;
 
             ElementId elementId = ExporterCacheManager.HandleToElementCache.Find(elemHnd);
-            Element elementToUse = (elementId == ElementId.InvalidElementId) ? element : element?.Document?.GetElement(elementId);
+            Element elementToUse = (MathUtil.IsInvalidElementId(elementId)) ? element : element?.Document?.GetElement(elementId);
             if (elementToUse == null)
                continue;
 
-            if (ParameterUtil.GetStringValueFromElementOrSymbol(elementToUse, BuiltInParameter.ASSEMBLY_CODE, false, out string uniformatCode) == null)
-               ParameterUtil.GetStringValueFromElementOrSymbol(elementToUse, "Assembly Code", out uniformatCode);
+            (_, string uniformatCode) = ParameterUtil.GetStringValueFromElementOrSymbol(elementToUse, null, false, "Assembly Code");
+            if (string.IsNullOrEmpty(uniformatCode))
+            {
+               uniformatCode = ParameterUtil.GetStringValueFromElementOrSymbol(elementToUse, null, false, BuiltInParameter.ASSEMBLY_CODE);
+            }
 
             if (!string.IsNullOrWhiteSpace(uniformatCode))
             {
-               if (ParameterUtil.GetStringValueFromElementOrSymbol(elementToUse, BuiltInParameter.ASSEMBLY_DESCRIPTION, false, out string uniformatRefName) == null)
-                  ParameterUtil.GetStringValueFromElementOrSymbol(elementToUse, "Assembly Description", out uniformatRefName);
+               (_, string uniformatRefName) = ParameterUtil.GetStringValueFromElementOrSymbol(elementToUse, null, false, "Assembly Description");
+               if (string.IsNullOrEmpty(uniformatRefName))
+               {
+                  uniformatRefName = ParameterUtil.GetStringValueFromElementOrSymbol(elementToUse, null, false, BuiltInParameter.ASSEMBLY_DESCRIPTION);
+               }
 
                classification ??= GetOrCreateClassification(file, uniformatKeyString);
 
@@ -170,8 +176,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                standardPass++;
             }
 
-            if (ParameterUtil.GetStringValueFromElementOrSymbol(element, elementType, classificationCodeFieldName,
-               out paramClassificationCode) == null)
+            (_, paramClassificationCode) = ParameterUtil.GetStringValueFromElementOrSymbol(element, elementType, false, classificationCodeFieldName);
+            if (string.IsNullOrEmpty(paramClassificationCode))
             {
                continue;
             }
@@ -179,18 +185,19 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             ParseClassificationCode(paramClassificationCode, classificationCodeFieldName, out classificationName, out classificationCode, out classificationRefName);
 
             if (string.IsNullOrEmpty(classificationRefName))
-            {
-               if (string.Compare(classificationCodeFieldName, "Assembly Code", true) == 0)
+            { 
+               NamingUtil.IFCStringKey compName = new(classificationCodeFieldName);
+               if (compName.IsEqualTo("ASSEMBLYCODE"))
                {
-                  ParameterUtil.GetStringValueFromElementOrSymbol(element, elementType, BuiltInParameter.ASSEMBLY_DESCRIPTION, false, out classificationRefName);
+                  classificationRefName = ParameterUtil.GetStringValueFromElementOrSymbol(element, elementType, false, BuiltInParameter.ASSEMBLY_DESCRIPTION);
                }
-               else if (string.Compare(classificationCodeFieldName, "Classification Number", true) == 0)
+               else if (compName.IsEqualTo("CLASSIFICATIONNUMBER"))
                {
-                  ParameterUtil.GetStringValueFromElementOrSymbol(element, elementType, BuiltInParameter.CLASSIFICATION_DESCRIPTION, false, out classificationRefName);
+                  classificationRefName = ParameterUtil.GetStringValueFromElementOrSymbol(element, elementType, false, BuiltInParameter.CLASSIFICATION_DESCRIPTION);
                }
             }
             // If classificationName is empty, there is no classification to export.
-            if (String.IsNullOrEmpty(classificationName))
+            if (string.IsNullOrEmpty(classificationName))
                continue;
 
             IFCAnyHandle classification;

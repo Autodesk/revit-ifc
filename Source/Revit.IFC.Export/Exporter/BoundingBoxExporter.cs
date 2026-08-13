@@ -36,23 +36,7 @@ namespace Revit.IFC.Export.Exporter
    /// </summary>
    public class BoundingBoxExporter
    {
-      private static IFCAnyHandle ExportBoundingBoxBase(ExporterIFC exporterIFC, XYZ cornerXYZ, double xDim, double yDim, double zDim)
-      {
-         double eps = MathUtil.Eps();
-         if (xDim < eps || yDim < eps || zDim < eps)
-            return null;
-
-         IFCFile file = exporterIFC.GetFile();
-         IFCAnyHandle cornerHnd = ExporterUtil.CreateCartesianPoint(file, cornerXYZ);
-         IFCAnyHandle boundingBoxItem = IFCInstanceExporter.CreateBoundingBox(file, cornerHnd, xDim, yDim, zDim);
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(boundingBoxItem))
-            return null;
-
-         IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Box);
-         return RepresentationUtil.CreateBoundingBoxRep(exporterIFC, contextOfItems, boundingBoxItem);
-      }
-
-      private static Transform GetLocalTransform(ExporterIFC exporterIFC)
+      public static Transform GetLocalTransform(ExporterIFC exporterIFC)
       {
          // We want to transform the geometry into the current local coordinate system.
          Transform geomTrf = Transform.Identity;
@@ -89,7 +73,7 @@ namespace Revit.IFC.Export.Exporter
       }
 
       // Handles Solid, Mesh, and Face.
-      private static BoundingBoxXYZ ComputeApproximateBoundingBox(IList<Solid> solids, IList<Mesh> polymeshes, IList<Face> independentFaces, Transform trf)
+      public static BoundingBoxXYZ ComputeApproximateBoundingBox(IList<Solid> solids, IList<Mesh> polymeshes, IList<Face> independentFaces, Transform trf)
       {
          XYZ minBound = new XYZ(1000000000, 1000000000, 1000000000);
          XYZ maxBound = new XYZ(-1000000000, -1000000000, -1000000000);
@@ -168,23 +152,6 @@ namespace Revit.IFC.Export.Exporter
          return boundingBox;
       }
 
-      private static IFCAnyHandle ExportBoundingBoxFromGeometry(ExporterIFC exporterIFC, IList<Solid> solids, IList<Mesh> meshes, IList<Face> faces,
-          Transform trf)
-      {
-         if (solids.Count == 0 && meshes.Count == 0 && faces.Count == 0)
-            return null;
-
-         Transform geomTrf = GetLocalTransform(exporterIFC);
-         geomTrf = geomTrf.Multiply(trf);
-
-         // We want to transform the geometry into the current local coordinate system.
-         BoundingBoxXYZ boundingBox = ComputeApproximateBoundingBox(solids, meshes, faces, geomTrf);
-
-         XYZ cornerXYZ = UnitUtil.ScaleLength(boundingBox.Min);
-         XYZ sizeXYZ = UnitUtil.ScaleLength(boundingBox.Max) - cornerXYZ;
-         return ExportBoundingBoxBase(exporterIFC, cornerXYZ, sizeXYZ.X, sizeXYZ.Y, sizeXYZ.Z);
-      }
-
       /// <summary>
       /// Creates the bounding box representation corresponding to a particular geometry.
       /// </summary>
@@ -204,7 +171,7 @@ namespace Revit.IFC.Export.Exporter
          IList<Solid> solids = solidMeshCapsule.GetSolids();
          IList<Mesh> meshes = solidMeshCapsule.GetMeshes();
          IList<Face> faces = new List<Face>();
-         return ExportBoundingBoxFromGeometry(exporterIFC, solids, meshes, faces, trf);
+         return RepresentationUtil.ExportBoundingBoxFromGeometry(exporterIFC, solids, meshes, faces, trf);
       }
 
       /// <summary>
@@ -221,7 +188,7 @@ namespace Revit.IFC.Export.Exporter
             return null;
 
          IList<Face> faces = new List<Face>();
-         return ExportBoundingBoxFromGeometry(exporterIFC, solids, meshes, faces, trf);
+         return RepresentationUtil.ExportBoundingBoxFromGeometry(exporterIFC, solids, meshes, faces, trf);
       }
 
       /// <summary>
@@ -253,7 +220,7 @@ namespace Revit.IFC.Export.Exporter
                faces.Add(geometryObject as Face);
          }
 
-         return ExportBoundingBoxFromGeometry(exporterIFC, solids, meshes, faces, trf);
+         return RepresentationUtil.ExportBoundingBoxFromGeometry(exporterIFC, solids, meshes, faces, trf);
       }
    }
 }

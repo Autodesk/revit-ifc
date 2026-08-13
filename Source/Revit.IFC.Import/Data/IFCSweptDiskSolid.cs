@@ -84,13 +84,13 @@ namespace Revit.IFC.Import.Data
          }
 
          StartParameter = IFCImportHandleUtil.GetOptionalDoubleAttribute(solid, "StartParam", 0.0);
-         if (StartParameter < MathUtil.Eps())
+         if (StartParameter < MathUtil.Eps)
             StartParameter = 0.0;
 
          double endParameter = IFCImportHandleUtil.GetOptionalDoubleAttribute(solid, "EndParam", -1.0);
          if (!MathUtil.IsAlmostEqual(endParameter, -1.0))
          {
-            if (endParameter < StartParameter + MathUtil.Eps())
+            if (endParameter < StartParameter + MathUtil.Eps)
             {
                Importer.TheLog.LogWarning(solid.StepId, "IfcSweptDiskSolid swept curve end parameter less than or equal to start parameter, ignoring both.", true);
                StartParameter = 0.0;

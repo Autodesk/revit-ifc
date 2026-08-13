@@ -55,18 +55,22 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>True if the operation succeed, false otherwise.</returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_SpaceTemperatureSummer, entryMap.CompatibleRevitParameterName) != null)
+         if (ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, entryMap.CompatibleRevitParameterName) is double m_SpaceTemperatureSummer)
             return true;
 
-         double maxValue = 0, minValue = 0;
-         if ((ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName + "Max", out maxValue) != null) &&
-            (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName + "Min", out minValue) != null)
-            || (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName + "Max", out maxValue) != null) &&
-            (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName + "Min", out minValue) != null))
+         if ((ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName + "Max") is double maxValue) &&
+            (ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName + "Min") is double minValue))
          {
             m_SpaceTemperatureSummer = (maxValue + minValue) / 2.0;
+            return true;
+         }
+
+         if ((ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName + "Max") is double maxValue2) &&
+            (ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName + "Min") is double minValue2))
+         {
+            m_SpaceTemperatureSummer = (maxValue2 + minValue2) / 2.0;
             return true;
          }
 
@@ -111,18 +115,23 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>True if the operation succeed, false otherwise.</returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_SpaceTemperatureWinter, entryMap.CompatibleRevitParameterName) != null)
+         if (ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, 
+            entryMap.CompatibleRevitParameterName) is double m_SpaceTemperatureWinter)
             return true;
 
-         double maxValue = 0, minValue = 0;
-         if (((ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName + "Max", out maxValue) != null) &&
-            (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName + "Min", out minValue) != null))
-            || ((ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName + "Max", out maxValue) != null) &&
-            (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName + "Min", out minValue) != null)))
+         if ((ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName + "Max") is double maxValue) &&
+            (ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName + "Min") is double minValue))
          {
             m_SpaceTemperatureWinter = (maxValue + minValue) / 2.0;
+            return true;
+         }
+
+         if ((ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName + "Max") is double maxValue2) &&
+            (ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.CompatibleRevitParameterName + "Min") is double minValue2))
+         {
+            m_SpaceTemperatureWinter = (maxValue2 + minValue2) / 2.0;
             return true;
          }
 

@@ -24,6 +24,7 @@ using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
+using System.Linq;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -61,7 +62,7 @@ namespace Revit.IFC.Export.Exporter
 
          ISet<IFCAnyHandle> surfaceItems = new HashSet<IFCAnyHandle>();
          // Use tessellated geometry for surface in IFC Reference View
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView || ExporterCacheManager.ExportOptionsCache.ExportAs4General)
+         if (ExporterCacheManager.ExportOptionsCache.ExportAsReferenceView || ExporterCacheManager.ExportOptionsCache.ExportAs4General)
          {
             BodyExporterOptions options = new BodyExporterOptions(false, ExportOptionsCache.ExportTessellationLevel.ExtraLow);
             IList<IFCAnyHandle> items = BodyExporter.ExportBodyAsTessellatedFaceSet(exporterIFC, element, options, geometryElement);
@@ -117,12 +118,8 @@ namespace Revit.IFC.Export.Exporter
 
          if (exportBoundaryRep && boundaryRepresentations.Count > 0)
          {
-            HashSet<IFCAnyHandle> boundaryRepresentationSet = new HashSet<IFCAnyHandle>();
-            boundaryRepresentationSet.UnionWith(boundaryRepresentations);
-            IFCAnyHandle contextOfItemsFootPrint = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.FootPrint);
-
             boundaryRep = RepresentationUtil.CreateBoundaryRep(exporterIFC, element, catId,
-               contextOfItemsFootPrint, boundaryRepresentationSet, boundaryRep);
+               boundaryRepresentations.ToHashSet(), boundaryRep);
          }
 
          return true;

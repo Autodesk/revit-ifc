@@ -70,9 +70,15 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         bool valid = true;
+         // Get override from parameter
+         if (ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, entryMap.CompatibleRevitParameterName) is double walkingLineOffsetOverride)
+         {
+            m_WalkingLineOffset = UnitUtil.ScaleArea(walkingLineOffsetOverride);
+            return true;
+         }
+
          if (StairsExporter.IsLegacyStairs(element))
          {
             double riserHeight, treadLength, treadLengthAtInnerSide, nosingLength, waistThickness = 0;
@@ -102,17 +108,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
          else
          {
-            valid = false;
+            return false;
          }
 
-         // Get override from parameter
-         double walkingLineOffsetOverride = 0.0;
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out walkingLineOffsetOverride, entryMap.CompatibleRevitParameterName) != null)
-         {
-            m_WalkingLineOffset = UnitUtil.ScaleArea(walkingLineOffsetOverride);
-         }
-
-         return valid;
+         return true;
       }
 
       /// <summary>

@@ -47,15 +47,15 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>True if the operation succeeded, false otherwise.</returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         double areaEps = MathUtil.Eps() * MathUtil.Eps();
+         const double areaEps = MathUtil.Eps * MathUtil.Eps;
 
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Area, entryMap.CompatibleRevitParameterName, "IfcQtyNetSurfaceArea") != null)
+         if (ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName,
+            entryMap.CompatibleRevitParameterName, "IfcQtyNetSurfaceArea") is double area && area > areaEps)
          {
-            m_Area = UnitUtil.ScaleArea(m_Area);
-            if (m_Area > areaEps)
-               return true;
+            m_Area = UnitUtil.ScaleArea(area);
+            return true;
          }
 
          double areaSum = 0;
@@ -87,7 +87,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
 
          m_Area = UnitUtil.ScaleArea(areaSum);
-         return (m_Area > areaEps);
+         return m_Area > areaEps;
       }
 
       /// <summary>

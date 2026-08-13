@@ -143,9 +143,8 @@ namespace Revit.IFC.Export.Exporter
                      SheetType = fsType
                   };
 
-                  ParameterUtil.GetElementIdValueFromElementOrSymbol(config.Sheet, BuiltInParameter.MATERIAL_ID_PARAM, out ElementId materialId);
-                  config.MaterialId = materialId;
-
+                  config.MaterialId = ParameterUtil.GetElementIdValueFromElementOrSymbol(config.Sheet, fsType, BuiltInParameter.MATERIAL_ID_PARAM);
+                  
                   bool status = true;
                   if (config.SheetType.IsCustom())
                   {
@@ -214,8 +213,9 @@ namespace Revit.IFC.Export.Exporter
                shapeReps.AddIfNotNull(shapeRep);
 
                IFCAnyHandle prodRep = IFCInstanceExporter.CreateProductDefinitionShape(cfg.File, null, null, shapeReps);
-               IFCAnyHandle handle = IFCInstanceExporter.CreateReinforcingBar(cfg.ExporterIFC, cfg.Sheet, guid, ExporterCacheManager.OwnerHistoryHandle,
-                  cfg.PlacementSetter.LocalPlacement, prodRep, matName, wireDiam, 0, 0, IFCReinforcingBarRole.NotDefined, null);
+               IFCAnyHandle handle = IFCInstanceExporter.CreateReinforcingBar(cfg.File, cfg.Sheet, null, guid, 
+                  ExporterCacheManager.OwnerHistoryHandle, cfg.PlacementSetter.LocalPlacement, prodRep, matName, wireDiam, 0, 0, 
+                  IFCReinforcingBarRole.NotDefined, null);
                IFCAnyHandleUtil.SetAttribute(handle, "ObjectType", "Generic");
                CategoryUtil.CreateMaterialAssociation(cfg.ExporterIFC, handle, cfg.MaterialId);
                rebarHandles.Add(handle);
@@ -290,14 +290,19 @@ namespace Revit.IFC.Export.Exporter
             ExporterCacheManager.FabricParamsCache[cfg.Sheet.Id] = fabricParams;
          }
 
+         // IfcReinforcingMeshType is new to IFC4.
+         IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcReinforcingMesh);
+         IFCAnyHandle type = (exportInfo.ExportType != IFCEntityType.UnKnown) ?
+            ExporterUtil.CreateGenericTypeFromElement(cfg.Sheet, exportInfo, cfg.File, cfg.ProductWrapper) : null;
+
          IFCAnyHandle handle = IFCInstanceExporter.CreateReinforcingMesh(cfg.ExporterIFC, cfg.Sheet, guid, ownerHistory, cfg.EcData.GetLocalPlacement(),
             prodRep, fabricParams.SteelGrade, fabricParams.MeshLength, fabricParams.MeshWidth,
             fabricParams.LongitudinalBarNominalDiameter, fabricParams.TransverseBarNominalDiameter,
             fabricParams.LongitudinalBarCrossSectionArea, fabricParams.TransverseBarCrossSectionArea,
             fabricParams.LongitudinalBarSpacing, fabricParams.TransverseBarSpacing);
-         IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcReinforcingMesh);
+
          ElementId fabricAreaId = cfg.Sheet?.FabricAreaOwnerId;
-         if (fabricAreaId != ElementId.InvalidElementId)
+         if (!MathUtil.IsInvalidElementId(fabricAreaId))
          {
             if (!ExporterCacheManager.FabricAreaHandleCache.TryGetValue(fabricAreaId, out HashSet<IFCAnyHandle> fabricSheets))
             {
@@ -308,11 +313,7 @@ namespace Revit.IFC.Export.Exporter
          }
          cfg.ProductWrapper.AddElement(cfg.Sheet, handle, cfg.PlacementSetter?.LevelInfo, cfg.EcData, true, exportInfo);
 
-         if (exportInfo.ExportType != Common.Enums.IFCEntityType.UnKnown)
-         {
-            IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(cfg.Sheet, exportInfo, cfg.File, cfg.ProductWrapper);
-            ExporterCacheManager.TypeRelationsCache.Add(type, handle);
-         }
+         ExporterCacheManager.TypeRelationsCache.Add(type, handle);
 
          CategoryUtil.CreateMaterialAssociation(cfg.ExporterIFC, handle, cfg.MaterialId);
 

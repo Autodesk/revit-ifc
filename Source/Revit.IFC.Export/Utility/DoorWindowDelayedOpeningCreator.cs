@@ -282,13 +282,13 @@ namespace Revit.IFC.Export.Utility
                double openingHeight = openingInfo.OpeningHeight;
                double openingWidth = openingInfo.OpeningWidth;
 
-               if (openingHeight > MathUtil.Eps())
+               if (openingHeight > MathUtil.Eps)
                {
                   foundHeight = true;
                   IFCAnyHandleUtil.SetAttribute(DoorWindowHnd, "OverallHeight", UnitUtil.ScaleLength(openingHeight));
                }
 
-               if (openingWidth > MathUtil.Eps())
+               if (openingWidth > MathUtil.Eps)
                {
                   foundWidth = true;
                   IFCAnyHandleUtil.SetAttribute(DoorWindowHnd, "OverallWidth", UnitUtil.ScaleLength(openingWidth));

@@ -68,7 +68,7 @@ namespace Revit.IFC.Export.Utility
          }
          else
          {
-            HashSet<IFCAnyHandle> products = new() { product };
+            HashSet<IFCAnyHandle> products = [ product ];
             Cache[handle] = products;
          }
       }

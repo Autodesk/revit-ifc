@@ -52,5 +52,5 @@ using System.Windows;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("windows7.0")]
-[assembly: AssemblyVersion("27.0.1.1")]
-[assembly: AssemblyFileVersion("27.0.1.1")]
+[assembly: AssemblyVersion("27.3.0.12")]
+[assembly: AssemblyFileVersion("27.3.0.12")]

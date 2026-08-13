@@ -90,6 +90,8 @@ namespace Revit.IFC.Export.Exporter
          TryToExportAsExtrusion = tryToExportAsExtrusion;
          if (ExporterCacheManager.ExportOptionsCache.LevelOfDetail <= coarseThreshhold)
             TessellationLevel = BodyTessellationLevel.Coarse;
+         AllowOffsetTransform = 
+            RepresentationUtil.DocumentMirrorStateManager.AllowOffsetTransform(AllowOffsetTransform);
       }
 
       /// <summary>

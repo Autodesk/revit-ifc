@@ -67,9 +67,17 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       {
          if (element == null)
             return null;
+
+         bool isType = element is ElementType;
+         ElementId elementId = element.Id;
          foreach (AttributeEntryMap entry in Entries)
          {
-            string result = entry.AsString(element);
+            EvaluatedParameter parameter = (entry.RevitBuiltInParameter != BuiltInParameter.INVALID) ?
+               ExporterCacheManager.ParameterAccess?.GetParameter(elementId, new ElementId(entry.RevitBuiltInParameter)) :
+               ParameterUtil.GetParameterFromName(elementId, entry.RevitParameterName, isType);
+
+            string result = (parameter?.Value as StringParameterValue)?.Value;
+
             if (result != null)
                return result;
          }

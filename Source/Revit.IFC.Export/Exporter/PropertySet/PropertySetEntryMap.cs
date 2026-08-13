@@ -80,7 +80,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          IFCExportBodyParams extrusionCreationData, ElementOrConnector elementOrConnector, 
          ElementType elementType, IFCAnyHandle handle, PropertyType propertyType, 
          PropertyType propertyArgumentType, PropertyValueType valueType, Type propertyEnumerationType,
-         string propertyName, bool lookInType, bool addTypePropertiesToInstance)
+         string propertyName, bool lookInType, bool addTypePropertiesToInstance, IDictionary<string, string> connectorDescription)
       {
          IFCAnyHandle propHnd = null;
 
@@ -103,7 +103,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd))
          {
             propHnd = CreatePropertyFromCalculatorOrDescription(file, exporterIFC, extrusionCreationData, elementOrConnector, elementType, handle,
-                  propertyType, valueType, propertyEnumerationType, propertyName);
+               propertyType, valueType, propertyEnumerationType, propertyName, connectorDescription);
          }
 
          return propHnd;
@@ -158,7 +158,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                {
                   if (double.TryParse(valueString, out double value))
                   {
-                     data = ExporterCacheManager.UnitsCache.ContainsKey("CURRENCY") ?
+                     data = ExporterCacheManager.UnitsCache.HasCurrencyUnit() ?
                         IFCDataUtil.CreateAsMonetaryMeasure(value) : IFCDataUtil.CreateAsReal(value);
                   }
                   break;
@@ -191,6 +191,26 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                {
                   if (Double.TryParse(valueString, out double value))
                      data = IFCDataUtil.CreateAsFrequencyMeasure(value);
+                  break;
+               }
+            case PropertyType.Date:
+               {
+                  data = IFCDataUtil.CreateAsDate(valueString);
+                  break;
+               }
+            case PropertyType.DateTime:
+               {
+                  data = IFCDataUtil.CreateAsDateTime(valueString);
+                  break;
+               }
+            case PropertyType.Duration:
+               {
+                  data = IFCDataUtil.CreateAsDuration(valueString);
+                  break;
+               }
+            case PropertyType.URIReference:
+               {
+                  data = IFCDataUtil.CreateAsURIReference(valueString);
                   break;
                }
             case PropertyType.Identifier:
@@ -304,6 +324,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                      data = IFCDataUtil.CreateAsPlanarForceMeasure(value);
                   break;
                }
+            case PropertyType.NonNegativeLength:
+               {
+                  if (Double.TryParse(valueString, out double value))
+                     data = IFCDataUtil.CreateAsNonNegativeLengthMeasure(value);
+                  break;
+               }
             case PropertyType.PositiveLength:
                {
                   if (Double.TryParse(valueString, out double value))
@@ -356,6 +382,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                      data = IFCDataUtil.CreateAsSoundPowerMeasure(value);
                   break;
                }
+            case PropertyType.SoundPowerLevel:
+               {
+                  if (Double.TryParse(valueString, out double value))
+                     data = IFCDataUtil.CreateAsSoundPowerLevelMeasure(value);
+                  break;
+               }
             case PropertyType.SoundPressure:
                {
                   if (Double.TryParse(valueString, out double value))
@@ -385,7 +417,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                      data = IFCDataUtil.CreateAsVolumeMeasure(value);
                   break;
                }
-               
+            case PropertyType.SectionModulus:
+               {
+                  if (Double.TryParse(valueString, out double value))
+                     data = IFCDataUtil.CreateAsSectionModulusMeasure(value);
+                  break;
+               }
             case PropertyType.VolumetricFlowRate:
                {
                   if (Double.TryParse(valueString, out double value))
@@ -533,6 +570,30 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                          builtInParameter, propertyDescription, valueType);
                      break;
                   }
+               case PropertyType.Date:
+                  {
+                     propHnd = PropertyUtil.CreateDatePropertyFromElement(file, element, revitParamNameToUse,
+                         builtInParameter, propertyDescription, valueType);
+                     break;
+                  }
+               case PropertyType.DateTime:
+                  {
+                     propHnd = PropertyUtil.CreateDateTimePropertyFromElement(file, element, revitParamNameToUse,
+                         builtInParameter, propertyDescription, valueType);
+                     break;
+                  }
+               case PropertyType.Duration:
+                  {
+                     propHnd = PropertyUtil.CreateDurationPropertyFromElement(file, element, revitParamNameToUse,
+                         builtInParameter, propertyDescription, valueType);
+                     break;
+                  }
+               case PropertyType.URIReference:
+                  {
+                     propHnd = PropertyUtil.CreateURIReferencePropertyFromElement(file, element, revitParamNameToUse,
+                         builtInParameter, propertyDescription, valueType);
+                     break;
+                  }
                case PropertyType.Identifier:
                   {
                      propHnd = PropertyUtil.CreateIdentifierPropertyFromElement(file, element, revitParamNameToUse, 
@@ -659,7 +720,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   }
                case PropertyType.MomentOfInertia:
                   {
-                     propHnd = PropertyUtil.CreateMomentOfInertiaPropertyFromElement(file, element, revitParamNameToUse, 
+                     propHnd = PropertyUtil.CreateMomentOfInertiaPropertyFromElement(file, element, revitParamNameToUse,
+                         builtInParameter, propertyDescription, valueType);
+                     break;
+                  }
+               case PropertyType.SectionModulus:
+                  {
+                     propHnd = PropertyUtil.CreateSectionModulusPropertyFromElement(file, element, revitParamNameToUse,
                          builtInParameter, propertyDescription, valueType);
                      break;
                   }
@@ -684,6 +751,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                case PropertyType.PlanarForce:
                   {
                      propHnd = PropertyUtil.CreatePlanarForcePropertyFromElement(file, element, revitParamNameToUse, 
+                         builtInParameter, propertyDescription, valueType);
+                     break;
+                  }
+               case PropertyType.NonNegativeLength:
+                  {
+                     propHnd = PropertyUtil.CreateNonNegativeLengthPropertyFromElement(file, element, revitParamNameToUse,
                          builtInParameter, propertyDescription, valueType);
                      break;
                   }
@@ -738,6 +811,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                case PropertyType.SoundPower:
                   {
                      propHnd = PropertyUtil.CreateSoundPowerPropertyFromElement(file, element, revitParamNameToUse,
+                         builtInParameter, propertyDescription, valueType);
+                     break;
+                  }
+               case PropertyType.SoundPowerLevel:
+                  {
+                     propHnd = PropertyUtil.CreateSoundPowerLevelPropertyFromElement(file, element, revitParamNameToUse,
                          builtInParameter, propertyDescription, valueType);
                      break;
                   }
@@ -1042,15 +1121,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          definedValues = null;
 
          // Get multiline string from element parameter
-         string tableString = String.Empty;
-         ParameterUtil.GetStringValueFromElement(element, revitParamNameToUse, out tableString);
+         (_, string tableString) = ParameterUtil.GetStringValueFromElement(element, false, revitParamNameToUse);
          if (tableString == null && builtInParameter != BuiltInParameter.INVALID)
          {
-            string builtInParamName = LabelUtils.GetLabelFor(builtInParameter);
-            ParameterUtil.GetStringValueFromElement(element, builtInParamName, out tableString);
+            (_, tableString) = GetStringValueFromElement(element, builtInParameter);
          }
 
-         if (String.IsNullOrEmpty(tableString))
+         if (string.IsNullOrEmpty(tableString))
             return false;
 
          // Parse this string as a list of value pairs
@@ -1173,8 +1250,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="propertyEnumerationType">The type of property.</param>
       /// <param name="propertyName">The name of property to create.</param>
       /// <returns>The property handle.</returns>
-      IFCAnyHandle CreatePropertyFromCalculatorOrDescription(IFCFile file, ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, ElementOrConnector elementOrConnector,
-            ElementType elementType, IFCAnyHandle handle, PropertyType propertyType, PropertyValueType valueType, Type propertyEnumerationType, string propertyName)
+      IFCAnyHandle CreatePropertyFromCalculatorOrDescription(IFCFile file, ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, 
+         ElementOrConnector elementOrConnector, ElementType elementType, IFCAnyHandle handle, PropertyType propertyType, 
+         PropertyValueType valueType, Type propertyEnumerationType, string propertyName, IDictionary<string, string> connectorDescription)
       {
          IFCAnyHandle propHnd = null;
          if (elementOrConnector.Connector != null)
@@ -1184,12 +1262,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             if (connector == null)
                return propHnd;
 
-            string propertValue = ConnectorExporter.GetConnectorParameterFromDescription(connector, propertyName);
-            if (String.IsNullOrEmpty(propertValue))
+            if (!connectorDescription.TryGetValue(propertyName, out string propertyValue)) 
                return propHnd;
 
             // Create property from property string value
-            propHnd = CreatePropertyFromCalculator(file, propertyType, valueType, propertyEnumerationType, propertyName, propertValue);
+            propHnd = CreatePropertyFromCalculator(file, propertyType, valueType, propertyEnumerationType, propertyName, propertyValue);
          }
          else if (elementOrConnector.Element != null)
          {
@@ -1200,7 +1277,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
 
             // Create property from calculator value
             if (PropertyCalculator.GetParameterFromSubelementCache(element, handle) ||
-                PropertyCalculator.Calculate(exporterIFC, extrusionCreationData, element, elementType, this))
+                PropertyCalculator.Calculate(exporterIFC, handle, extrusionCreationData, element, elementType, this))
             {
                propHnd = CreatePropertyFromCalculator(file, propertyType, valueType, propertyEnumerationType, propertyName, null);
             }
@@ -1251,6 +1328,30 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   propHnd = PropertyUtil.CreateTextPropertyFromCache(file, propertyDescription, val, valueType);
                   break;
                }
+            case PropertyType.Date:
+               {
+                  string val = (useCalculator) ? PropertyCalculator.GetStringValue() : propertyValue;
+                  propHnd = PropertyUtil.CreateDateProperty(file, propertyDescription, val, valueType);
+                  break;
+               }
+            case PropertyType.DateTime:
+               {
+                  string val = (useCalculator) ? PropertyCalculator.GetStringValue() : propertyValue;
+                  propHnd = PropertyUtil.CreateDateTimeProperty(file, propertyDescription, val, valueType);
+                  break;
+               }
+            case PropertyType.Duration:
+               {
+                  string val = (useCalculator) ? PropertyCalculator.GetStringValue() : propertyValue;
+                  propHnd = PropertyUtil.CreateDurationProperty(file, propertyDescription, val, valueType);
+                  break;
+               }
+            case PropertyType.URIReference:
+               {
+                  string val = (useCalculator) ? PropertyCalculator.GetStringValue() : propertyValue;
+                  propHnd = PropertyUtil.CreateURIReferenceProperty(file, propertyDescription, val, valueType);
+                  break;
+               }
             case PropertyType.Identifier:
                {
                   string val = (useCalculator) ? PropertyCalculator.GetStringValue() : propertyValue;
@@ -1290,6 +1391,12 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                {
                   double val = (useCalculator) ? PropertyCalculator.GetDoubleValue() : double.Parse(propertyValue);
                   propHnd = PropertyUtil.CreateLengthPropertyFromCache(file, propertyDescription, new List<double?>() { val }, valueType, null);
+                  break;
+               }
+            case PropertyType.NonNegativeLength:
+               {
+                  double val = (useCalculator) ? PropertyCalculator.GetDoubleValue() : double.Parse(propertyValue);
+                  propHnd = PropertyUtil.CreateNonNegativeLengthProperty(file, propertyDescription, new List<double?>() { val }, valueType, null);
                   break;
                }
             case PropertyType.PositiveLength:
@@ -1388,6 +1495,18 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                {
                   double val = (useCalculator) ? PropertyCalculator.GetDoubleValue() : double.Parse(propertyValue);
                   propHnd = PropertyUtil.CreateLinearVelocityProperty(file, propertyDescription, new List<double?>() { val }, valueType, null);
+                  break;
+               }
+            case PropertyType.SoundPowerLevel:
+               {
+                  double val = (useCalculator) ? PropertyCalculator.GetDoubleValue() : double.Parse(propertyValue);
+                  propHnd = PropertyUtil.CreateSoundPowerLevelProperty(file, propertyDescription, new List<double?>() { val }, valueType, null);
+                  break;
+               }
+            case PropertyType.SectionModulus:
+               {
+                  double val = (useCalculator) ? PropertyCalculator.GetDoubleValue() : double.Parse(propertyValue);
+                  propHnd = PropertyUtil.CreateSectionModulusPropertyFromCache(file, propertyDescription, new List<double?>() { val }, valueType, null);
                   break;
                }
             default:

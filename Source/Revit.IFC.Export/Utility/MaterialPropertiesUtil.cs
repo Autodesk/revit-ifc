@@ -17,14 +17,14 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Exporter.PropertySet;
 using Revit.IFC.Export.Toolkit;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using static Revit.IFC.Export.Utility.ParameterUtil;
 
 namespace Revit.IFC.Export.Utility
@@ -239,7 +239,7 @@ namespace Revit.IFC.Export.Utility
          if (!materialPropertiesAreAllowed)
             return;
 
-         Document document = ExporterCacheManager.Document;
+         Autodesk.Revit.DB.Document document = ExporterCacheManager.Document;
 
          foreach (KeyValuePair<ElementId, Tuple<IFCAnyHandle, IFCExportInfoPair>> cachedMaterial in ExporterCacheManager.MaterialHandleCache.ElementIdToHandleAndInfo)
          {
@@ -336,25 +336,25 @@ namespace Revit.IFC.Export.Utility
             return properties;
 
          string materialSetName = materialPropertyType.ToString();
-
+         
          foreach (var paramPair in materialParameters)
          {
-            Parameter param = assertElement.get_Parameter(paramPair.Item1);
+            EvaluatedParameter param = ExporterCacheManager.ParameterAccess?.GetParameter(assertElement.Id, new ElementId(paramPair.Item1));
             if (param == null)
                continue;
 
             string parameterName = paramPair.Item2;
 
-            // Skip properties exluded from export
+            // Skip properties excluded from export
             IFCPropertyMappingInfo mappingInfo = PropertyUtil.GetParameterMappingInfoFromCache(
-               PropertySetupType.RevitMaterialParameters, materialSetName, param.Id, parameterName);
+               PropertySetupType.RevitMaterialParameters, materialSetName, param.Definition.Id, parameterName);
             if ((mappingInfo?.ExportFlag ?? true) == false)
                continue;
 
             if (!string.IsNullOrEmpty(mappingInfo?.IFCPropertyName))
                parameterName = mappingInfo.IFCPropertyName;
 
-            IFCAnyHandle propertyHnd = PropertyUtil.CreatePropertyByParameterStorageType(file, param, parameterName);
+            IFCAnyHandle propertyHnd = PropertyUtil.CreatePropertyByParameterStorageType(file, param, null, parameterName);
             if (propertyHnd != null)
                properties.Add(propertyHnd);
          }
@@ -589,7 +589,7 @@ namespace Revit.IFC.Export.Utility
             foreach (PropertySetDescription currDesc in currPsetsToCreate)
             {
                ElementOrConnector elementOrConnector = new ElementOrConnector(material);
-               ISet<IFCAnyHandle> props = currDesc.ProcessEntries(file, exporterIFC, null, elementOrConnector, null, materialHnd);
+               ISet<IFCAnyHandle> props = currDesc.ProcessEntries(file, exporterIFC, null, elementOrConnector, null, materialHnd, null);
                if (props.Count > 0)
                   IFCInstanceExporter.CreateMaterialProperties(file, materialHnd, props, currDesc.DescriptionOfSet, currDesc.Name);
             }

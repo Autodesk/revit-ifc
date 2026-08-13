@@ -32,6 +32,14 @@ namespace RevitIFCTools
    /// </summary>
    public partial class GeneratePsetDefWin : Window
    {
+      private static readonly string[] SchemaFolderOrder =
+      {
+         "IFC2x2_add1",
+         "IFC2X3_TC1",
+         "IFC4_ADD2",
+         "IFC4x3"
+      };
+
       string outputFilename = "";
       string sourceFolder = "";
       StreamWriter logF;
@@ -710,6 +718,17 @@ namespace RevitIFCTools
          }
 
          return psdFolders;
+      }
+
+      private static int GetSchemaFolderSortIndex(string folderName)
+      {
+         for (int i = 0; i < SchemaFolderOrder.Length; i++)
+         {
+            if (folderName.Equals(SchemaFolderOrder[i], StringComparison.OrdinalIgnoreCase))
+               return i;
+         }
+
+         return SchemaFolderOrder.Length;
       }
    }
 }

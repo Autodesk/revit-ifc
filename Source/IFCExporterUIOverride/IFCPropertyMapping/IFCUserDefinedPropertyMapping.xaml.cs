@@ -377,7 +377,7 @@ namespace BIM.IFC.Export.UI
          }
       }
 
-      private IFCVersion EntityTreeVersion { get; set; } = IFCVersion.Default;
+      private IFCSchemaFileVersion EntityTreeVersion { get; set; } = IFCSchemaFileVersion.IFC4X3;
 
       private UserDefinedPropertyInfo _selectedProperty;
       public UserDefinedPropertyInfo SelectedProperty
@@ -565,8 +565,24 @@ namespace BIM.IFC.Export.UI
 
                SelectedPropertySet = ObservablePropertySets.FirstOrDefault();
             }
-            catch (Exception)
+            catch (System.IO.IOException ex)
             {
+               IFCCommandOverrideApplication.TheDocument?.Application?.WriteJournalComment("IFC warning: Property mapping import file read failed - " + ex.Message, true);
+               return;
+            }
+            catch (Autodesk.Revit.Exceptions.FileAccessException ex)
+            {
+               IFCCommandOverrideApplication.TheDocument?.Application?.WriteJournalComment("IFC warning: Property mapping import file read failed - " + ex.Message, true);
+               return;
+            }
+            catch (Autodesk.Revit.Exceptions.InvalidOperationException ex)
+            {
+               IFCCommandOverrideApplication.TheDocument?.Application?.WriteJournalComment("IFC warning: Property mapping import failed - " + ex.Message, true);
+               return;
+            }
+            catch (Autodesk.Revit.Exceptions.ArgumentException ex)
+            {
+               IFCCommandOverrideApplication.TheDocument?.Application?.WriteJournalComment("IFC warning: Property mapping import failed - " + ex.Message, true);
                return;
             }
          }
@@ -606,8 +622,14 @@ namespace BIM.IFC.Export.UI
             {
                IFCUserDefinedPropertySet importedTemplate = currentPSet.CopyPropertySet(IFCCommandOverrideApplication.TheDocument, copyName);
             }
-            catch (Exception)
+            catch (Autodesk.Revit.Exceptions.InvalidOperationException ex)
             {
+               IFCCommandOverrideApplication.TheDocument?.Application?.WriteJournalComment("IFC warning: Property set copy failed - " + ex.Message, true);
+               return;
+            }
+            catch (Autodesk.Revit.Exceptions.ArgumentException ex)
+            {
+               IFCCommandOverrideApplication.TheDocument?.Application?.WriteJournalComment("IFC warning: Property set copy failed - " + ex.Message, true);
                return;
             }
 
@@ -639,8 +661,14 @@ namespace BIM.IFC.Export.UI
                string fileName = ModelPathUtils.ConvertModelPathToUserVisiblePath(modelPath);
                IFCUserDefinedPropertySet.ExportToFile(IFCCommandOverrideApplication.TheDocument, fileName);
             }
-            catch (Exception)
+            catch (System.IO.IOException ex)
             {
+               IFCCommandOverrideApplication.TheDocument?.Application?.WriteJournalComment("IFC warning: Property mapping export file write failed - " + ex.Message, true);
+               return;
+            }
+            catch (Autodesk.Revit.Exceptions.FileAccessException ex)
+            {
+               IFCCommandOverrideApplication.TheDocument?.Application?.WriteJournalComment("IFC warning: Property mapping export file write failed - " + ex.Message, true);
                return;
             }
          }
@@ -713,10 +741,10 @@ namespace BIM.IFC.Export.UI
 
       private void button_SelectEnitites_Click(object sender, RoutedEventArgs e)
       {
-         IFCVersion? versionToUse = ObservableApplicableEntities.Count > 0 ? EntityTreeVersion : null;
+         IFCSchemaFileVersion? versionToUse = ObservableApplicableEntities.Count > 0 ? EntityTreeVersion : null;
          EntityTree entityTree = new(versionToUse,
             GetSelectedEnititesString(), desc: "", singleNodeSelection: false, EntityTree.SelectionStrategyType.Inclusion,
-            synchronizeSelectionWithType: false, propagatePreselection: true)
+            synchronizeSelectionWithType: false, propagatePreselection: true, showExtendedEntities: true)
          {
             Owner = this,
             Title = Properties.Resources.IFCEntitySelection
@@ -727,7 +755,7 @@ namespace BIM.IFC.Export.UI
 
          if (ret.HasValue && ret.Value == true)
          {
-            EntityTreeVersion = IfcSchemaEntityTree.VersionName(entityTree.CurrentIFCVersion);
+            EntityTreeVersion = entityTree.CurrentIFCVersion;
             ObservableApplicableEntities.Clear();
             foreach (string entity in entityTree.GetSelectedEntityParents().Split(';'))
             {

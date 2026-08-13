@@ -98,18 +98,18 @@ namespace Revit.IFC.Export.Utility
          AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x2, 1, false, false, true, false, false, false, false, false, false, false, linkedFileExportAs));
          AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC2x3FM, 1, true, false, false, false, true, true, false, false, true, true, linkedFileExportAs, includeSteelElements: true));
          AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true,
-            exchangeRequirement:KnownERNames.Architecture));
+            exchangeRequirement: KnownERNames.Architecture));
          AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true,
-            exchangeRequirement:KnownERNames.Structural));
+            exchangeRequirement: KnownERNames.Structural));
          AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4RV, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true,
-            exchangeRequirement:KnownERNames.BuildingService));
+            exchangeRequirement: KnownERNames.BuildingService));
          AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4DTV, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true));
          AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4x3RV, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true,
-            exchangeRequirement:KnownERNames.Architecture));
+            exchangeRequirement: KnownERNames.Architecture));
          AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4x3RV, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true,
-            exchangeRequirement:KnownERNames.Structural));
+            exchangeRequirement: KnownERNames.Structural));
          AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4x3RV, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true,
-            exchangeRequirement:KnownERNames.BuildingService));
+            exchangeRequirement: KnownERNames.BuildingService));
          AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFC4x3DTV, 0, true, false, false, false, false, false, false, false, false, false, linkedFileExportAs, includeSteelElements: true));
          AddOrReplace(IFCExportConfiguration.CreateBuiltInConfiguration(IFCVersion.IFCSG, 1, true, true, false, false, false, true, false, false, true, false, linkedFileExportAs, includeSteelElements: true));
       }
@@ -154,18 +154,30 @@ namespace Revit.IFC.Export.Utility
                      IFCExportConfiguration configuration = IFCExportConfiguration.CreateDefaultConfiguration();
                      configuration.Name = configEntity.Get<string>(s_setupName);
                      configuration.IFCVersion = (IFCVersion)configEntity.Get<int>(s_setupVersion);
-                     configuration.ExchangeRequirement = IFCExchangeRequirements.ParseEREnum(configEntity.Get<string>(s_exchangeRequirement));
-                     configuration.FacilityType = IFCFacilityTypes.ParseFacilityTypeEnum(configEntity.Get<string>(s_facilityType));
-                     configuration.FacilityPredefinedType = IFCFacilityTypes.ParseFacilityPredefinedTypeEnum(configuration.FacilityType, configEntity.Get<string>(s_facilityPredefinedType));
+                     Field fieldExchangeRequirement = m_OldSchema.GetField(s_exchangeRequirement);
+                     if (fieldExchangeRequirement != null)
+                        configuration.ExchangeRequirement = IFCExchangeRequirements.ParseEREnum(configEntity.Get<string>(s_exchangeRequirement));
+                     Field fieldFacilityType = m_OldSchema.GetField(s_facilityType);
+                     if (fieldFacilityType != null)
+                        configuration.FacilityType = IFCFacilityTypes.ParseFacilityTypeEnum(configEntity.Get<string>(s_facilityType));
+                     Field fieldFacilityPredefinedType = m_OldSchema.GetField(s_facilityPredefinedType);
+                     if (fieldFacilityPredefinedType != null)
+                        configuration.FacilityPredefinedType = IFCFacilityTypes.ParseFacilityPredefinedTypeEnum(configuration.FacilityType, configEntity.Get<string>(s_facilityPredefinedType));
                      configuration.IFCFileType = (IFCFileFormat)configEntity.Get<int>(s_setupFileFormat);
                      configuration.SpaceBoundaries = configEntity.Get<int>(s_setupSpaceBoundaries);
                      configuration.ExportBaseQuantities = configEntity.Get<bool>(s_setupQTO);
                      configuration.SplitWallsAndColumns = configEntity.Get<bool>(s_splitWallsAndColumns);
                      configuration.Export2DElements = configEntity.Get<bool>(s_setupExport2D);
-                     configuration.ExportCeilingGrids = configEntity.Get<bool>(s_setupExportCeilingGrids);
+                     Field fieldExportCeilingGrids = m_OldSchema.GetField(s_setupExportCeilingGrids);
+                     if (fieldExportCeilingGrids != null)
+                        configuration.ExportCeilingGrids = configEntity.Get<bool>(s_setupExportCeilingGrids);
                      configuration.ExportInternalRevitPropertySets = configEntity.Get<bool>(s_setupExportRevitProps);
-                     configuration.CategoryMapping = configEntity.Get<string>(s_categoryMapping);
-                     configuration.PropertyMapping = configEntity.Get<string>(s_propertyMapping);
+                     Field fieldCategoryMapping = m_OldSchema.GetField(s_categoryMapping);
+                     if (fieldCategoryMapping != null)
+                        configuration.CategoryMapping = configEntity.Get<string>(s_categoryMapping);
+                     Field fieldPropertyMapping = m_OldSchema.GetField(s_propertyMapping);
+                     if (fieldPropertyMapping != null)
+                        configuration.PropertyMapping = configEntity.Get<string>(s_propertyMapping);
                      Field fieldIFCCommonPropertySets = m_OldSchema.GetField(s_setupExportIFCCommonProperty);
                      if (fieldIFCCommonPropertySets != null)
                         configuration.ExportIFCCommonPropertySets = configEntity.Get<bool>(s_setupExportIFCCommonProperty);
@@ -193,7 +205,7 @@ namespace Revit.IFC.Export.Utility
                      if (fieldExportUserDefinedPsetsFileName != null)
                         configuration.ExportUserDefinedPsetsFileName = configEntity.Get<string>(s_setupExportUserDefinedPsetsFileName);
                      Field fieldUseTypePropertiesInInstacePSets = m_OldSchema.GetField(s_setupUseTypePropertiesInInstacePSets);
-                     if (fieldExportUserDefinedPsets != null)
+                     if (fieldUseTypePropertiesInInstacePSets != null)
                         configuration.UseTypePropertiesInInstacePSets = configEntity.Get<bool>(s_setupUseTypePropertiesInInstacePSets);
 
                      Field fieldExportUserDefinedParameterMapingTable = m_OldSchema.GetField(s_setupExportUserDefinedParameterMapping);
@@ -385,9 +397,8 @@ namespace Revit.IFC.Export.Utility
                         IFCExportConfiguration configuration = JsonConvert.DeserializeObject<IFCExportConfiguration>(configData, new IFCExportConfigurationConverter());
                         AddOrReplace(configuration);
                      }
-                     catch (Exception)
+                     catch (JsonException)
                      {
-                        // don't skip all configurations if an exception occurs for one
                         Document?.Application?.WriteJournalComment("IFC error: Cannot read IFCExportConfigurationMap schema", true);
                      }
                   }
@@ -403,9 +414,21 @@ namespace Revit.IFC.Export.Utility
                }
             }
          }
-         catch (System.Exception)
+         catch (Autodesk.Revit.Exceptions.InvalidOperationException ex)
          {
-            // to avoid fail to show the dialog if any exception throws in reading schema.
+            Document?.Application?.WriteJournalComment("IFC warning: ReadSavedConfigurations schema read failed - " + ex.Message, true);
+         }
+         catch (Autodesk.Revit.Exceptions.ArgumentException ex)
+         {
+            Document?.Application?.WriteJournalComment("IFC warning: ReadSavedConfigurations schema read failed - " + ex.Message, true);
+         }
+         catch (FormatException ex)
+         {
+            Document?.Application?.WriteJournalComment("IFC warning: ReadSavedConfigurations format error - " + ex.Message, true);
+         }
+         catch (OverflowException ex)
+         {
+            Document?.Application?.WriteJournalComment("IFC warning: ReadSavedConfigurations format error - " + ex.Message, true);
          }
       }
 
@@ -457,7 +480,7 @@ namespace Revit.IFC.Export.Utility
       private const string s_exportBarsInUniformRebarSetsAsSeparateIFCEntities = "ExportBarsInUniformRebarSetsAsSeparateIFCEntities";
       private const string s_categoryMapping = "CategoryMapping";
       private const string s_propertyMapping = "PropertyMapping";
-      
+
       // Used for COBie 2.4
       private const string s_includeSteelElements = "IncludeSteelElements";
       // Geo Reference info
@@ -496,7 +519,7 @@ namespace Revit.IFC.Export.Utility
             IList<DataStorage> oldSavedConfigurations = GetSavedConfigurations(m_OldSchema);
             if (oldSavedConfigurations.Count > 0)
             {
-               Transaction deleteTransaction = new(Document,
+               using Transaction deleteTransaction = new(Document,
                   Properties.Resources.DeleteOldSetups);
                try
                {
@@ -509,8 +532,15 @@ namespace Revit.IFC.Export.Utility
                   Document.Delete(dataStorageToDelete);
                   deleteTransaction.Commit();
                }
-               catch (System.Exception)
+               catch (Autodesk.Revit.Exceptions.InvalidOperationException ex)
                {
+                  Document?.Application?.WriteJournalComment("IFC warning: Failed to delete old saved configurations - " + ex.Message, true);
+                  if (deleteTransaction.HasStarted())
+                     deleteTransaction.RollBack();
+               }
+               catch (Autodesk.Revit.Exceptions.ArgumentException ex)
+               {
+                  Document?.Application?.WriteJournalComment("IFC warning: Failed to delete old saved configurations - " + ex.Message, true);
                   if (deleteTransaction.HasStarted())
                      deleteTransaction.RollBack();
                }
@@ -527,7 +557,7 @@ namespace Revit.IFC.Export.Utility
             IList<DataStorage> oldSavedConfigurations = GetSavedConfigurations(m_mapSchema);
             if (oldSavedConfigurations.Count > 0)
             {
-               Transaction deleteTransaction = new(Document,
+               using Transaction deleteTransaction = new(Document,
                   Properties.Resources.DeleteOldSetups);
                try
                {
@@ -540,8 +570,15 @@ namespace Revit.IFC.Export.Utility
                   Document.Delete(dataStorageToDelete);
                   deleteTransaction.Commit();
                }
-               catch (System.Exception)
+               catch (Autodesk.Revit.Exceptions.InvalidOperationException ex)
                {
+                  Document?.Application?.WriteJournalComment("IFC warning: Failed to delete old schema data - " + ex.Message, true);
+                  if (deleteTransaction.HasStarted())
+                     deleteTransaction.RollBack();
+               }
+               catch (Autodesk.Revit.Exceptions.ArgumentException ex)
+               {
+                  Document?.Application?.WriteJournalComment("IFC warning: Failed to delete old schema data - " + ex.Message, true);
                   if (deleteTransaction.HasStarted())
                      deleteTransaction.RollBack();
                }
@@ -600,7 +637,7 @@ namespace Revit.IFC.Export.Utility
          }
 
          // Overwrite all saved configs with the new list
-         Transaction transaction = createTransaction ? new(Document,
+         using Transaction transaction = createTransaction ? new(Document,
             Properties.Resources.UpdateExportSetups) : null;
          try
          {
@@ -638,8 +675,15 @@ namespace Revit.IFC.Export.Utility
 
             transaction?.Commit();
          }
-         catch (System.Exception)
+         catch (Autodesk.Revit.Exceptions.InvalidOperationException ex)
          {
+            Document?.Application?.WriteJournalComment("IFC warning: WriteSavedConfigurations failed - " + ex.Message, true);
+            if (transaction?.HasStarted() ?? false)
+               transaction?.RollBack();
+         }
+         catch (Autodesk.Revit.Exceptions.ArgumentException ex)
+         {
+            Document?.Application?.WriteJournalComment("IFC warning: WriteSavedConfigurations failed - " + ex.Message, true);
             if (transaction?.HasStarted() ?? false)
                transaction?.RollBack();
          }

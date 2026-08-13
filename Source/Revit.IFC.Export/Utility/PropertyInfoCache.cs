@@ -108,7 +108,6 @@ namespace Revit.IFC.Export.Utility
          }
       }
 
-
       /// <summary>
       /// Get DoublePropertyInfoCache object for the particular type
       /// </summary>

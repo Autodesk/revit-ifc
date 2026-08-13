@@ -32,34 +32,13 @@ namespace Revit.IFC.Import.Data
    /// </summary>
    public class IFCApplication : IFCEntity
    {
-      string m_ApplicationDeveloper = null;
-      string m_Version = null;
-      string m_ApplicationFullName = null;
-      string m_ApplicationIdentifier = null;
+      public IFCAnyHandle ApplicationDeveloper { get; set; }
 
-      public string ApplicationDeveloper
-      {
-         get { return m_ApplicationDeveloper; }
-         set { m_ApplicationDeveloper = value; }
-      }
+      public string Version { get; set; }
 
-      public string Version
-      {
-         get { return m_Version; }
-         set { m_Version = value; }
-      }
+      public string ApplicationFullName { get; set; }
 
-      public string ApplicationFullName
-      {
-         get { return m_ApplicationFullName; }
-         set { m_ApplicationFullName = value; }
-      }
-
-      public string ApplicationIdentifier
-      {
-         get { return m_ApplicationIdentifier; }
-         set { m_ApplicationIdentifier = value; }
-      }
+      public string ApplicationIdentifier { get; set; }
 
       protected IFCApplication()
       {
@@ -74,7 +53,7 @@ namespace Revit.IFC.Import.Data
       {
          base.Process(ifcApplication);
 
-         ApplicationDeveloper = IFCAnyHandleUtil.GetStringAttribute(ifcApplication, "ApplicationDeveloper");
+         ApplicationDeveloper = IFCAnyHandleUtil.GetInstanceAttribute(ifcApplication, "ApplicationDeveloper");
          Version = IFCAnyHandleUtil.GetStringAttribute(ifcApplication, "Version");
          ApplicationFullName = IFCAnyHandleUtil.GetStringAttribute(ifcApplication, "ApplicationFullName");
          ApplicationIdentifier = IFCAnyHandleUtil.GetStringAttribute(ifcApplication, "ApplicationIdentifier");

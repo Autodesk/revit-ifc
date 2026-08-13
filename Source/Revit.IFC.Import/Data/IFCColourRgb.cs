@@ -91,7 +91,7 @@ namespace Revit.IFC.Import.Data
       /// <returns>The Color value.</returns>
       public Color GetScaledColor(double factor)
       {
-         if (factor < MathUtil.Eps())
+         if (factor < MathUtil.Eps)
          {
             Importer.TheLog.LogWarning(Id, "Invalid negative scaling factor of " + factor + ", defaulting to black.", true);
             return new Color(0, 0, 0);
@@ -104,7 +104,7 @@ namespace Revit.IFC.Import.Data
             return new Color(127, 127, 127);
          }
 
-         if (factor > 1.0 + MathUtil.Eps())
+         if (factor > 1.0 + MathUtil.Eps)
          {
             Importer.TheLog.LogWarning(Id, "Invalid normalised scaling factor of " + factor + ", defaulting to original color", true);
             return origColor;

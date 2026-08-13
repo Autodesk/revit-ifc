@@ -1,4 +1,4 @@
-﻿//
+//
 // BIM IFC library: this library works with Autodesk(R) Revit(R) to export IFC files containing model geometry.
 // Copyright (C) 2012  Autodesk, Inc.
 // 
@@ -107,15 +107,14 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            try
-            {
-               int ret = Convert.ToInt32(FinalParameterValue);
+            if (FinalParameterValue is int intVal)
+               return intVal;
+
+            string strVal = FinalParameterValue?.ToString();
+            if (strVal != null && int.TryParse(strVal, out int ret))
                return ret;
-            }
-            catch (Exception)
-            {
-               return null;
-            }
+
+            return null;
          }
       }
 
@@ -126,15 +125,17 @@ namespace Revit.IFC.Export.Utility
       {
          get
          {
-            try
-            {
-               double ret = Convert.ToDouble(FinalParameterValue);
+            if (FinalParameterValue is double dblVal)
+               return dblVal;
+
+            if (FinalParameterValue is int intVal)
+               return intVal;
+
+            string strVal = FinalParameterValue?.ToString();
+            if (strVal != null && double.TryParse(strVal, out double ret))
                return ret;
-            }
-            catch (Exception)
-            {
-               return null;
-            }
+
+            return null;
          }
       }
 
@@ -332,13 +333,13 @@ namespace Revit.IFC.Export.Utility
                if (thisObj.THIS() != null)
                   parValue = GetValueFromParam_nameContext(RevitElement, paramNames[0]);
                else if (thisObj.TYPE() != null)
-                  parValue = GetValueFromParam_nameContext(RevitElement.Document.GetElement(RevitElement.GetTypeId()), paramNames[0]);
+                  parValue = GetValueFromParam_nameContext(ExporterCacheManager.Document.GetElement(RevitElement.GetTypeId()), paramNames[0]);
             }
 
             if (paramNames.Count() > 1 && parValue != null && parValue is ElementId)
             {
                // Parameter should be obtained from the second level reference if the parameter is of ElementId type
-               parValue = GetValueFromParam_nameContext(RevitElement.Document.GetElement(parValue as ElementId), paramNames[1]);
+               parValue = GetValueFromParam_nameContext(ExporterCacheManager.Document.GetElement(parValue as ElementId), paramNames[1]);
             }
             nodeP.nodePropertyValue = parValue;
          }
@@ -449,7 +450,18 @@ namespace Revit.IFC.Export.Utility
                      convertUnit = unitType.GetValue(null, null) as ForgeTypeId;
                   }
                }
-               catch { }
+               catch (InvalidOperationException ex)
+               {
+                  ExporterCacheManager.Document?.Application?.WriteJournalComment("IFC warning: Parameter expression unit type resolution failed - " + ex.Message, true);
+               }
+               catch (System.Reflection.TargetInvocationException ex)
+               {
+                  ExporterCacheManager.Document?.Application?.WriteJournalComment("IFC warning: Parameter expression unit type resolution failed - " + ex.Message, true);
+               }
+               catch (System.Reflection.AmbiguousMatchException ex)
+               {
+                  ExporterCacheManager.Document?.Application?.WriteJournalComment("IFC warning: Parameter expression unit type resolution failed - " + ex.Message, true);
+               }
             }
          }
          NodeProperty nodeP = new NodeProperty();

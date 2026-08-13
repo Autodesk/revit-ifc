@@ -69,22 +69,38 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Area, entryMap.CompatibleRevitParameterName, "IfcQtyNetArea");
-         m_Area = UnitUtil.ScaleArea(m_Area);
-         if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+         (_, m_Area) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, entryMap.CompatibleRevitParameterName,
+            "IfcQtyNetArea");
+         if (m_Area > MathUtil.Eps * MathUtil.Eps)
+         {
+            m_Area = UnitUtil.ScaleArea(m_Area);
             return true;
+         }
+
+         // extrusionCreationData.ScaledArea is computed from actual geometry, so it is
+         // reliable for all element types including non-in-place FamilyInstances.
+         // This intentionally runs before the FamilyInstance guard below, which only
+         // applies to the HOST_AREA_COMPUTED built-in parameter fallback.
+         if (extrusionCreationData != null)
+         {
+            m_Area = extrusionCreationData.ScaledArea;
+            if (m_Area > MathUtil.Eps * MathUtil.Eps)
+               return true;
+         }
 
          // HOST_AREA_COMPUTED is incorrect in case of not in-place families.
          // Do not export 'Net Area' quantity.
          if (element is FamilyInstance familyInstance && !IsInPlace(familyInstance))
             return false;
-         
-         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.HOST_AREA_COMPUTED, out m_Area);
-         m_Area = UnitUtil.ScaleArea(m_Area);
-         if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+
+         (_, m_Area) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.HOST_AREA_COMPUTED);
+         if (m_Area > MathUtil.Eps * MathUtil.Eps)
+         {
+            m_Area = UnitUtil.ScaleArea(m_Area);
             return true;
+         }
 
          return false;
       }

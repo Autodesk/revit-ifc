@@ -112,7 +112,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The thermal transmittance in IFC units.</returns>
       static public double ScaleThermalTransmittance(double unscaledThermalTransmittance)
       {
-         return ScaleDouble(SpecTypeId.ThermalTransmittance, unscaledThermalTransmittance);
+         return ScaleDouble(SpecTypeId.HeatTransferCoefficient, unscaledThermalTransmittance);
       }
 
       /// <summary>
@@ -383,6 +383,16 @@ namespace Revit.IFC.Export.Utility
       static public double ScaleMomentOfInertia(double unscaledValue)
       {
          return ScaleDouble(SpecTypeId.MomentOfInertia, unscaledValue);
+      }
+
+      /// <summary>
+      /// Converts SectionModulus in Revit internal units to Revit display units.
+      /// </summary>
+      /// <param name="unscaledValue">The SectionModulus in Revit internal units.</param>
+      /// <returns>The SectionModulus in Revit display units.</returns>
+      static public double ScaleSectionModulus(double unscaledValue)
+      {
+         return ScaleDouble(SpecTypeId.SectionModulus, unscaledValue);
       }
 
       /// <summary>

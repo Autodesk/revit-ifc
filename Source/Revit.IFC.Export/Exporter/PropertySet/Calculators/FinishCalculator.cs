@@ -71,11 +71,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         if (ParameterUtil.GetStringValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Finish, entryMap.CompatibleRevitParameterName) != null
-            && !string.IsNullOrEmpty(m_Finish))
-               return true;
+         (_, m_Finish) = ParameterUtil.GetStringValueFromElementOrSymbol(element, null, false, entryMap.RevitParameterName, entryMap.CompatibleRevitParameterName);
+         if (!string.IsNullOrEmpty(m_Finish))
+            return true;
 
          if (element is Ceiling)
          {

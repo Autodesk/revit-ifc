@@ -17,10 +17,12 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System.Collections.Generic;
-using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
+using Revit.IFC.Common.Utility;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -148,7 +150,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public IList<ElementId> GetBuildingStoriesByElevation()
       {
-         return BuildingStoriesByElevation.Where(k => k.Value != ElementId.InvalidElementId).Select(x => x.Value).ToList();
+         return BuildingStoriesByElevation.Where(k => !MathUtil.IsInvalidElementId(k.Value)).Select(x => x.Value).ToList();
       }
 
       /// <summary>
@@ -157,7 +159,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public IList<ElementId> GetLevelsByElevation()
       {
-         return LevelsByElevation.Where(k => k.Value != ElementId.InvalidElementId).Select(x => x.Value).ToList();
+         return LevelsByElevation.Where(k => !MathUtil.IsInvalidElementId(k.Value)).Select(x => x.Value).ToList();
       }
 
       /// <summary>
@@ -206,7 +208,7 @@ namespace Revit.IFC.Export.Utility
             return;
 
          ElementId overrideLevelId = ParameterUtil.OverrideContainmentParameter(level, out _);
-         if (overrideLevelId != null && overrideLevelId != ElementId.InvalidElementId)
+         if (!MathUtil.IsInvalidElementId(overrideLevelId))
          {
             LevelParameterOverride[level.Id] = overrideLevelId;
          }
@@ -253,7 +255,7 @@ namespace Revit.IFC.Export.Utility
          ElementId levelId = ElementId.InvalidElementId;
          double lowestPosition = double.MaxValue;
 
-         if (element.LevelId != ElementId.InvalidElementId)
+         if (!MathUtil.IsInvalidElementId(element.LevelId))
             return element.LevelId;
 
          BoundingBoxXYZ bbox = element.get_BoundingBox(null);
@@ -335,7 +337,7 @@ namespace Revit.IFC.Export.Utility
                   var levelId = floor.LevelId;
                   foreach(ElementId dependentElementId in dependentElementIds)
                   {
-                     if (dependentElementId == ElementId.InvalidElementId)
+                     if (MathUtil.IsInvalidElementId(dependentElementId))
                         continue;
                      var dependentElement = document.GetElement(dependentElementId);
                      if (dependentElement is SlabEdge)

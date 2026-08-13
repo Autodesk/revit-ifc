@@ -47,14 +47,15 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>True if the operation succeed, false otherwise.</returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element,
+         ElementType elementType, EntryMap entryMap)
       {
          // Check the parameter override.
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Area, entryMap.CompatibleRevitParameterName, "IfcQtyArea") != null)
+         if (ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName,
+            entryMap.CompatibleRevitParameterName, "IfcQtyArea") is double area && area > MathUtil.Eps * MathUtil.Eps)
          {
-            m_Area = UnitUtil.ScaleArea(m_Area);
-            if (m_Area > MathUtil.Eps() * MathUtil.Eps())
-               return true;
+            m_Area = UnitUtil.ScaleArea(area);
+            return true;
          }
 
          double height = 0.0;
@@ -62,39 +63,35 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
 
          ElementId categoryId = CategoryUtil.GetSafeCategoryId(element);
 
-         // Work for Door element
-         if (categoryId == new ElementId(BuiltInCategory.OST_Doors))
+         // Work for Door and window element
+         long categoryIdValue = categoryId.Value;
+         if (categoryIdValue is (long)BuiltInCategory.OST_Doors or (long)BuiltInCategory.OST_Windows)
          {
-            if ((ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.DOOR_HEIGHT, out height) != null) &&
-                  (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.DOOR_WIDTH, out width) != null))
+            // Note that DOOR_HEIGHT and WINDOW_HEIGHT are the same parameter, and DOOR_WIDTH and WINDOW_WIDTH are the same parameter.
+            (EvaluatedParameter parameter, height) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.DOOR_HEIGHT);
+            if (parameter != null)
             {
-               m_Area = UnitUtil.ScaleArea(height * width);
-               return true;
+               (parameter, width) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.DOOR_WIDTH);
+               if (parameter != null)
+               {
+                  m_Area = UnitUtil.ScaleArea(height * width);
+                  return true;
+               }
             }
          }
-         // Work for Window element
-         else if (categoryId == new ElementId(BuiltInCategory.OST_Windows))
+         else if ((categoryIdValue is (long)BuiltInCategory.OST_Ceilings or (long)BuiltInCategory.OST_Floors) || element is Floor)
          {
-            if ((ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.WINDOW_HEIGHT, out height) != null) &&
-                  (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.WINDOW_WIDTH, out width) != null))
+            (EvaluatedParameter parameter, area) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.HOST_AREA_COMPUTED);
+            if (parameter != null)
             {
-               m_Area = UnitUtil.ScaleArea(height * width);
-               return true;
-            }
-         }
-         else if (categoryId == new ElementId(BuiltInCategory.OST_Ceilings) || categoryId == new ElementId(BuiltInCategory.OST_Floors)
-            || element is Floor)
-         {
-            if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.HOST_AREA_COMPUTED, out height) != null)
-            {
-               m_Area = UnitUtil.ScaleArea(height * width);
+               m_Area = UnitUtil.ScaleArea(area);
                return true;
             }
          }
 
          // Work for Space element or other element that has extrusion
          m_Area = extrusionCreationData?.ScaledArea ?? 0.0;
-         return m_Area > MathUtil.Eps() * MathUtil.Eps();
+         return m_Area > MathUtil.Eps * MathUtil.Eps;
       }
 
       /// <summary>

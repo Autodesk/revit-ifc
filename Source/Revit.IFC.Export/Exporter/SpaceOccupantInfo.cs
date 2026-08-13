@@ -38,7 +38,7 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// The associated IfcClassificationReference handles.
       /// </summary>
-      private Dictionary<string, IFCAnyHandle> m_ClassificationReferences = new Dictionary<string, IFCAnyHandle>();
+      private Dictionary<string, IFCAnyHandle> m_ClassificationReferences = [];
 
       /// <summary>
       /// The associated Pset_SpaceOccupant handle, if any.

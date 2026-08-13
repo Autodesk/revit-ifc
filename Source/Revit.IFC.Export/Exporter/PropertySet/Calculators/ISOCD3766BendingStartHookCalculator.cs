@@ -62,7 +62,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          if (element is Rebar)
          {
@@ -79,7 +79,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
 
          if (bendData != null)
          {
-            if (bendData.HookLength0 > MathUtil.Eps())
+            if (bendData.HookLength0 > MathUtil.Eps)
             {
                // HookAngle0 is already in degress, so convert to radians and then scale.
                double hookAngleInRadians = bendData.HookAngle0 * (Math.PI / 180.0);

@@ -210,9 +210,9 @@ namespace Revit.IFC.Export.Exporter
                // We will attach rebar to an assembly for rebar belonging to an assembly; 
                // otherwise we will create a group, assuming there are at least 2 rebar to group.
                ElementId assemblyId = relatedToAssembly.Key;
-               bool hasAssemblyId = (assemblyId != ElementId.InvalidElementId);
+               bool hasAssemblyId = !MathUtil.IsInvalidElementId(assemblyId);
                bool attachToLevel = !hasAssemblyId;
-
+               
                ISet<IFCAnyHandle> createdRebarHandles = new HashSet<IFCAnyHandle>();
                foreach (DelayedProductWrapper delayedProductWrapper in relatedToAssembly.Value)
                {
@@ -364,42 +364,6 @@ namespace Revit.IFC.Export.Exporter
          return rebarEntity;
       }
 
-      private static Curve ApplyNonConformalTransformIfPossible(Curve baseCurve, Transform transform)
-      {
-         if (!(baseCurve?.IsBound ?? false) || transform == null)
-            return null;
-
-         Line baseLine = baseCurve as Line;
-         if (baseLine != null)
-         {
-            XYZ newStartPoint = transform.OfPoint(baseLine.GetEndPoint(0));
-            XYZ newEndPoint = transform.OfPoint(baseLine.GetEndPoint(1));
-
-            return Line.CreateBound(newStartPoint, newEndPoint);
-         }
-
-         Arc baseArc = baseCurve as Arc;
-         if (baseArc != null)
-         {
-            // Strictly speaking, the non-conformal transform of an arc is an ellipse.
-            // However, this method is intended for very slightly non-conformal transforms,
-            // and an arc that is within a small tolerance of the "real" ellipse is more
-            // useful (and accurate to intent) than an ellipse.
-            XYZ newStartPoint = transform.OfPoint(baseArc.GetEndPoint(0));
-            XYZ newEndPoint = transform.OfPoint(baseArc.GetEndPoint(1));
-
-            double midParameter = (baseArc.GetEndParameter(0) + baseArc.GetEndParameter(1)) / 2.0;
-            XYZ newPointOnArc = transform.OfPoint(baseArc.Evaluate(midParameter, false));
-
-            return Arc.Create(newStartPoint, newEndPoint, newPointOnArc);
-         }
-
-         // At the moment, rebar segments can only be lines or arcs, so no need to worry
-         // about other cases.
-
-         return null;
-      }
-
       /// <summary>
       /// Exports a Rebar to IFC ReinforcingBar.
       /// </summary>
@@ -447,8 +411,7 @@ namespace Revit.IFC.Export.Exporter
                if (MathUtil.IsAlmostZero(totalBarLength))
                   return null;
 
-               ElementId materialId = ElementId.InvalidElementId;
-               ParameterUtil.GetElementIdValueFromElementOrSymbol(rebarElement, BuiltInParameter.MATERIAL_ID_PARAM, out materialId);
+               ElementId materialId = ParameterUtil.GetElementIdValueFromElementOrSymbol(rebarElement, null, BuiltInParameter.MATERIAL_ID_PARAM);
 
                double longitudinalBarNominalDiameter = 0.0, modelDiameter = 0.0;
                GetBarDiameters(rebarItem, out longitudinalBarNominalDiameter, out modelDiameter);
@@ -543,22 +506,11 @@ namespace Revit.IFC.Export.Exporter
                      else
                         endParam += 1.0;
 
-                     if (barTrf.IsConformal)
-                     {
-                        curves.Add(baseCurve.CreateTransformed(barTrf));
-                     }
-                     else
-                     {
-                        // There are cases where the Rebar API returns slightly non-conformal
-                        // transforms that cause an exception in CreateTransformed above.  Until
-                        // that API is improved, we will do our own non-conformal transformation
-                        // if possible.
-                        Curve curve = ApplyNonConformalTransformIfPossible(baseCurve, barTrf);
-                        if (curve == null)
-                           throw new InvalidOperationException("Couldn't transform rebar curve.");
-                        
-                        curves.Add(curve);
-                     }
+                     Curve transformedCurve = GeometryUtil.CreateTransformedCurve(baseCurve, barTrf);
+                     if (transformedCurve == null)
+                        throw new InvalidOperationException("Couldn't transform rebar curve.");
+
+                     curves.Add(transformedCurve);
                   }
 
                   // For IFC4 and Structural Exchange Requirement export, Entity type not allowed for RV: IfcPolyline
@@ -574,6 +526,10 @@ namespace Revit.IFC.Export.Exporter
                   //for uniform sets we export only after we have all solids
                   if (!bExportAsSingleIFCEntity || (bExportAsSingleIFCEntity && bodyItems.Count == rebarQuantity))
                   {
+                     IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcReinforcingBar);
+                     IFCAnyHandle typeHnd = ExporterUtil.CreateGenericTypeFromElement(rebarElement,
+                        exportInfo, file, productWrapper);
+                     
                      IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Body);
                      IFCAnyHandle shapeRep = RepresentationUtil.CreateAdvancedSweptSolidRep(exporterIFC,
                         rebarElement, categoryId, contextOfItems, bodyItems, null);
@@ -586,11 +542,14 @@ namespace Revit.IFC.Export.Exporter
                          GUIDUtil.CreateSubElementGUID(rebarElement, indexForNamingAndGUID + (int)IFCReinforcingBarSubElements.BarStart - 1) :
                          GUIDUtil.GenerateIFCGuidFrom(
                             GUIDUtil.CreateGUIDString(rebarElement, indexForNamingAndGUID.ToString()));
-                     IFCAnyHandle elemHnd = IFCInstanceExporter.CreateReinforcingBar(exporterIFC, rebarElement, rebarGUID, ExporterCacheManager.OwnerHistoryHandle,
-                        copyLevelPlacement, prodRep, steelGrade, longitudinalBarNominalDiameter, longitudinalBarCrossSectionArea, barLength, role, null);
-                     IFCAnyHandleUtil.OverrideNameAttribute(elemHnd, rebarName);
-                     IFCExportInfoPair exportInfo = new IFCExportInfoPair(IFCEntityType.IfcReinforcingBar);
+                     IFCAnyHandle elemHnd = IFCInstanceExporter.CreateReinforcingBar(file, rebarElement, typeHnd, rebarGUID, 
+                        ExporterCacheManager.OwnerHistoryHandle, copyLevelPlacement, prodRep, steelGrade, 
+                        longitudinalBarNominalDiameter, longitudinalBarCrossSectionArea, barLength, role, null);
+                     if (IFCAnyHandleUtil.IsNullOrHasNoValue(elemHnd))
+                        continue;
 
+                     IFCAnyHandleUtil.OverrideNameAttribute(elemHnd, rebarName);
+                     
                      // We will not add the element to the productWrapper here, but instead in the function that calls
                      // ExportRebar.  The reason for this is that we don't currently know if the handles such be associated
                      // to the level or not, depending on whether they will or won't be grouped.
@@ -601,12 +560,7 @@ namespace Revit.IFC.Export.Exporter
                      ExporterCacheManager.HandleToElementCache.Register(elemHnd, rebarElement.Id);
                      CategoryUtil.CreateMaterialAssociation(exporterIFC, elemHnd, materialId);
 
-                     IFCAnyHandle typeHnd = ExporterUtil.CreateGenericTypeFromElement(rebarElement,
-                        exportInfo, file, productWrapper);
-                     if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeHnd))
-                     {
-                        ExporterCacheManager.TypeRelationsCache.Add(typeHnd, elemHnd);
-                     }
+                     ExporterCacheManager.TypeRelationsCache.Add(typeHnd, elemHnd);
                   }
                }
             }
@@ -844,10 +798,10 @@ namespace Revit.IFC.Export.Exporter
             }
          }
 
-         if (nominalDiameter < MathUtil.Eps())
+         if (nominalDiameter < MathUtil.Eps)
             nominalDiameter = UnitUtil.ScaleLength(1.0 / 12.0);
 
-         if (modelDiameter < MathUtil.Eps())
+         if (modelDiameter < MathUtil.Eps)
             modelDiameter = UnitUtil.ScaleLength(1.0 / 12.0);
       }
 

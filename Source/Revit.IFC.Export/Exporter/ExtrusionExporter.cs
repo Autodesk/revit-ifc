@@ -34,7 +34,7 @@ namespace Revit.IFC.Export.Exporter
    {
       GenerateFootprint = 0x001,    // for backward compatibility, generate footprint implies generate body
       GenerateProfileDef = 0x010,   // for backward compatibility, generate profiledef implies generate body
-      GenerateBody = 0x100,          // explicit info to generate body. In IFC4RV if the body will be skipped, it will be set to ~0x100
+      GenerateBody = 0x100,          // explicit info to generate body. In Reference View if the body will be skipped, it will be set to ~0x100
       None = 0x00
    }
 
@@ -331,7 +331,7 @@ namespace Revit.IFC.Export.Exporter
          if (!GetCenterAndRadiusOfCurveLoop(curveLoops[0], out ctr, out radius))
             return null;
 
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+         if (ExporterCacheManager.ExportOptionsCache.ExportAsReferenceView)
          {
             XYZ projDirToUse = projDir;
             if (curveLoops[0].HasPlane())
@@ -455,7 +455,7 @@ namespace Revit.IFC.Export.Exporter
                return null;
             pointProjUV = UnitUtil.ScaleLength(pointProjUV);
 
-            if ((upperRight == null) || ((pointProjUV.U > upperRight.U - MathUtil.Eps()) && (pointProjUV.V > upperRight.V - MathUtil.Eps())))
+            if ((upperRight == null) || ((pointProjUV.U > upperRight.U - MathUtil.Eps) && (pointProjUV.V > upperRight.V - MathUtil.Eps)))
             {
                upperRight = pointProjUV;
                startVertex = idx;
@@ -653,7 +653,7 @@ namespace Revit.IFC.Export.Exporter
          XYZ planeNorm = lcs.BasisZ;
          for (int ii = 0; ii < numFillets; ii++)
          {
-            bool filletIsCCW = (fillets[ii].Normal.DotProduct(planeNorm) > MathUtil.Eps());
+            bool filletIsCCW = (fillets[ii].Normal.DotProduct(planeNorm) > MathUtil.Eps);
             if (filletIsCCW == firstTurnIsCCW)
                return null;
          }
@@ -912,7 +912,7 @@ namespace Revit.IFC.Export.Exporter
 
          Application app = ExporterCacheManager.Document.Application;
 
-         IList<Curve> curves = new List<Curve>();
+         List<Curve> curves = [];
          foreach (Curve curve in curveLoop)
          {
             curves.Add(curve);
@@ -972,7 +972,7 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle extrudedSolidHnd = null;
          curveLoops = null;
 
-         if (scaledExtrusionSize < MathUtil.Eps())
+         if (scaledExtrusionSize < MathUtil.Eps)
             return extrudedSolidHnd;
 
          IFCFile file = exporterIFC.GetFile();
@@ -1057,9 +1057,9 @@ namespace Revit.IFC.Export.Exporter
          IFCAnyHandle sweptArea = null;
          if (curveLoops.Count == 1)
          {
-            if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+            if (ExporterCacheManager.ExportOptionsCache.ExportAsReferenceView)
             {
-               // Only Circle profile and IndexedPolyCurve are allowed in IFC4RV
+               // Only Circle profile and IndexedPolyCurve are allowed in Reference View
                sweptArea = CreateCircleBasedProfileDefIfPossible(exporterIFC, profileName, curveLoops[0], lcs, sweptDirection);
             }
             else
@@ -1074,51 +1074,60 @@ namespace Revit.IFC.Export.Exporter
             sweptArea = CreateCircleBasedProfileDefIfPossible(exporterIFC, profileName, curveLoops, lcs, sweptDirection);
          }
 
-         if (sweptArea == null)
+         if (sweptArea != null)
          {
-            IFCAnyHandle profileCurve = null;
-            HashSet<IFCAnyHandle> innerCurves = new HashSet<IFCAnyHandle>();
+            return sweptArea;
+         }
 
-            // reorient curves if necessary: outer CCW, inners CW.
-            foreach (CurveLoop curveLoop in curveLoops)
+         IFCAnyHandle profileCurve = null;
+         HashSet<IFCAnyHandle> innerCurves = new();
+
+         // reorient curves if necessary: outer CCW, inners CW.
+         foreach (CurveLoop curveLoop in curveLoops)
+         {
+            bool isCCW = false;
+            try
             {
-               bool isCCW = false;
-               try
-               {
-                  isCCW = curveLoop.IsCounterclockwise(lcs.BasisZ);
-               }
-               catch
-               {
-                  if (profileCurve == null)
-                     return null;
-                  else
-                     continue;
-               }
-
+               isCCW = curveLoop.IsCounterclockwise(lcs.BasisZ);
+            }
+            catch
+            {
                if (profileCurve == null)
-               {
-                  if (!isCCW)
-                     curveLoop.Flip();
-                  profileCurve = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, curveLoop, lcs, sweptDirection);
-                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(profileCurve))
-                     return null;
-               }
+                  return null;
                else
-               {
-                  if (isCCW)
-                     curveLoop.Flip();
-                  innerCurves.AddIfNotNull(GeometryUtil.CreateIFCCurveFromCurveLoop(
-                     exporterIFC, curveLoop, lcs, sweptDirection));
-               }
+                  continue;
             }
 
-            IFCFile file = exporterIFC.GetFile();
-            if (innerCurves.Count > 0)
-               sweptArea = IFCInstanceExporter.CreateArbitraryProfileDefWithVoids(file, IFCProfileType.Area, profileName, profileCurve, innerCurves);
+            // Flip if profileCurve == null && !isCCW, or profileCurve != null && isCCW.
+            if (isCCW ^ (profileCurve == null))
+            {
+               curveLoop.Flip();
+            }
+
+            IFCAnyHandle currCurve = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, curveLoop, lcs,
+               sweptDirection);
+            if (IFCAnyHandleUtil.IsNullOrHasNoValue(currCurve))
+            {
+               if (profileCurve == null)
+                  return null;
+               else
+                  continue;
+            }
+
+            if (profileCurve == null)
+            {
+               profileCurve = currCurve;
+            }
             else
-               sweptArea = IFCInstanceExporter.CreateArbitraryClosedProfileDef(file, IFCProfileType.Area, profileName, profileCurve);
+            {
+               innerCurves.Add(currCurve);
+            }
          }
-         return sweptArea;
+
+         IFCFile file = exporterIFC.GetFile();
+         return (innerCurves.Count > 0) ?
+            IFCInstanceExporter.CreateArbitraryProfileDefWithVoids(file, IFCProfileType.Area, profileName, profileCurve, innerCurves) :
+            IFCInstanceExporter.CreateArbitraryClosedProfileDef(file, IFCProfileType.Area, profileName, profileCurve);
       }
 
       /// <summary>
@@ -1383,6 +1392,11 @@ namespace Revit.IFC.Export.Exporter
                   retVal.FootPrintInfo = currRetVal.FootPrintInfo;
                }
 
+               // currRetVal will only have one extrusion.  Use the analyzer from the "last" extrusion.  Should only really be used for one extrusion.
+               // Preserve the analyzer even when the handle is null (e.g., RV rejecting clipping/boolean).
+               // The analyzer holds extrusion base face geometry needed for quantity calculations.
+               retVal.Analyzer = currRetVal.Analyzer ?? retVal.Analyzer;
+
                if (currRetVal != null && currRetVal.Handle != null)
                {
                   extraClippingData.MaterialIds = extraClippingData.MaterialIds.Union(currentExtraClippingData.MaterialIds).ToList();
@@ -1427,9 +1441,6 @@ namespace Revit.IFC.Export.Exporter
                   tr.RollBack();
                   return retVal;
                }
-
-               // currRetVal will only have one extrusion.  Use the analyzer from the "last" extrusion.  Should only really be used for one extrusion.
-               retVal.Analyzer = currRetVal.Analyzer;
                if (currRetVal.BaseRepresentationItems.Count > 0)
                {
                   retVal.BaseRepresentationItems.Add(currRetVal.BaseRepresentationItems[0]);
@@ -1638,7 +1649,8 @@ namespace Revit.IFC.Export.Exporter
                   sortedElementCutouts.Add(new SortedSet<ICollection<PlanarFace>>(planarFaceCollectionComparer)); // complex
 
                   // 3. Groups of arbitrary faces that may be converted into void extrusions.
-                  ICollection<ICollection<Face>> unhandledElementCutouts = new HashSet<ICollection<Face>>();
+                  ICollection<KeyValuePair<ElementId, ICollection<Face>>> unhandledElementCutouts =
+                     new List<KeyValuePair<ElementId, ICollection<Face>>>();
 
                   // Go through the return value from GeometryUtil.GetCuttingElementFaces and populate the groups above.
                   foreach (KeyValuePair<ElementId, ICollection<ICollection<Face>>> elementCutoutsForElement in elementCutouts)
@@ -1647,7 +1659,7 @@ namespace Revit.IFC.Export.Exporter
                      Element cuttingElement = document.GetElement(elementCutoutsForElement.Key);
                      bool allowMultipleClipPlanes = true;
                      ElementId cuttingElementCategoryId = CategoryUtil.GetSafeCategoryId(cuttingElement);
-                     if (cuttingElementCategoryId != ElementId.InvalidElementId)
+                     if (!MathUtil.IsInvalidElementId(cuttingElementCategoryId))
                         AllowMultipleClipPlanesForCategory(cuttingElementCategoryId);
 
                      foreach (ICollection<Face> elementCutout in elementCutoutsForElement.Value)
@@ -1672,7 +1684,8 @@ namespace Revit.IFC.Export.Exporter
                         if (planarFacesByNormal != null)
                            sortedElementCutouts[allowMultipleClipPlanes ? 1 : 0].Add(planarFacesByNormal);
                         else
-                           unhandledElementCutouts.Add(elementCutout);
+                           unhandledElementCutouts.Add(new KeyValuePair<ElementId, ICollection<Face>>(
+                              elementCutoutsForElement.Key, elementCutout));
                      }
                   }
 
@@ -1700,16 +1713,18 @@ namespace Revit.IFC.Export.Exporter
                         if (finalExtrusionBodyItemHnd == null || unhandledClipping)
                         {
                            ICollection<Face> currentUnhandledElementCutouts = new HashSet<Face>(currentElementCutouts);
-                           unhandledElementCutouts.Add(currentUnhandledElementCutouts);
+                           unhandledElementCutouts.Add(new KeyValuePair<ElementId, ICollection<Face>>(
+                              ElementId.InvalidElementId, currentUnhandledElementCutouts));
                         }
                         else
                         {
                            if (finalExtrusionBodyItemHnd != extrusionBodyItemHnd)
                            {
-                              // IFC4RV does not support Clipping, so it needs to rollback and return null value
-                              if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                              // Reference View does not support Clipping, so it needs to rollback and return null value
+                              if (ExporterCacheManager.ExportOptionsCache.ExportAsReferenceView)
                               {
                                  tr.RollBack();
+                                 nullVal.Analyzer = retVal.Analyzer;
                                  return nullVal;
                               }
 
@@ -1718,23 +1733,36 @@ namespace Revit.IFC.Export.Exporter
 
                            // Even if we created a clipping, we may have faces to further process as openings.  
                            if (skippedFaces != null && skippedFaces.Count != 0)
-                              unhandledElementCutouts.Add(skippedFaces);
+                              unhandledElementCutouts.Add(new KeyValuePair<ElementId, ICollection<Face>>(
+                                 ElementId.InvalidElementId, skippedFaces));
                         }
                      }
                   }
 
                   IFCAnyHandle finalExtrusionClippingBodyItemHnd = finalExtrusionBodyItemHnd;
-                  foreach (ICollection<Face> currentElementCutouts in unhandledElementCutouts)
+                  foreach (KeyValuePair<ElementId, ICollection<Face>> currentElementCutouts in unhandledElementCutouts)
                   {
                      bool unhandledOpening = false;
-                     try
-                     {
-                        finalExtrusionBodyItemHnd = GeometryUtil.CreateOpeningFromFaces(exporterIFC, extrusionBasePlane, projDir,
-                            currentElementCutouts, extrusionRange, finalExtrusionBodyItemHnd);
-                     }
-                     catch
+                     bool forceOpeningFailure = false;
+                     if (element is Part && currentElementCutouts.Key == element.Id)
+                        forceOpeningFailure = true;
+
+                     if (forceOpeningFailure)
                      {
                         unhandledOpening = true;
+                        finalExtrusionBodyItemHnd = null;
+                     }
+                     else
+                     {
+                        try
+                        {
+                           finalExtrusionBodyItemHnd = GeometryUtil.CreateOpeningFromFaces(exporterIFC, extrusionBasePlane, projDir,
+                               currentElementCutouts.Value, extrusionRange, finalExtrusionBodyItemHnd);
+                        }
+                        catch
+                        {
+                           unhandledOpening = true;
+                        }
                      }
 
                      if (finalExtrusionBodyItemHnd == null || unhandledOpening)
@@ -1751,10 +1779,11 @@ namespace Revit.IFC.Export.Exporter
                      }
                      else if (finalExtrusionBodyItemHnd != finalExtrusionClippingBodyItemHnd)
                      {
-                        // IFC4RV does not support BooleanResult, so it needs to rollback and return null value
-                        if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                        // Reference View does not support BooleanResult, so it needs to rollback and return null value
+                        if (ExporterCacheManager.ExportOptionsCache.ExportAsReferenceView)
                         {
                            tr.RollBack();
+                           nullVal.Analyzer = retVal.Analyzer;
                            return nullVal;
                         }
                         extraClippingData.HasBooleanResult = true;
@@ -1933,10 +1962,13 @@ namespace Revit.IFC.Export.Exporter
 
          IFCFile file = exporterIFC.GetFile();
 
+         if (extrusionLCS == null)
+            return null;
+
          XYZ extrusionDir = extrusionLCS.BasisZ;
          IList<IFCAnyHandle> profileCurves;
          // A list of IfcCurve entities.
-         if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+         if (ExporterCacheManager.ExportOptionsCache.ExportAsReferenceView)
          {
             profileCurves = new List<IFCAnyHandle>();
             profileCurves.AddIfNotNull(GeometryUtil.CreatePolyCurveFromCurve(exporterIFC, 

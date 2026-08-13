@@ -69,33 +69,32 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Area, entryMap.CompatibleRevitParameterName, "IfcQtyGrossCeilingArea");
-         m_Area = UnitUtil.ScaleArea(m_Area);
-         if (m_Area > MathUtil.Eps() * MathUtil.Eps())
-            return true;
-
-         m_Area = UnitUtil.ScaleArea(CalculateSpatialElementGrossCeilingArea(element as SpatialElement));
-         if (m_Area > MathUtil.Eps() * MathUtil.Eps())
-            return true;
-
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.HOST_AREA_COMPUTED, out m_Area) != null)
+         (_, m_Area) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, entryMap.CompatibleRevitParameterName,
+            "IfcQtyGrossCeilingArea");
+         if (m_Area > MathUtil.Eps * MathUtil.Eps)
          {
             m_Area = UnitUtil.ScaleArea(m_Area);
-            if (m_Area > MathUtil.Eps() * MathUtil.Eps())
-               return true;
+            return true;
+         }
+
+         m_Area = UnitUtil.ScaleArea(CalculateSpatialElementGrossCeilingArea(element as SpatialElement));
+         if (m_Area > MathUtil.Eps * MathUtil.Eps)
+            return true;
+
+         (_, m_Area) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.HOST_AREA_COMPUTED);
+         if (m_Area > MathUtil.Eps * MathUtil.Eps)
+         {
+            m_Area = UnitUtil.ScaleArea(m_Area);
+            return true;
          }
 
          if (extrusionCreationData == null)
             return false;
 
          m_Area = extrusionCreationData.ScaledArea;
-
-         if (m_Area > MathUtil.Eps() * MathUtil.Eps())
-            return true;
-
-         return false;
+         return m_Area > MathUtil.Eps * MathUtil.Eps;
       }
 
       private double CalculateSpatialElementGrossCeilingArea(SpatialElement spatialElement)

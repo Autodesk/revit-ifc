@@ -92,7 +92,7 @@ namespace Revit.IFC.Import.Data
       /// Gets the Application ApplicationDeveloper string.
       /// </summary>
       /// <returns>The ApplicationDeveloper string, if set.</returns>
-      public string ApplicationDeveloper()
+      public IFCAnyHandle ApplicationDeveloper()
       {
          if (m_OwningApplication == null)
             return null;

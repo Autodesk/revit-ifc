@@ -339,7 +339,7 @@ namespace BIM.IFC.Export.UI
 
          if (!comboboxActivePhase.HasItems)
          {
-            PhaseArray phaseArray = document.Phases; 
+            PhaseArray phaseArray = document.Phases;
             comboboxActivePhase.Items.Add(new IFCPhaseAttributes(ElementId.InvalidElementId, IFCCommandOverrideApplication.TheDocument));  // Default.
             foreach (Phase phase in phaseArray)
             {
@@ -490,7 +490,7 @@ namespace BIM.IFC.Export.UI
          comboBoxCategoryMapping.SelectedItem = categoryMapping;
 
          UpdateComboBoxPropertyMappingSetups(IFCExport.TheDocument, configuration);
-        
+
          UpdatePhaseAttributes(configuration);
          checkboxIFCCommonPropertySets.IsChecked = configuration.ExportIFCCommonPropertySets;
          checkboxInternalPropertySets.IsChecked = configuration.ExportInternalRevitPropertySets;
@@ -515,7 +515,7 @@ namespace BIM.IFC.Export.UI
          checkboxStoreIFCGUID.IsChecked = configuration.StoreIFCGUID;
          checkBoxExportRoomsInView.IsChecked = configuration.ExportRoomsInView;
          comboBoxLOD.SelectedIndex = (int)(Math.Round(configuration.TessellationLevelOfDetail * 4) - 1);
-         checkboxIncludeSteelElements.IsChecked = configuration.IncludeSteelElements;
+         checkboxIncludeSteelElements.IsChecked = configuration.CanIncludeSteelElements() && configuration.IncludeSteelElements;
          comboBoxSitePlacement.SelectedIndex = (int)configuration.SitePlacement;
          comboboxLinkedFiles.SelectedIndex = (int)configuration.ExportLinkedFiles;
          if ((configuration.IFCVersion == IFCVersion.IFC4 || configuration.IFCVersion == IFCVersion.IFC4DTV || configuration.IFCVersion == IFCVersion.IFC4RV)
@@ -601,31 +601,15 @@ namespace BIM.IFC.Export.UI
          userDefinedParameterMappingTable.IsEnabled = userDefinedParameterMappingTable.IsEnabled && configuration.ExportUserDefinedParameterMapping;
          buttonBrowse.IsEnabled = buttonBrowse.IsEnabled && configuration.ExportUserDefinedPsets;
          buttonParameterMappingBrowse.IsEnabled = buttonParameterMappingBrowse.IsEnabled && configuration.ExportUserDefinedParameterMapping;
-         
+
          // ExportRoomsInView option will only be enabled if it is not currently disabled AND the "export elements visible in view" option is checked
          bool? cboVisibleElementInCurrentView = checkboxVisibleElementsCurrView.IsChecked;
          checkBoxExportRoomsInView.IsEnabled = checkBoxExportRoomsInView.IsEnabled && cboVisibleElementInCurrentView.HasValue ? cboVisibleElementInCurrentView.Value : false;
          bool? triangulationOnly = checkBox_TriangulationOnly.IsChecked;
 
-         if ((configuration.IFCVersion == IFCVersion.IFC2x3) 
-            || (configuration.IFCVersion == IFCVersion.IFCCOBIE) 
-            || (configuration.IFCVersion == IFCVersion.IFC2x3FM) 
-            || (configuration.IFCVersion == IFCVersion.IFC2x3BFM) 
-            || (configuration.IFCVersion == IFCVersion.IFC2x3CV2)
-            || (configuration.IFCVersion == IFCVersion.IFC4RV)
-            || (configuration.IFCVersion == IFCVersion.IFC4DTV)
-            || (configuration.IFCVersion == IFCVersion.IFC4x3)
-            || (configuration.IFCVersion == IFCVersion.IFC4x3RV)
-            || (configuration.IFCVersion == IFCVersion.IFC4x3DTV))
-         {
-            checkboxIncludeSteelElements.IsChecked = configuration.IncludeSteelElements;
-            checkboxIncludeSteelElements.IsEnabled = true;
-         }
-         else
-         {
-            checkboxIncludeSteelElements.IsChecked = false;
-            checkboxIncludeSteelElements.IsEnabled = false;
-         }
+         bool canIncludeSteelElements = configuration.CanIncludeSteelElements();
+         checkboxIncludeSteelElements.IsChecked = canIncludeSteelElements && configuration.IncludeSteelElements;
+         checkboxIncludeSteelElements.IsEnabled = canIncludeSteelElements;
 
          checkbox_UseTypeNameOnly.IsChecked = configuration.UseTypeNameOnlyForIfcType;
          checkbox_UseTypeNameOnly.IsEnabled = true;
@@ -853,7 +837,7 @@ namespace BIM.IFC.Export.UI
 
          FileSaveDialog fileSaveDialog = new FileSaveDialog(Properties.Resources.ConfigurationFilePrefix + " (*.json)|*.json");
          fileSaveDialog.InitialFileName = GetDefaultDirectory() + "\\" + Properties.Resources.ConfigurationFilePrefix + " - " + configuration.Name + ".json";
-         
+
          if (fileSaveDialog.Show() == ItemSelectionDialogResult.Confirmed)
          {
             try
@@ -909,9 +893,17 @@ namespace BIM.IFC.Export.UI
                   }
                }
             }
-            catch (Exception)
+            catch (JsonException ex)
             {
-
+               IFCCommandOverrideApplication.TheDocument?.Application?.WriteJournalComment("IFC warning: Configuration import JSON parsing failed - " + ex.Message, true);
+            }
+            catch (IOException ex)
+            {
+               IFCCommandOverrideApplication.TheDocument?.Application?.WriteJournalComment("IFC warning: Configuration import file read failed - " + ex.Message, true);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+               IFCCommandOverrideApplication.TheDocument?.Application?.WriteJournalComment("IFC warning: Configuration import file access denied - " + ex.Message, true);
             }
          }
       }
@@ -1032,7 +1024,7 @@ namespace BIM.IFC.Export.UI
             newConfiguration.Name = name;
          }
          else
-            newConfiguration = configuration.Duplicate(name, makeEditable:true);
+            newConfiguration = configuration.Duplicate(name, makeEditable: true);
          m_configurationsMap.AddOrReplace(newConfiguration);
 
          // set new configuration as selected
@@ -1281,6 +1273,10 @@ namespace BIM.IFC.Export.UI
                checkBox_TriangulationOnly.IsEnabled = false;
             }
 
+            bool canIncludeSteelElements = configuration.CanIncludeSteelElements();
+            checkboxIncludeSteelElements.IsChecked = canIncludeSteelElements && configuration.IncludeSteelElements;
+            checkboxIncludeSteelElements.IsEnabled = canIncludeSteelElements;
+
             UpdateExchangeRequirement(configuration);
 
             UpdateFacilityType(configuration);
@@ -1318,7 +1314,7 @@ namespace BIM.IFC.Export.UI
             TextBox_Northings.Text = "";
          }
          else
-         { 
+         {
             Document doc = IFCExport.TheDocument;
 
             if (comboBoxProjectSite.SelectedItem == null)
@@ -1827,7 +1823,7 @@ namespace BIM.IFC.Export.UI
          {
             IFCExportConfiguration configuration = GetSelectedConfiguration();
             configuration.ExchangeRequirement = IFCExchangeRequirements.GetEREnum(comboBoxExchangeRequirement.SelectedValue.ToString());
-         } 
+         }
       }
 
       private void comboBoxFacilityType_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1845,8 +1841,8 @@ namespace BIM.IFC.Export.UI
          if (comboBoxFacilityPredefinedType.SelectedValue != null)
          {
             IFCExportConfiguration configuration = GetSelectedConfiguration();
-            configuration.FacilityPredefinedType = 
-               IFCFacilityTypes.GetFacilityPredefinedTypeEnum(configuration.FacilityType, 
+            configuration.FacilityPredefinedType =
+               IFCFacilityTypes.GetFacilityPredefinedTypeEnum(configuration.FacilityType,
                comboBoxFacilityPredefinedType.SelectedValue.ToString());
          }
       }
@@ -1907,7 +1903,7 @@ namespace BIM.IFC.Export.UI
       private void UpdateExchangeRequirement(IFCExportConfiguration configuration)
       {
          if (IFCExchangeRequirements.ExchangeRequirements.TryGetValue(configuration.IFCVersion, out IList<KnownERNames> erList) &&
-            (erList?.Count > 0)) 
+            (erList?.Count > 0))
          {
             if (configuration.ExchangeRequirement == KnownERNames.NotDefined)
             {
@@ -2094,8 +2090,9 @@ namespace BIM.IFC.Export.UI
       private void button_ExcludeElement_Click(object sender, RoutedEventArgs e)
       {
          IFCExportConfiguration configuration = GetSelectedConfiguration();
+         IFCSchemaFileVersion schemaFileVersion = IfcSchemaEntityTree.GetSchemaVersion(configuration.IFCVersion);
 
-         EntityTree entityTree = new(configuration.IFCVersion, configuration.ExcludeFilter, 
+         EntityTree entityTree = new(schemaFileVersion, configuration.ExcludeFilter,
             desc: "", singleNodeSelection: false, EntityTree.SelectionStrategyType.Exclusion,
             synchronizeSelectionWithType: true, propagatePreselection: false)
          {

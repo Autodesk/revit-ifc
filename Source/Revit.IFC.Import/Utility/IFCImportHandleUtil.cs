@@ -113,7 +113,7 @@ namespace Revit.IFC.Import.Utility
       static public double GetOptionalNormalisedRatioAttribute(IFCAnyHandle handle, string name, double defaultValue)
       {
          double? value = IFCAnyHandleUtil.GetDoubleAttribute(handle, name);
-         if (value.HasValue && (value.Value > -MathUtil.Eps()) && (value.Value < 1.0 + MathUtil.Eps()))
+         if (value.HasValue && (value.Value > -MathUtil.Eps) && (value.Value < 1.0 + MathUtil.Eps))
             return value.Value;
 
          return defaultValue;
@@ -131,7 +131,7 @@ namespace Revit.IFC.Import.Utility
       static public double GetOptionalPositiveRatioAttribute(IFCAnyHandle handle, string name, double defaultValue)
       {
          double? value = IFCAnyHandleUtil.GetDoubleAttribute(handle, name);
-         if (value.HasValue && (value.Value > MathUtil.Eps()))
+         if (value.HasValue && (value.Value > MathUtil.Eps))
             return value.Value;
 
          return defaultValue;

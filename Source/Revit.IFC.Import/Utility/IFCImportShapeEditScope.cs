@@ -315,7 +315,7 @@ namespace Revit.IFC.Import.Utility
 
          TessellatedShapeBuilderScope bs = BuilderScope as TessellatedShapeBuilderScope;
          return (bs.TargetGeometry == TessellatedShapeBuilderTarget.Mesh) ?
-            MathUtil.Eps() : IFCImportFile.TheFile.ShortCurveTolerance;
+            MathUtil.Eps : IFCImportFile.TheFile.ShortCurveTolerance;
       }
 
       /// <summary>
