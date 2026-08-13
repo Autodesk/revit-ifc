@@ -62,7 +62,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>True if the operation succeed, false otherwise.</returns>
-      public override bool Calculate(ExporterIFC exporterIFC, 
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle,
          IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, 
          EntryMap entryMap)
       {
@@ -78,13 +78,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             return true;
          }
 
-         double eps = MathUtil.Eps();
+         double eps = MathUtil.Eps;
 
          // For ProvisionForVoid
          ShapeCalculator shapeCalculator = ShapeCalculator.Instance;
          if (shapeCalculator != null && shapeCalculator.GetCurrentElement() == element)
          {
-            if (String.Compare(shapeCalculator.GetStringValue(), IFCProvisionForVoidShapeType.Rectangle.ToString()) == 0)
+            if (string.Compare(shapeCalculator.GetStringValue(), IFCProvisionForVoidShapeType.Rectangle.ToString()) == 0)
             {
                IFCAnyHandle rectProfile = shapeCalculator.GetCurrentProfileHandle();
                if (!IFCAnyHandleUtil.IsNullOrHasNoValue(rectProfile))
@@ -99,22 +99,27 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
 
          ElementId categoryId = CategoryUtil.GetSafeCategoryId(element);
+         long categoryIdValue = categoryId.Value;
          IFCAnyHandle hnd = ExporterCacheManager.ElementToHandleCache.Find(element.Id);
 
          m_Height = 0.0;
-         if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcDoor) || categoryId == new ElementId(BuiltInCategory.OST_Doors))
+         if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcDoor) || categoryIdValue == (long)BuiltInCategory.OST_Doors)
          {
-            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.DOOR_HEIGHT, out m_Height);
+            (_, m_Height) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.DOOR_HEIGHT);
          }
-         else if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcWindow) || categoryId == new ElementId(BuiltInCategory.OST_Windows))
+         else if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcWindow) || categoryIdValue == (long)BuiltInCategory.OST_Windows)
          {
-            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.WINDOW_HEIGHT, out m_Height);
+            (_, m_Height) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.WINDOW_HEIGHT);
          }
          else if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcCurtainWall))
          {
             BoundingBoxXYZ boundingBox = element.get_BoundingBox(null);
             if (boundingBox != null)
                m_Height = boundingBox.Max.Z - boundingBox.Min.Z;
+         }
+         else if(IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcFooting))
+         {
+            (_, m_Height) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.STRUCTURAL_FOUNDATION_THICKNESS);
          }
 
          if (m_Height > eps)
@@ -123,7 +128,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             return true;
          }
 
-         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Height, entryMap.CompatibleRevitParameterName);
+         (_, m_Height) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, 
+            entryMap.CompatibleRevitParameterName);
 
          if (m_Height > eps)
          {

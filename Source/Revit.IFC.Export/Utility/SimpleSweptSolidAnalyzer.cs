@@ -88,6 +88,9 @@ namespace Revit.IFC.Export.Utility
          if (directrix == null)
             return Create(faces, normal);
 
+         if (!directrix.IsBound)
+            return null;
+
          XYZ directrixStartPt = directrix.GetEndPoint(0);
          XYZ directrixEndPt = directrix.GetEndPoint(1);
 
@@ -399,8 +402,13 @@ namespace Revit.IFC.Export.Utility
                   if (sideFace == candidateProfileFace)
                      sideFace = candidateEdge.GetFace(1);
 
+                  // TODO: when sideFace was null, we used to throw an exception (which would be generically caught).  Instead we will
+                  // return null.  But can we just continue?
+                  if (sideFace == null)
+                     return null;
+
                   if (sideFacesWithCandidateEdges.ContainsKey(sideFace)) // should not happen
-                     throw new InvalidOperationException("Failed");
+                     throw new InvalidOperationException("Can't create SweptSolidAnalyzer.");
 
                   sideFacesWithCandidateEdges[sideFace] = candidateEdge;
                }
@@ -434,7 +442,7 @@ namespace Revit.IFC.Export.Utility
                      }
 
                      if (sideFacesWithTheOtherCandidateEdges.ContainsKey(sideFace)) // should not happen
-                        throw new InvalidOperationException("Failed");
+                        throw new InvalidOperationException("Can't create SweptSolidAnalyzer.");
 
                      sideFacesWithTheOtherCandidateEdges[sideFace] = theOtherCandidateEdge;
                   }

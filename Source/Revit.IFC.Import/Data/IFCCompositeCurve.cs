@@ -104,7 +104,7 @@ namespace Revit.IFC.Import.Data
             double minEndGap = Math.Min(distGapEndPtToNextStartPt, distGapEndPtToNextEndPt);
 
             double minGap = Math.Min(minStartGap, minEndGap);
-            if (minGap > MathUtil.SmallGap())
+            if (minGap > MathUtil.SmallGap)
             {
                ClearGapInformation();
                return null;
@@ -125,7 +125,7 @@ namespace Revit.IFC.Import.Data
                   StartGapPoint = startPoint;
             }
 
-            if (StartGapPoint.DistanceTo(EndGapPoint) < ShortCurveTolerance + MathUtil.Eps())
+            if (StartGapPoint.DistanceTo(EndGapPoint) < ShortCurveTolerance + MathUtil.Eps)
                return null;
 
             Line gapLine = Line.CreateBound(StartGapPoint, EndGapPoint);
@@ -331,7 +331,7 @@ namespace Revit.IFC.Import.Data
                      double? nextCurveStartParameter = null;
 
                      // We have two non-Lines meeting.  Try two more heuristics to clean the gap.
-                     if (minGap < shortCurveTol + MathUtil.Eps())
+                     if (minGap < shortCurveTol + MathUtil.Eps)
                      {
                         // If we are close, we can actually create a short segment that is
                         // actually a bit longer than what we need, and the CurveLoop will
@@ -356,7 +356,7 @@ namespace Revit.IFC.Import.Data
                               {
                                  double distanceTo = repairStartPoint.DistanceTo(possiblePoints[jj]);
 
-                                 if (distanceTo > shortCurveTol + MathUtil.Eps())
+                                 if (distanceTo > shortCurveTol + MathUtil.Eps)
                                  {
                                     repairEndPoint = possiblePoints[jj];
 

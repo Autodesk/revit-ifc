@@ -37,12 +37,12 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// The associated element handles.
       /// </summary>
-      public HashSet<IFCAnyHandle> ElementHandles { get; set; } = new HashSet<IFCAnyHandle>();
+      public HashSet<IFCAnyHandle> ElementHandles { get; set; } = [];
 
       /// <summary>
       /// Group's export type.
       /// </summary>
-      public IFCExportInfoPair GroupType { get; set; } = new IFCExportInfoPair(IFCEntityType.UnKnown);
+      public IFCExportInfoPair GroupType { get; set; } = new();
 
       /// <summary>
       /// Flag that indicate that the group should be exported.

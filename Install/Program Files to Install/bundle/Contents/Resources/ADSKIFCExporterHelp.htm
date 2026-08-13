@@ -235,6 +235,40 @@ working on expanding and eventually removing this limit, and we will be tracking
 <h2 id="VersionHistory" name="VersionHistory">Version History</h2>
 
 <div class="versionset">
+	<div class="version">27.3.0.12</div><div class="versioninfo-bullet">
+      <br><p>
+         Bug Fixes:
+
+         </p><ul>
+            <li>Fixed IFC export failing when exporting directly to a network location.</li>
+            <li>Fixed rooms being exported with shifted or incorrect geometry.</li>
+            <li>Fixed assemblies being mirrored or shifted during export.</li>
+            <li>Fixed doors within assemblies being vertically displaced.</li>
+            <li>Fixed void cuts from structural connection families being exported in the wrong location.</li>
+            <li>Fixed walls cut with sloped voids not being exported correctly to IFC4.</li>
+            <li>Fixed incorrect geometry for exported parts.</li>
+            <li>Fixed multi-flight ramp components being exported as IfcSlab.</li>
+            <li>Fixed pipe fittings becoming misaligned when exporting to IFC4x3.</li>
+            <li>Fixed MEP fabrication elements being exported twice.</li>
+            <li>Fixed MEP insulation being assigned to the wrong level.</li>
+            <li>Fixed model lines being invisible in some IFC viewers.</li>
+            <li>Fixed colors in IFC4 Reference View not matching the colors in the model.</li>
+            <li>Fixed incorrect width, height and length in footing base quantities.</li>
+            <li>Fixed incorrect slab base quantities.</li>
+            <li>Fixed missing net area and width in base quantities for stair landings.</li>
+            <li>Fixed missing gross footprint area in base quantities for multilayer walls.</li>
+            <li>Fixed missing room schedule parameters in property set export.</li>
+            <li>Fixed the stair stringer type parameter not being exported with a user-defined property set.</li>
+            <li>Fixed the Initial Color and Initial Intensity parameters of lighting fixtures not being exported.</li>
+            <li>Fixed ObjectType not being exported for IfcProject in IFC4 and IFC4x3.</li>
+            <li>Fixed the predefined type not being set when changing "Export to IFC As".</li>
+            <li>Fixed problems adding a user-defined property set to a project (GitHub #971).</li>
+            <li>Import: fixed levels from a linked IFC file being placed in the wrong position.</li>
+            <li>Import: fixed doors being misplaced when opening IFC files from other applications.</li>
+         </ul>
+   </div>
+</div>
+<div class="versionset">
 	<div class="version">27.0.1.1</div><div class="versioninfo-bullet">
       <br><p>
          Bug Fixes:

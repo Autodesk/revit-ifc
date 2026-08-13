@@ -46,6 +46,16 @@ namespace Revit.IFC.Export.Exporter
       List<IFCAnyHandle> m_LocalPlacements;
 
       /// <summary>
+      /// Optional nesting of sub components, one map per stair or ramp handle.
+      /// Each map relates a component handle (the part, e.g. an IfcMember stringer) to another
+      /// component handle in the same set that should be the whole that decomposes it (e.g. the
+      /// IfcStairFlight or IfcSlab it belongs to).  Components that appear as keys here are
+      /// aggregated under their parent instead of directly under the stair or ramp.  This is only
+      /// used from IFC4 onward, where nested decompositions are allowed.
+      /// </summary>
+      List<Dictionary<IFCAnyHandle, IFCAnyHandle>> m_ComponentNesting;
+
+      /// <summary>
       /// Constructs an StairRampContainerInfo.
       /// </summary>
       /// <param name="stairOrRampHandles">The stair or ramp handles.</param>
@@ -56,6 +66,13 @@ namespace Revit.IFC.Export.Exporter
          m_StairOrRampHandles = stairOrRampHandles;
          m_Components = components;
          m_LocalPlacements = localPlacements;
+
+         // Start with an empty nesting map per handle; callers populate it only when they need
+         // to nest some components under others rather than directly under the stair or ramp.
+         m_ComponentNesting = new List<Dictionary<IFCAnyHandle, IFCAnyHandle>>();
+         int count = (components != null) ? components.Count : 0;
+         for (int ii = 0; ii < count; ii++)
+            m_ComponentNesting.Add(new Dictionary<IFCAnyHandle, IFCAnyHandle>());
       }
 
       /// <summary>
@@ -111,6 +128,16 @@ namespace Revit.IFC.Export.Exporter
       public List<IFCAnyHandle> LocalPlacements
       {
          get { return m_LocalPlacements; }
+      }
+
+      /// <summary>
+      /// The nesting of sub components, one map per stair or ramp handle (parallel to Components).
+      /// A component that is a key in the map for its index is aggregated under the mapped parent
+      /// component instead of directly under the stair or ramp.  Empty unless explicitly populated.
+      /// </summary>
+      public List<Dictionary<IFCAnyHandle, IFCAnyHandle>> ComponentNesting
+      {
+         get { return m_ComponentNesting; }
       }
 
       /// <summary>

@@ -51,7 +51,7 @@ namespace Revit.IFC.Export.Exporter
             return false;
 
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
-         Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcGroup;
+         IFCEntityType elementClassTypeEnum = IFCEntityType.IfcGroup;
          if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
             return false;
 
@@ -86,7 +86,7 @@ namespace Revit.IFC.Export.Exporter
                   groupHnd = IFCInstanceExporter.CreateDistributionSystem(file, guid, ownerHistory, name, description, objectType, longName, exportAs.PredefinedType);
                   break;
                case IFCEntityType.IfcFurniture:
-                  groupHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportAs, file, element, guid, ownerHistory, null, null);
+                  groupHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportAs, file, element, null, guid, ownerHistory, null, null);
                   break;
                case IFCEntityType.IfcSystem:
                   groupHnd = IFCInstanceExporter.CreateSystem(file, guid, ownerHistory, name, description, objectType);
@@ -112,7 +112,7 @@ namespace Revit.IFC.Export.Exporter
                   IFCAnyHandle localPlacementToUse;
                   ElementId roomId = setter.UpdateRoomRelativeCoordinates(element, out localPlacementToUse);
 
-                  bool containedInSpace = (roomId != ElementId.InvalidElementId);
+                  bool containedInSpace = !MathUtil.IsInvalidElementId(roomId);
                   productWrapper.AddElement(element, groupHnd, setter.LevelInfo, null, !containedInSpace, exportAs);
 
                   if (containedInSpace)

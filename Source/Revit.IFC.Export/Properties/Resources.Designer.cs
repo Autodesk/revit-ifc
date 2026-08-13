@@ -394,6 +394,15 @@ namespace Revit.IFC.Export.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to IFC Export: Processing Connections: {0} of {1}.
+        /// </summary>
+        internal static string IFCProcessingConnections {
+            get {
+                return ResourceManager.GetString("IFCProcessingConnections", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to IFC Export: Processing Export Zones: {0} of {1} (Export Zone ID: {2}).
         /// </summary>
         internal static string IFCProcessingExportZones {

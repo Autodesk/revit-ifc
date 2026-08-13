@@ -57,6 +57,7 @@ namespace Revit.IFC.Export.Utility
             existStairRampContainerInfo.StairOrRampHandles.AddRange(stairRampContainerInfo.StairOrRampHandles);
             existStairRampContainerInfo.Components.AddRange(stairRampContainerInfo.Components);
             existStairRampContainerInfo.LocalPlacements.AddRange(stairRampContainerInfo.LocalPlacements);
+            existStairRampContainerInfo.ComponentNesting.AddRange(stairRampContainerInfo.ComponentNesting);
          }
       }
 

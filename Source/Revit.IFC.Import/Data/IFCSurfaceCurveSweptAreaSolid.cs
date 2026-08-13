@@ -96,13 +96,13 @@ namespace Revit.IFC.Import.Data
          ReferenceSurface = IFCSurface.ProcessIFCSurface(referenceSurface);
 
          StartParameter = IFCImportHandleUtil.GetOptionalDoubleAttribute(solid, "StartParam", 0.0);
-         if (StartParameter < MathUtil.Eps())
+         if (StartParameter < MathUtil.Eps)
             StartParameter = 0.0;
 
          double endParameter = IFCImportHandleUtil.GetOptionalDoubleAttribute(solid, "EndParam", -1.0);
          if (!MathUtil.IsAlmostEqual(endParameter, -1.0))
          {
-            if (endParameter < StartParameter + MathUtil.Eps())
+            if (endParameter < StartParameter + MathUtil.Eps)
                Importer.TheLog.LogError(solid.StepId, "IfcSurfaceCurveSweptAreaSolid swept curve end parameter less than or equal to start parameter, aborting.", true);
             EndParameter = endParameter;
          }

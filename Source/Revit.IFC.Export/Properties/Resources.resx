@@ -138,6 +138,9 @@
   <data name="IFCProcessingBeamSystems" xml:space="preserve">
     <value>IFC Export: Processing Beam Systems: {0} of {1} (Beam System ID: {2})</value>
   </data>
+  <data name="IFCProcessingConnections" xml:space="preserve">
+    <value>IFC Export: Processing Connections: {0} of {1}</value>
+  </data>
   <data name="IFCProcessingExportZones" xml:space="preserve">
     <value>IFC Export: Processing Export Zones: {0} of {1} (Export Zone ID: {2})</value>
   </data>

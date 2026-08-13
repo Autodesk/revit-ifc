@@ -70,20 +70,25 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Area, entryMap.CompatibleRevitParameterName, "IfcQtyNetSideArea");
-         m_Area = UnitUtil.ScaleArea(m_Area);
-         if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+         (_, m_Area) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, 
+            entryMap.CompatibleRevitParameterName, "IfcQtyNetSideArea");
+         if (m_Area > MathUtil.Eps * MathUtil.Eps)
+         {
+            m_Area = UnitUtil.ScaleArea(m_Area);
             return true;
+         }
 
          IFCAnyHandle hnd = ExporterCacheManager.ElementToHandleCache.Find(element.Id);
          if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcCurtainWall))
          {
-            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.HOST_AREA_COMPUTED, out m_Area);
-            m_Area = UnitUtil.ScaleArea(m_Area);
-            if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+            (_, m_Area) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.HOST_AREA_COMPUTED);
+            if (m_Area > MathUtil.Eps * MathUtil.Eps)
+            {
+               m_Area = UnitUtil.ScaleArea(m_Area);
                return true;
+            }
          }
 
          return false;

@@ -73,7 +73,7 @@ namespace Revit.IFC.Import.Data
          // the base curve, if it is not cyclic.  
          // This is an error on the input that we see in some files.
          return (baseCurve != null &&
-            param1 > param2 + MathUtil.Eps() &&
+            param1 > param2 + MathUtil.Eps &&
             trimPreference == IFCTrimmingPreference.Cartesian &&
             !baseCurve.IsCyclic);
       }
@@ -204,7 +204,7 @@ namespace Revit.IFC.Import.Data
          }
          else
          {
-            if (param1 > param2 - MathUtil.Eps())
+            if (param1 > param2 - MathUtil.Eps)
             {
                Importer.TheLog.LogWarning(Id, "Param1 > Param2 for IfcTrimmedCurve #, reversing.", false);
                MathUtil.Swap(ref param1, ref param2);

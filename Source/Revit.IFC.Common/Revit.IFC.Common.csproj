@@ -1,7 +1,7 @@
 <Project Sdk="">
   <PropertyGroup>
     <RootNamespace>Revit.IFC.Common</RootNamespace>
-    <AssemblyName>Revit.IFC.Common</AssemblyName>
+    <AssemblyName>Revit.IFC.Common.OpenSource</AssemblyName>
   </PropertyGroup>
   <Import Project="$(SolutionDir)VSProps\Revit.CSharp.Sdk.props" />
    <ItemGroup>

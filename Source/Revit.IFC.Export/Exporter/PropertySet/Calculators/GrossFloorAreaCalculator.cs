@@ -69,26 +69,25 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Area, entryMap.CompatibleRevitParameterName, "IfcQtyGrossFloorArea");
-         m_Area = UnitUtil.ScaleArea(m_Area);
-         if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+         (_, m_Area) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, entryMap.CompatibleRevitParameterName,
+            "IfcQtyGrossFloorArea");
+         if (m_Area > MathUtil.Eps * MathUtil.Eps)
+         {
+            m_Area = UnitUtil.ScaleArea(m_Area);
             return true;
+         }
 
          m_Area = UnitUtil.ScaleArea(CalculateSpatialElementGrossFloorArea(element as SpatialElement));
-         if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+         if (m_Area > MathUtil.Eps * MathUtil.Eps)
             return true;
 
          if (extrusionCreationData == null)
             return false;
 
          m_Area = extrusionCreationData.ScaledArea;
-
-         if (m_Area > MathUtil.Eps() * MathUtil.Eps())
-            return true;
-
-         return false;
+         return m_Area > MathUtil.Eps * MathUtil.Eps;
       }
 
       private double CalculateSpatialElementGrossFloorArea(SpatialElement spatialElement)

@@ -47,9 +47,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>True if the operation succeed, false otherwise.</returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         ParameterUtil.GetStringValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_ReferenceName, entryMap.CompatibleRevitParameterName);
+         (_, m_ReferenceName) = ParameterUtil.GetStringValueFromElementOrSymbol(element, null, false, entryMap.RevitParameterName, entryMap.CompatibleRevitParameterName);
          if (!string.IsNullOrEmpty(m_ReferenceName))
             return true;
 
@@ -67,13 +67,15 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             if (ExporterCacheManager.ExportOptionsCache.NamingOptions.UseFamilyAndTypeNameForReference ||
                string.IsNullOrEmpty(elementTypeName))
             {
-               if (!String.IsNullOrEmpty(elementTypeName))
-                  m_ReferenceName = String.Format("{0}:{1}", elementType.FamilyName, elementTypeName);
+               if (!string.IsNullOrEmpty(elementTypeName))
+                  m_ReferenceName = string.Format("{0}:{1}", elementType.FamilyName, elementTypeName);
                else
                   m_ReferenceName = elementType.FamilyName;
             }
             else
+            {
                m_ReferenceName = elementTypeName;
+            }
          }
          return true;
       }

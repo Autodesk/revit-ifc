@@ -43,12 +43,12 @@ namespace Revit.IFC.Export.Utility
             List<string> erNameListForUI = new List<string>(KnownExchangeRequirements[ifcVersion].Select(x => x.ToFullLabel()));
             KnownExchangeRequirementsLocalized.Add(ifcVersion, erNameListForUI);
 
-            // For IFC4RV
+            // For IFC4 Reference View
             ifcVersion = IFCVersion.IFC4RV;
             KnownExchangeRequirements.Add(ifcVersion, new List<KnownERNames>() { KnownERNames.Architecture, KnownERNames.BuildingService, KnownERNames.Structural });
             KnownExchangeRequirementsLocalized.Add(ifcVersion, erNameListForUI);
 
-            // For IFC4.3RV
+            // For IFC4.3 Reference View
             ifcVersion = IFCVersion.IFC4x3RV;
             KnownExchangeRequirements.Add(ifcVersion, new List<KnownERNames>() { KnownERNames.Architecture, KnownERNames.BuildingService, KnownERNames.Structural });
             KnownExchangeRequirementsLocalized.Add(ifcVersion, erNameListForUI);

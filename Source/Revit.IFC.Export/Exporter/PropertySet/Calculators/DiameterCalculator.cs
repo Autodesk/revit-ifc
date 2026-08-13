@@ -63,15 +63,18 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Diameter, entryMap.CompatibleRevitParameterName, "IfcQtyDiameter") != null)
+         if (ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName,
+            entryMap.CompatibleRevitParameterName, "IfcQtyDiameter") is double diameter)
          {
-            m_Diameter = UnitUtil.ScaleLength(m_Diameter);
-            if (m_Diameter > MathUtil.Eps() * MathUtil.Eps())
+            if (diameter > MathUtil.Eps * MathUtil.Eps)
+            {
+               m_Diameter = UnitUtil.ScaleLength(diameter);
                return true;
+            }
          }
-
+         
          if (extrusionCreationData == null)
             return false;
 
@@ -82,7 +85,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             if (String.Compare(shapeCalculator.GetStringValue(), IFCProvisionForVoidShapeType.Round.ToString()) == 0)
             {
                m_Diameter = extrusionCreationData.ScaledOuterPerimeter / Math.PI;
-               if (m_Diameter > MathUtil.Eps())
+               if (m_Diameter > MathUtil.Eps)
                   return true;
             }
          }

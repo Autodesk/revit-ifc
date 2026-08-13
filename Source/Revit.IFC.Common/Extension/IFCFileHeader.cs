@@ -1,4 +1,4 @@
-﻿//
+//
 // BIM IFC export alternate UI library: this library works with Autodesk(R) Revit(R) to provide an alternate user interface for the export of IFC files from Revit.
 // Copyright (C) 2012  Autodesk, Inc.
 // 
@@ -173,12 +173,12 @@ namespace Revit.IFC.Common.Extensions
             if (savedFileHeaderMap.ContainsKey(s_FileSchema))
                fileHeader.FileSchema = savedFileHeaderMap[s_FileSchema];
          }
-         catch (Exception)
+         catch (Autodesk.Revit.Exceptions.InvalidOperationException)
          {
             document.Application.WriteJournalComment("IFC error: Cannot read IFCFileHeader schema", true);
          }
 
          return true;
-      } 
-   }   
+      }
+   }
 }

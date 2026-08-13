@@ -84,5 +84,9 @@
       <HintPath>..\..\..\API\2027\AddInLoader.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="RevitAPISteel">
+      <HintPath>..\..\..\API\2027\RevitAPISteel.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
 </Project>

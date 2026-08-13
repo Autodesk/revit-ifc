@@ -58,15 +58,18 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Adds a new type info of an element.
+      /// Adds a new type info of an element, storing property set ingredients
+      /// (pset name + individual property handles) rather than finished
+      /// IfcPropertySet handles.
       /// </summary>
       /// <param name="elementId">The element id.</param>
-      /// <param name="propertySets">The property sets.</param>
+      /// <param name="propertyInputs">The property set ingredients.</param>
       /// <param name="elements">The IFC elements.</param>
-      public void AddNewTypeProperties(ElementId elementId, ICollection<IFCAnyHandle> propertySets,
-          ICollection<IFCAnyHandle> elements)
+      public void AddNewTypeProperties(ElementId elementId,
+         IList<(string PsetName, HashSet<IFCAnyHandle> Properties)> propertyInputs,
+         ICollection<IFCAnyHandle> elements)
       {
-         TypePropertyInfo typePropertyInfo = new TypePropertyInfo(propertySets, elements);
+         TypePropertyInfo typePropertyInfo = new TypePropertyInfo(propertyInputs, elements);
          Add(elementId, typePropertyInfo);
       }
    }

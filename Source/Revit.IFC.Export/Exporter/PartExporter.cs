@@ -101,7 +101,7 @@ namespace Revit.IFC.Export.Exporter
       private static void SplitAndExportParts(ExporterIFC exporterIFC, List<PartOrGeometry> partsOrGeometries, bool isGeometry,  Element hostElement, ProductWrapper subWrapper, PlacementSetter placementSetter,
          IFCAnyHandle originalPlacement, bool isWallOrColumn, ElementId overrideLevelId, IFCExtrusionAxes ifcExtrusionAxes, bool setMaterialNameToPartName)
       {
-         bool hasOverrideLevel = overrideLevelId != null && overrideLevelId != ElementId.InvalidElementId;
+         bool hasOverrideLevel = !MathUtil.IsInvalidElementId(overrideLevelId);
          // Split parts if wall or column is split by level, and then export; otherwise, export parts normally.
          if (isWallOrColumn && hasOverrideLevel && ExporterCacheManager.ExportOptionsCache.WallAndColumnSplitting)
          {
@@ -159,7 +159,7 @@ namespace Revit.IFC.Export.Exporter
          Document doc = partElement.Document;
          foreach (LinkElementId linkElementId in partElement.GetSourceElementIds())
          {
-            if (linkElementId.HostElementId == ElementId.InvalidElementId)
+            if (MathUtil.IsInvalidElementId(linkElementId.HostElementId))
                continue;
 
             Element parentPartAsElement = doc.GetElement(linkElementId.HostElementId);
@@ -224,7 +224,8 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="partElement">The standalone part to export.</param>
       /// <param name="geometryElement">The goemetry of the part.</param>
       /// <param name="productWrapper">The ProductWrapper object.</param>
-      public static void ExportPartAsBuildingElement(ExporterIFC exporterIFC, Element partElement, GeometryElement geometryElement, ProductWrapper productWrapper)
+      public static void ExportPartAsBuildingElement(ExporterIFC exporterIFC, Element partElement, GeometryElement geometryElement, 
+         ProductWrapper productWrapper)
       {
          Part part = partElement as Part;
          if (!ExporterCacheManager.ExportOptionsCache.ExportParts || part == null || geometryElement == null)
@@ -506,43 +507,36 @@ namespace Revit.IFC.Export.Exporter
                         switch (exportType.ExportInstance)
                         {
                            case IFCEntityType.IfcColumn:
-                              ifcPart = IFCInstanceExporter.CreateColumn(exporterIFC, elementToUse, partGUID, ownerHistory,
-                                  extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType);
-                              break;
                            case IFCEntityType.IfcCovering:
-                              ifcPart = IFCInstanceExporter.CreateCovering(exporterIFC, elementToUse, partGUID, ownerHistory,
-                                  extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType);
-                              break;
                            case IFCEntityType.IfcFooting:
-                              ifcPart = IFCInstanceExporter.CreateFooting(exporterIFC, elementToUse, partGUID, ownerHistory,
-                                  extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType);
+                           case IFCEntityType.IfcRoof:
+                           case IFCEntityType.IfcWall:
+                              ifcPart = IFCInstanceExporter.CreateGenericIFCEntity(exportType, file, elementToUse, null, partGUID, ownerHistory,
+                                  extrusionCreationData.GetLocalPlacement(), prodRep);
                               break;
                            case IFCEntityType.IfcPile:
-                              ifcPart = IFCInstanceExporter.CreatePile(exporterIFC, elementToUse, partGUID, ownerHistory,
+                              ifcPart = IFCInstanceExporter.CreatePile(file, elementToUse, null, partGUID, ownerHistory,
                                   extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType, null);
-                              break;
-                           case IFCEntityType.IfcRoof:
-                              ifcPart = IFCInstanceExporter.CreateRoof(exporterIFC, elementToUse, partGUID, ownerHistory,
-                                  extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType);
                               break;
                            case IFCEntityType.IfcSlab:
                               {
                                  // TODO: fix this elsewhere.
                                  if (ExporterUtil.IsNotDefined(ifcEnumType))
                                  {
-                                    if (hostCatId == new ElementId(BuiltInCategory.OST_Floors))
-                                       ifcEnumType = "FLOOR";
-                                    else if (hostCatId == new ElementId(BuiltInCategory.OST_Roofs))
-                                       ifcEnumType = "ROOF";
+                                    switch (hostCatId.Value)
+                                    {
+                                       case (long)BuiltInCategory.OST_Floors:
+                                          ifcEnumType = "FLOOR";
+                                          break;
+                                       case (long)BuiltInCategory.OST_Roofs:
+                                          ifcEnumType = "ROOF";
+                                          break;
+                                    }
                                  }
 
-                                 ifcPart = IFCInstanceExporter.CreateSlab(exporterIFC, elementToUse, partGUID, ownerHistory,
+                                 ifcPart = IFCInstanceExporter.CreateSlab(file, elementToUse, null, partGUID, ownerHistory,
                                      extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType);
                               }
-                              break;
-                           case IFCEntityType.IfcWall:
-                              ifcPart = IFCInstanceExporter.CreateWall(exporterIFC, elementToUse, partGUID, ownerHistory,
-                              extrusionCreationData.GetLocalPlacement(), prodRep, ifcEnumType);
                               break;
                            default:
                               ifcPart = IFCInstanceExporter.CreateBuildingElementProxy(exporterIFC, elementToUse, partGUID, ownerHistory,
@@ -594,7 +588,7 @@ namespace Revit.IFC.Export.Exporter
                   }
                   else
                   {
-                     // Special case for IFC4RV to export Element with material layer on its layer components as separate items
+                     // Special case for Reference View to export Element with material layer on its layer components as separate items
                      shapeRepresentation = bodyData.RepresentationHnd;
                   }
                }
@@ -663,33 +657,34 @@ namespace Revit.IFC.Export.Exporter
 
       public static bool GetLayerIndex(Element part, out int layerIndex)
       {
-         layerIndex = -1;
-         string layerIndexStr;
-         if (ParameterUtil.GetStringValueFromElement(part, BuiltInParameter.DPART_LAYER_INDEX, out layerIndexStr) != null)
+         (_, string layerIndexStr) = ParameterUtil.GetStringValueFromElement(part, BuiltInParameter.DPART_LAYER_INDEX);
+         if (layerIndexStr != null && int.TryParse(layerIndexStr, out int index) && index > 0)
          {
-            int index = int.Parse(layerIndexStr) - 1; //The index starts at 1
-            if (index >= 0)
-            {
-               layerIndex = index;
-               return true;
-            }
+            //The index starts at 1.
+            layerIndex = index - 1;
+            return true;
          }
 
+         layerIndex = -1;
          return false;
       }
 
-      private static void AddGeometries(ExporterIFC exporterIFC, Element part, IFCRange range,
+      private static bool AddGeometries(ExporterIFC exporterIFC, Element part, IFCRange range,
          ref List<GeometryObject> geometryObjects, IList<Solid> solidsToExclude)
       {
          Options options = GeometryUtil.GetIFCExportGeometryOptions();
          GeometryElement geometryElement = part.get_Geometry(options);
          if (geometryElement == null)
-            return;
+            return false;
 
-         AddGeometriesFromGeometryElement(exporterIFC, part.Document, geometryElement, range, ref geometryObjects, solidsToExclude);
+         return AddGeometriesFromGeometryElement(exporterIFC, part.Document, geometryElement, range, ref geometryObjects, solidsToExclude);
       }
 
-      private static void AddGeometriesFromGeometryElement(ExporterIFC exporterIFC, Document doc, GeometryElement geometryElement, IFCRange range,
+      /// <summary>
+      /// Extracts visible solids/meshes from a geometry element and appends them to geometryObjects.
+      /// Returns true if at least one visible geometry object was appended; false if nothing was appended.
+      /// </summary>
+      private static bool AddGeometriesFromGeometryElement(ExporterIFC exporterIFC, Document doc, GeometryElement geometryElement, IFCRange range,
          ref List<GeometryObject> geometryObjects, IList<Solid> solidsToExclude)
       {
          // GetSplitClippedSolidMeshGeometry will call GetSplitSolidMeshGeometry is range is null.
@@ -700,11 +695,17 @@ namespace Revit.IFC.Export.Exporter
             solidMeshInfo = GeometryUtil.GetSplitClippedSolidMeshGeometry(geometryElement, range);
 
          if (solidMeshInfo.GetSolids().Count == 0 && solidMeshInfo.GetMeshes().Count == 0)
-            return;
+            return false;
 
          IList<Solid> solids = solidMeshInfo.GetSolids();
          IList<Mesh> meshes = solidMeshInfo.GetMeshes();
-         geometryObjects.AddRange(FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(doc, exporterIFC, ref solids, ref meshes, solidsToExclude));
+         IList<GeometryObject> visibleGeometry = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(doc, exporterIFC, ref solids, ref meshes, solidsToExclude);
+
+         if (visibleGeometry.Count == 0) 
+            return false;
+
+         geometryObjects.AddRange(visibleGeometry);
+         return true;
       }
 
       private static ICollection<ElementId> m_AssociatedPartsCache = null;
@@ -723,19 +724,24 @@ namespace Revit.IFC.Export.Exporter
       private static void AddGeometriesFromPartOrGeometry(ExporterIFC exporterIFC, PartOrGeometry partOrGeometry, IFCRange range,
          Element hostElement, IList<Solid> solidsToExclude, ref List<GeometryObject> geometryObjects, ref List<int> partMaterialLayerIndexList)
       {
+         // Only add layer index if geometry was actually produced, to keep lists synchronized.
          if (partOrGeometry.IsGeometry)
          {
-            if (ExporterCacheManager.TemporaryPartsCache.FindInfo(partOrGeometry.GeometryElement, out TemporaryPartInfo partInfo))
-               partMaterialLayerIndexList.Add(partInfo.LayerIndex);
-
-            AddGeometriesFromGeometryElement(exporterIFC, hostElement.Document, partOrGeometry.GeometryElement, range, ref geometryObjects, solidsToExclude);
+            if (AddGeometriesFromGeometryElement(exporterIFC, hostElement.Document, partOrGeometry.GeometryElement, range, ref geometryObjects, solidsToExclude))
+            {
+               int layerIdx = ExporterCacheManager.TemporaryPartsCache.FindInfo(partOrGeometry.GeometryElement, out TemporaryPartInfo partInfo)
+                  ? partInfo.LayerIndex : -1;
+               partMaterialLayerIndexList.Add(layerIdx);
+            }
          }
          else
          {
-            if (GetLayerIndex(partOrGeometry.Part, out int layerIndex))
-               partMaterialLayerIndexList.Add(layerIndex);
-
-            AddGeometries(exporterIFC, partOrGeometry.Part, range, ref geometryObjects, solidsToExclude);
+            if (AddGeometries(exporterIFC, partOrGeometry.Part, range, ref geometryObjects, solidsToExclude))
+            {
+               int layerIdx = GetLayerIndex(partOrGeometry.Part, out int layerIndex)
+                  ? layerIndex : -1;
+               partMaterialLayerIndexList.Add(layerIdx);
+            }
          }
       }
 
@@ -781,7 +787,7 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
-      /// Export parts for IFC4RV. This will export the individual part representations as IfcShapeAspect, and return the main shape representation handle
+      /// Export parts for Reference View. This will export the individual part representations as IfcShapeAspect, and return the main shape representation handle
       /// </summary>
       /// <returns>The host shape representation with multiple items from its parts.</returns>
       public static IFCAnyHandle ExportHostPartAsShapeAspects(ExporterIFC exporterIFC, Element hostElement, 
@@ -994,7 +1000,7 @@ namespace Revit.IFC.Export.Exporter
             cnt++;
          }
          
-         HashSet<string> shapeAspectNameUsed = new HashSet<string>();
+         HashSet<string> shapeAspectNameUsed = [];
          foreach (var indexToRepresentationsPair in layerIndexToRepresentationsMap)
          {
             int layerIndex = indexToRepresentationsPair.Key;
@@ -1176,7 +1182,7 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// Identifies if the host element should be exported as parts.
       /// If MVD is older then IFC4 we rely on ExportOptionsCache.ExportParts option.
-      /// If MVD is IFC4RV and if Exchange type is Structural we need to export Parts if they exist. If number of parts is 1 we need to export it as ShapeAspect and not as Part.
+      /// If MVD is Reference View and if Exchange type is Structural we need to export Parts if they exist. If number of parts is 1 we need to export it as ShapeAspect and not as Part.
       /// </summary>
       /// <param name="hostElement">The host element.</param>
       /// <param name="layersCount">The number of layers or parts the hostElemnt consists of.</param>
@@ -1367,7 +1373,7 @@ namespace Revit.IFC.Export.Exporter
 
                // Assign a single range from the bounding box of the Part, otherwise it may cause problem somewhere that expects the non null value
                IFCRange range = new IFCRange(partBBox.Min.Z, partBBox.Max.Z);
-               if (bottomLevelId == ElementId.InvalidElementId)
+               if (MathUtil.IsInvalidElementId(bottomLevelId))
                   bottomLevelId = isGeometry ? hostElement.LevelId : partOrGeometry.Part.LevelId;
 
                if (!levelParts.ContainsKey(bottomLevelId))
@@ -1452,7 +1458,7 @@ namespace Revit.IFC.Export.Exporter
          }
 
          // If there is no associated level id, it has to be linked to the lowest level
-         if (theSplitLevelId == ElementId.InvalidElementId && levelIds.Count > 0)
+         if (MathUtil.IsInvalidElementId(theSplitLevelId) && levelIds.Count > 0)
          {
             theSplitLevelId = levelIds[0];
          }
@@ -1477,9 +1483,9 @@ namespace Revit.IFC.Export.Exporter
 
          foreach (LinkElementId linkElementId in part.GetSourceElementIds())
          {
-            if (linkElementId.HostElementId == ElementId.InvalidElementId)
+            if (MathUtil.IsInvalidElementId(linkElementId.HostElementId))
             {
-               if (linkElementId.LinkInstanceId == ElementId.InvalidElementId)
+               if (MathUtil.IsInvalidElementId(linkElementId.LinkInstanceId))
                   continue;
                Element linkedElement = part.Document.GetElement(linkElementId.LinkInstanceId);
 

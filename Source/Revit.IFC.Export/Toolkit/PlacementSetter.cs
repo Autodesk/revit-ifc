@@ -39,6 +39,28 @@ namespace Revit.IFC.Export.Toolkit
    /// </remarks>
    public class PlacementSetter : IDisposable
    {
+      /// <summary>
+      /// Adjusts placement parameters for mirrored link export. The site placement uses
+      /// BaseLinkTransform (reflection stripped), so each element's placement must be
+      /// compensated: AdjustedPlacement = MirrorTransform × OriginalPlacement × MirrorTransform.
+      /// </summary>
+      private static void AdjustPlacementForMirroredLink(ref XYZ origin, ref XYZ axis, ref XYZ refDirection)
+      {
+         if (!RepresentationUtil.DocumentMirrorState.IsExportingMirroredLink())
+            return;
+
+         Transform mirrorTrf = FederatedLinkManager.MirrorTransform;
+         if (mirrorTrf == null)
+            return;
+
+         if (origin != null)
+            origin = mirrorTrf.OfPoint(origin);
+         if (axis != null)
+            axis = mirrorTrf.OfVector(axis);
+         if (refDirection != null)
+            refDirection = mirrorTrf.OfVector(refDirection);
+      }
+
       protected ExporterIFC ExporterIFC { get; set; } = null;
 
       /// <summary>
@@ -131,7 +153,7 @@ namespace Revit.IFC.Export.Toolkit
       {
          // Call a different PlacementSetter if the containment is overridden to the Site or the Building
          bool allowOverride = true;
-         if ((overrideLevelId == null || overrideLevelId == ElementId.InvalidElementId) && containerOverrideHnd != null)
+         if (MathUtil.IsInvalidElementId(overrideLevelId) && containerOverrideHnd != null)
          {
             if (IFCAnyHandleUtil.IsTypeOf(containerOverrideHnd, IFCEntityType.IfcSite)
                || IFCAnyHandleUtil.IsTypeOf(containerOverrideHnd, IFCEntityType.IfcBuilding))
@@ -145,7 +167,7 @@ namespace Revit.IFC.Export.Toolkit
             }
          }
 
-         if (overrideLevelId == null || overrideLevelId == ElementId.InvalidElementId)
+         if (MathUtil.IsInvalidElementId(overrideLevelId))
          {
             overrideLevelId = LevelUtil.GetBaseLevelIdForElement(elem);
          }
@@ -213,7 +235,7 @@ namespace Revit.IFC.Export.Toolkit
 
          IDictionary<ElementId, IFCLevelInfo> levelInfos = ExporterCacheManager.LevelInfoCache.LevelsById;
 
-         if (overrideLevelId == ElementId.InvalidElementId)
+         if (MathUtil.IsInvalidElementId(overrideLevelId))
          {
             if (familyTrf == null)
             {
@@ -241,7 +263,7 @@ namespace Revit.IFC.Export.Toolkit
                      hostElemId = elem.AssemblyInstanceId;
                   }
 
-                  if (hostElemId != ElementId.InvalidElementId)
+                  if (!MathUtil.IsInvalidElementId(hostElemId))
                   {
                      hostElem = doc.GetElement(hostElemId);
                   }
@@ -253,7 +275,7 @@ namespace Revit.IFC.Export.Toolkit
             // todo: store.
             double bottomHeight = double.MaxValue;
             ElementId bottomLevelId = ElementId.InvalidElementId;
-            if ((newLevelId == ElementId.InvalidElementId) || orientationTrf != null)
+            if (MathUtil.IsInvalidElementId(newLevelId) || orientationTrf != null)
             {
                // if we have a trf, it might geometrically push the instance to a new level.  Check that case.
                // actually, we should ALWAYS check the bbox vs the settings
@@ -310,12 +332,12 @@ namespace Revit.IFC.Export.Toolkit
                   bool useHeight = !MathUtil.IsAlmostZero(height);
                   double endHeight = startHeight + height;
 
-                  if (originIsValid && ((originToUse[2] > (startHeight - MathUtil.Eps())) && (!useHeight || originToUse[2] < (endHeight - MathUtil.Eps()))))
+                  if (originIsValid && ((originToUse[2] > (startHeight - MathUtil.Eps)) && (!useHeight || originToUse[2] < (endHeight - MathUtil.Eps))))
                   {
                      newLevelId = levelInfoPair.Key;
                   }
 
-                  if (startHeight < (bottomHeight + MathUtil.Eps()))
+                  if (startHeight < (bottomHeight + MathUtil.Eps))
                   {
                      bottomLevelId = levelInfoPair.Key;
                      bottomHeight = startHeight;
@@ -323,7 +345,7 @@ namespace Revit.IFC.Export.Toolkit
                }
             }
 
-            if (newLevelId == ElementId.InvalidElementId)
+            if (MathUtil.IsInvalidElementId(newLevelId))
                newLevelId = bottomLevelId;
 
             // Finally, override the level if needed.
@@ -377,6 +399,7 @@ namespace Revit.IFC.Export.Toolkit
             trf = trf.Inverse;
 
             origin = UnitUtil.ScaleLength(origin);
+            AdjustPlacementForMirroredLink(ref origin, ref zDir, ref xDir);
             LocalPlacement = ExporterUtil.CreateLocalPlacement(file, levelPlacement, origin, zDir, xDir);
          }
          else if (orientationTrf != null)
@@ -392,6 +415,7 @@ namespace Revit.IFC.Export.Toolkit
             trf = trf.Inverse;
 
             origin = UnitUtil.ScaleLength(origin);
+            AdjustPlacementForMirroredLink(ref origin, ref zDir, ref xDir);
             LocalPlacement = ExporterUtil.CreateLocalPlacement(file, levelPlacement, origin, zDir, xDir);
          }
          else
@@ -419,7 +443,7 @@ namespace Revit.IFC.Export.Toolkit
       /// <param name="siteOrBuilding">IfcSite or IfcBuilding</param>
       public PlacementSetter(ExporterIFC exporterIFC, Element elem, Transform familyTrf, Transform orientationTrf, IFCAnyHandle siteOrBuilding)
       {
-         if (!IFCAnyHandleUtil.IsTypeOf(siteOrBuilding, Common.Enums.IFCEntityType.IfcSite) && !IFCAnyHandleUtil.IsTypeOf(siteOrBuilding, Common.Enums.IFCEntityType.IfcBuilding))
+         if (!IFCAnyHandleUtil.IsTypeOf(siteOrBuilding, IFCEntityType.IfcSite) && !IFCAnyHandleUtil.IsTypeOf(siteOrBuilding, IFCEntityType.IfcBuilding))
             throw new ArgumentException("Argument siteOrBuilding (" + IFCAnyHandleUtil.GetEntityType(siteOrBuilding).ToString() + ") must be either IfcSite or IfcBuilding!");
 
          ExporterIFC = exporterIFC;
@@ -433,6 +457,7 @@ namespace Revit.IFC.Export.Toolkit
             trf = trf.Inverse;
 
             origin = UnitUtil.ScaleLength(origin);
+            AdjustPlacementForMirroredLink(ref origin, ref zDir, ref xDir);
             LocalPlacement = ExporterUtil.CreateLocalPlacement(exporterIFC.GetFile(), null, origin, zDir, xDir);
          }
          else if (orientationTrf != null)
@@ -444,6 +469,7 @@ namespace Revit.IFC.Export.Toolkit
             trf = orientationTrf.Inverse;
 
             origin = UnitUtil.ScaleLength(origin);
+            AdjustPlacementForMirroredLink(ref origin, ref zDir, ref xDir);
             LocalPlacement = ExporterUtil.CreateLocalPlacement(exporterIFC.GetFile(), null, origin, zDir, xDir);
          }
          else
@@ -458,6 +484,20 @@ namespace Revit.IFC.Export.Toolkit
       }
 
       /// <summary>
+      /// Returns a local placement relative to a new parent based on the setter's current local placement.
+      /// </summary>
+      /// <param name="roomHnd">Handle to the parent placement handle.</param>
+      /// <returns>The handle to the IfcLocalPlacement to use for the given parent placement handle.</returns>
+      public IFCAnyHandle MaybeUpdatePlacementRelativeToContainer(IFCAnyHandle parentPlacementHnd)
+      {
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(parentPlacementHnd))
+            return null;
+
+         Transform trf = ExporterIFCUtils.GetRelativeLocalPlacementOffsetTransform(LocalPlacement, parentPlacementHnd);
+         return ExporterUtil.CreateLocalPlacement(ExporterIFC.GetFile(), parentPlacementHnd, trf.Origin, trf.BasisZ, trf.BasisX);
+      }
+
+      /// <summary>
       ///   Obtains the handle to an alternate local placement for a room-related element.
       /// </summary>
       /// <param name="roomHnd">Handle to the element.</param>
@@ -466,14 +506,8 @@ namespace Revit.IFC.Export.Toolkit
       /// </returns>
       private void UpdatePlacement(IFCAnyHandle roomHnd, out IFCAnyHandle placement)
       {
-         placement = LocalPlacement;
-
-         if (roomHnd == null)
-            return;
-
-         IFCAnyHandle roomPlacementHnd = IFCAnyHandleUtil.GetObjectPlacement(roomHnd);
-         Transform trf = ExporterIFCUtils.GetRelativeLocalPlacementOffsetTransform(placement, roomPlacementHnd);
-         placement = ExporterUtil.CreateLocalPlacement(ExporterIFC.GetFile(), roomPlacementHnd, trf.Origin, trf.BasisZ, trf.BasisX);
+         IFCAnyHandle roomPlacementHnd = IFCAnyHandleUtil.IsNullOrHasNoValue(roomHnd) ? null : IFCAnyHandleUtil.GetObjectPlacement(roomHnd);
+         placement = MaybeUpdatePlacementRelativeToContainer(roomPlacementHnd);
       }
 
       /// <summary>
@@ -559,7 +593,7 @@ namespace Revit.IFC.Export.Toolkit
                      continue;
                   
                   ElementId currentRoomId = GetIdInSpatialStructure(element);
-                  if (currentRoomId == ElementId.InvalidElementId)
+                  if (MathUtil.IsInvalidElementId(currentRoomId))
                      return ElementId.InvalidElementId;
                   
                   if (!initialized)
@@ -585,7 +619,7 @@ namespace Revit.IFC.Export.Toolkit
 
          roomId = GetIdInSpatialStructure(elem);
 
-         if (roomId == ElementId.InvalidElementId)
+         if (MathUtil.IsInvalidElementId(roomId))
             return ElementId.InvalidElementId;
 
          roomHnd = ExporterCacheManager.SpaceInfoCache.FindSpaceHandle(roomId);
@@ -628,7 +662,7 @@ namespace Revit.IFC.Export.Toolkit
             IFCLevelInfo levelInfo = levelInfoPair.Value;
             double startHeight = levelInfo.Elevation;
 
-            if (startHeight > newHeight + MathUtil.Eps())
+            if (startHeight > newHeight + MathUtil.Eps)
                continue;
 
             double height = levelInfo.DistanceToNextLevel;
@@ -642,7 +676,7 @@ namespace Revit.IFC.Export.Toolkit
             }
 
             double endHeight = startHeight + height;
-            if (newHeight < endHeight - MathUtil.Eps())
+            if (newHeight < endHeight - MathUtil.Eps)
             {
                scaledOffsetFromNewLevel = (newHeight - startHeight) * scale;
                placementHnd = levelInfo.GetLocalPlacement();

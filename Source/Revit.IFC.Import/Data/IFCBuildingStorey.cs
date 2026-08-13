@@ -1,4 +1,4 @@
-﻿//
+//
 // Revit IFC Import library: this library works with Autodesk(R) Revit(R) to import IFC files.
 // Copyright (C) 2013  Autodesk, Inc.
 // 
@@ -168,6 +168,13 @@ namespace Revit.IFC.Import.Data
 
          double referenceElevation = GetReferenceElevation();
          double totalElevation = (ObjectLocation?.TotalTransformAfterOffset?.Origin.Z ?? 0.0) + referenceElevation;
+
+         // Keep legacy elevation behavior for compatibility: level elevation comes from placement + building reference.
+         // If Elevation is also provided and conflicts with placement, log for diagnostics only.
+         if (ObjectLocation != null && !MathUtil.IsAlmostZero(Elevation) && !MathUtil.IsAlmostEqual(ObjectLocation?.TotalTransformAfterOffset?.Origin.Z ?? 0.0, Elevation))
+         {
+            Importer.TheLog.LogWarning(Id, "IfcBuildingStorey has inconsistent ObjectPlacement and Elevation values. Using ObjectPlacement.", false);
+         }
 
          if (level == null)
          {

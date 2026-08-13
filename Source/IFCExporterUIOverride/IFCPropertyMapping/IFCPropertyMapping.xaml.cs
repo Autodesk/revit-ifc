@@ -2,6 +2,7 @@
 using Autodesk.Revit.UI;
 using Autodesk.UI.Windows;
 using BIM.IFC.Export.UI.Properties;
+using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Utility;
 using System;
 using System.Collections.Generic;
@@ -1666,7 +1667,7 @@ namespace BIM.IFC.Export.UI
 
          IFCRevitPropertySelector propertySelector = new(
             new RevitParameterInfo(mappingInfo.RevitPropertyName, mappingInfo.RevitPropertyId),
-            SelectedPropertySet.Name, mappingInfo.IFCPropertyName, mappingInfo.PropertyDataType, SelectedIfcSchema,
+            SelectedPropertySet.Name, mappingInfo.IFCPropertyName, mappingInfo.PropertyDataType, IfcSchemaEntityTree.GetSchemaVersion(SelectedIfcSchema),
             _selectedPropertySetup, applicableEntities, isTableProperty)
          {
             Owner = this,

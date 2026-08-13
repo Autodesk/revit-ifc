@@ -1,5 +1,6 @@
 ﻿using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
+using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Exporter;
 using Revit.IFC.Export.Exporter.PropertySet;
 using System.Collections.Generic;
@@ -54,7 +55,7 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       public void Register(ElementId elementId, List<GeometryElement> partGeometries)
       {
-         if (elementId == ElementId.InvalidElementId)
+         if (MathUtil.IsInvalidElementId(elementId))
             return;
 
          ElementToPartGeometries.TryAdd(elementId, partGeometries);

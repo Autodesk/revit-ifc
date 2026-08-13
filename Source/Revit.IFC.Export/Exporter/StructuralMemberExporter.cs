@@ -139,8 +139,8 @@ namespace Revit.IFC.Export.Exporter
 
          if (canExportAxis)
          {
-            axisInfo = new StructuralMemberAxisInfo();
-            axisInfo.Axis = curve.CreateTransformed(orientTrf.Inverse);       // transform the curve into its LCS
+            axisInfo = new();
+            axisInfo.Axis = GeometryUtil.CreateTransformedCurve(curve, orientTrf.Inverse);       // transform the curve into its LCS
             axisInfo.AxisDirection = orientTrf.BasisX;                // We define here the Axis Curve to be following the X-axis
             axisInfo.AxisNormal = orientTrf.BasisZ;
             axisInfo.LCSAsTransform = orientTrf;
@@ -191,13 +191,13 @@ namespace Revit.IFC.Export.Exporter
          }
 
          // Calculate the transformation matrix to tranform the original Axis Curve at its ECS into the new ECS assigned in the offset
-         curve = curve.CreateTransformed(offset.Inverse.Multiply(axisInfo.LCSAsTransform));
+         curve = GeometryUtil.CreateTransformedCurve(curve, offset.Inverse.Multiply(axisInfo.LCSAsTransform));
 
          IDictionary<IFCFuzzyXYZ, IFCAnyHandle> cachePoints = new Dictionary<IFCFuzzyXYZ, IFCAnyHandle>();
          const GeometryUtil.TrimCurvePreference trimCurvePreference = GeometryUtil.TrimCurvePreference.TrimmedCurve;
          IFCAnyHandle ifcCurveHnd = GeometryUtil.CreateIFCCurveFromRevitCurve(exporterIFC.GetFile(), 
             exporterIFC, curve, true, cachePoints, trimCurvePreference);
-         IList<IFCAnyHandle> axis_items = new List<IFCAnyHandle>();
+         List<IFCAnyHandle> axis_items = [];
          if (!(IFCAnyHandleUtil.IsNullOrHasNoValue(ifcCurveHnd)))
             axis_items.Add(ifcCurveHnd);
 
@@ -209,7 +209,7 @@ namespace Revit.IFC.Export.Exporter
             IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(identifier);
             IFCAnyHandle axisRep = RepresentationUtil.CreateShapeRepresentation(exporterIFC, 
                element, catId, contextOfItems, identifierOpt, representationTypeOpt, 
-               axis_items);
+               axis_items.ToHashSet());
             return axisRep;
          }
 

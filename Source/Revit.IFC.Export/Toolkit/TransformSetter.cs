@@ -108,9 +108,9 @@ namespace Revit.IFC.Export.Toolkit
 
             // If the BBox passes through (0,0, 0), or no bbox, do nothing.
             if (bbox == null ||
-                ((bbox.Min.X < MathUtil.Eps() && bbox.Max.X > -MathUtil.Eps()) &&
-                 (bbox.Min.Y < MathUtil.Eps() && bbox.Max.Y > -MathUtil.Eps()) &&
-                 (bbox.Min.Z < MathUtil.Eps() && bbox.Max.Z > -MathUtil.Eps())))
+                ((bbox.Min.X < MathUtil.Eps && bbox.Max.X > -MathUtil.Eps) &&
+                 (bbox.Min.Y < MathUtil.Eps && bbox.Max.Y > -MathUtil.Eps) &&
+                 (bbox.Min.Z < MathUtil.Eps && bbox.Max.Z > -MathUtil.Eps)))
             {
                if (!ecData.ReuseLocalPlacement)
                   ecData.SetLocalPlacement(ExporterUtil.CopyLocalPlacement(file, localPlacement));
@@ -125,6 +125,13 @@ namespace Revit.IFC.Export.Toolkit
             XYZ lpOrig = scaledTrf.OfPoint(scaledOrig);
             if (!ecData.AllowVerticalOffsetOfBReps)
                lpOrig = new XYZ(lpOrig.X, lpOrig.Y, 0.0);
+
+            if (RepresentationUtil.DocumentMirrorState.IsExportingMirroredLink())
+            {
+               Transform mirrorTrf = FederatedLinkManager.MirrorTransform;
+               if (mirrorTrf != null)
+                  lpOrig = mirrorTrf.OfPoint(lpOrig);
+            }
 
             Transform scaledTrfInv = scaledTrf.Inverse;
             XYZ scaledInvOrig = scaledTrfInv.OfPoint(XYZ.Zero);
@@ -225,9 +232,9 @@ namespace Revit.IFC.Export.Toolkit
 
             // If the BBox passes through (0,0, 0), or no bbox, do nothing.
             if (bbox == null ||
-                ((bbox.Min.X < MathUtil.Eps() && bbox.Max.X > -MathUtil.Eps()) &&
-                 (bbox.Min.Y < MathUtil.Eps() && bbox.Max.Y > -MathUtil.Eps()) &&
-                 (bbox.Min.Z < MathUtil.Eps() && bbox.Max.Z > -MathUtil.Eps())))
+                ((bbox.Min.X < MathUtil.Eps && bbox.Max.X > -MathUtil.Eps) &&
+                 (bbox.Min.Y < MathUtil.Eps && bbox.Max.Y > -MathUtil.Eps) &&
+                 (bbox.Min.Z < MathUtil.Eps && bbox.Max.Z > -MathUtil.Eps)))
                return trf;
 
             XYZ corner = bbox.Min;
@@ -340,9 +347,9 @@ namespace Revit.IFC.Export.Toolkit
 
             // If the BBox passes through (0,0, 0), or no bbox, do nothing.
             if (bbox == null ||
-                ((bbox.Min.X < MathUtil.Eps() && bbox.Max.X > -MathUtil.Eps()) &&
-                 (bbox.Min.Y < MathUtil.Eps() && bbox.Max.Y > -MathUtil.Eps()) &&
-                 (bbox.Min.Z < MathUtil.Eps() && bbox.Max.Z > -MathUtil.Eps())))
+                ((bbox.Min.X < MathUtil.Eps && bbox.Max.X > -MathUtil.Eps) &&
+                 (bbox.Min.Y < MathUtil.Eps && bbox.Max.Y > -MathUtil.Eps) &&
+                 (bbox.Min.Z < MathUtil.Eps && bbox.Max.Z > -MathUtil.Eps)))
             {
                if (!ecData.ReuseLocalPlacement)
                   ecData.SetLocalPlacement(ExporterUtil.CopyLocalPlacement(file, localPlacement));

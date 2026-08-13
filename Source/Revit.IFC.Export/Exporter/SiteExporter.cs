@@ -54,16 +54,18 @@ namespace Revit.IFC.Export.Exporter
          IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(topoSurface, out ifcEnumType);
 
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
-         Common.Enums.IFCEntityType elementClassTypeEnum;
+         IFCEntityType elementClassTypeEnum;
 
-         if (Enum.TryParse<Common.Enums.IFCEntityType>(exportType.ExportInstance.ToString(), out elementClassTypeEnum)
-               || Enum.TryParse<Common.Enums.IFCEntityType>(exportType.ExportType.ToString(), out elementClassTypeEnum))
+         if (Enum.TryParse(IFCAnyHandleUtil.GetIFCEntityTypeName(exportType.ExportInstance), out elementClassTypeEnum)
+            || Enum.TryParse(IFCAnyHandleUtil.GetIFCEntityTypeName(exportType.ExportType), out elementClassTypeEnum))
          {
             if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
                return;
 
-            if (elementClassTypeEnum == Common.Enums.IFCEntityType.IfcSite)
-               ExportSiteBase(exporterIFC, topoSurface.Document, topoSurface, geometryElement, productWrapper);
+            if (elementClassTypeEnum == IFCEntityType.IfcSite)
+            {
+               ExportElementAsSiteWithGeographicElement(exporterIFC, topoSurface, geometryElement, productWrapper);
+            }
             else
             {
                // Export Default Site first before exporting the TopographySurface as a generic element
@@ -93,7 +95,7 @@ namespace Revit.IFC.Export.Exporter
          if ((element == null) || !ExporterCacheManager.SiteExportInfo.IsPotentialSiteElementId(element.Id))
             return false;
 
-         ExportSiteBase(exporterIFC, element.Document, element, geometryElement, productWrapper);
+         ExportElementAsSiteWithGeographicElement(exporterIFC, element, geometryElement, productWrapper);
          return true;
       }
 
@@ -125,6 +127,31 @@ namespace Revit.IFC.Export.Exporter
       public static void ExportDefaultSite(ExporterIFC exporterIFC, Document document, ProductWrapper productWrapper)
       {
          ExportSiteBase(exporterIFC, document, null, null, productWrapper);
+      }
+
+      /// <summary>
+      /// Exports an element as IfcSite. For IFC4+, the site carries no geometric representation
+      /// and the element's geometry is exported as a separate IfcGeographicElement contained
+      /// within the spatial structure. For older schemas, geometry is placed directly on the IfcSite.
+      /// </summary>
+      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="element">The element to export as site.</param>
+      /// <param name="geometryElement">The geometry element.</param>
+      /// <param name="productWrapper">The ProductWrapper.</param>
+      private static void ExportElementAsSiteWithGeographicElement(ExporterIFC exporterIFC, Element element, GeometryElement geometryElement, ProductWrapper productWrapper)
+      {
+         bool exportAsGeographicElement = !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4;
+         ExportSiteBase(exporterIFC, element.Document, element, exportAsGeographicElement ? null : geometryElement, productWrapper);
+
+         if (exportAsGeographicElement && geometryElement != null)
+         {
+            using (ProductWrapper genElemProductWrapper = ProductWrapper.Create(exporterIFC, true))
+            {
+               IFCExportInfoPair geoExportType = new IFCExportInfoPair(Common.Enums.IFCEntityType.IfcGeographicElement, "NOTDEFINED");
+               GenericElementExporter.ExportSimpleGenericElement(exporterIFC, element, geometryElement, genElemProductWrapper, geoExportType);
+               ExporterUtil.ExportRelatedProperties(exporterIFC, element, genElemProductWrapper);
+            }
+         }
       }
 
       /// <summary>
@@ -162,7 +189,7 @@ namespace Revit.IFC.Export.Exporter
          using (IFCTransaction tr = new IFCTransaction(file))
          {
             IFCAnyHandle siteRepresentation = null;
-            if (element != null)
+            if (element != null && geometryElement != null)
             {
                // It would be possible that they actually represent several different sites with different buildings, 
                // but until we have a concept of a building in Revit, we have to assume 0-1 sites, 1 building.

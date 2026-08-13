@@ -18,6 +18,8 @@
 //
 
 using System;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace Revit.IFC.Common.Utility
@@ -44,26 +46,104 @@ namespace Revit.IFC.Common.Utility
         IntPtr hWnd,
         string lpString);
 
-      private IntPtr m_StatusBar = IntPtr.Zero;
+      private IntPtr StatusBar { get; set; } = IntPtr.Zero;
+
+      private Stopwatch Stopwatch { get; set; } = new();
+
+      private long LastMessageTime { get; set; } = -1;
 
       protected RevitStatusBar()
       {
          // Find the status bar, so we can add messages.
-         IntPtr revitHandle = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;
-         if (revitHandle != IntPtr.Zero)
-            m_StatusBar = FindWindowEx(revitHandle, IntPtr.Zero, "msctls_statusbar32", "");
+         IntPtr revitHandle = Process.GetCurrentProcess().MainWindowHandle;
+         if (revitHandle == IntPtr.Zero)
+            return;
+
+         StatusBar = FindWindowEx(revitHandle, IntPtr.Zero, "msctls_statusbar32", "");
+         Stopwatch.Start();
+      }
+
+      private void SetInternal(string msg, long currTime)
+      {
+         SetWindowText(StatusBar, msg);
+         LastMessageTime = currTime;
+      }
+
+      static readonly long UpdateTimeInMilliseconds = 750;
+
+      private long CanDisplayMessage(bool forceSet)
+      {
+         if (StatusBar == IntPtr.Zero)
+            return -1;
+
+         long currTime = Stopwatch.ElapsedMilliseconds;
+         if (forceSet)
+            return currTime;
+
+         return (currTime < LastMessageTime + UpdateTimeInMilliseconds) ? -1 : currTime;
       }
 
       /// <summary>
       /// Set the value of the status bar, if there is a valid handle to it.
       /// </summary>
-      /// <param name="msg">The message.</param>
-      public void Set(string msg)
+      /// <param name="format">The message format.</param>
+      public void ForceSet([StringSyntax(StringSyntaxAttribute.CompositeFormat)] string format)
       {
-         if (m_StatusBar != IntPtr.Zero)
-         {
-            SetWindowText(m_StatusBar, msg);
-         }
+         long currTime = CanDisplayMessage(true);
+         if (currTime < 0)
+            return;
+
+         SetInternal(format, currTime);
+      }
+
+      /// <summary>
+      /// Set the value of the status bar, if there is a valid handle to it and enough time has elapsed.
+      /// </summary>
+      /// <param name="format">The message format.</param>
+      /// <param name="argument">The argument for the format string.</param>
+      public void Set([StringSyntax(StringSyntaxAttribute.CompositeFormat)] string format, object argument)
+      {
+         long currTime = CanDisplayMessage(false);
+         if (currTime < 0)
+            return;
+         
+         string msg = string.Format(format, argument);
+         SetInternal(msg, currTime);
+      }
+
+      /// <summary>
+      /// Set the value of the status bar, if there is a valid handle to it and enough time has elapsed.
+      /// </summary>
+      /// <param name="format">The message format.</param>
+      /// <param name="firstArgument">The first argument for the format string.</param>
+      /// <param name="secondArgument">The second argument for the format string.</param>
+      public void Set([StringSyntax(StringSyntaxAttribute.CompositeFormat)] string format,
+         object firstArgument, object secondArgument)
+      {
+         long currTime = CanDisplayMessage(false);
+         if (currTime < 0)
+            return;
+
+         string msg = string.Format(format, firstArgument, secondArgument);
+         SetInternal(msg, currTime);
+      }
+      
+      /// <summary>
+      /// Set the value of the status bar, if there is a valid handle to it and enough time has elapsed.
+      /// </summary>
+      /// <param name="format">The message format.</param>
+      /// <param name="firstArgument">The first argument for the format string.</param>
+      /// <param name="secondArgument">The second argument for the format string.</param>
+      /// <param name="thirdArgument">The third argument for the format string.</param>
+      public void Set([StringSyntax(StringSyntaxAttribute.CompositeFormat)] string format, 
+         object firstArgument, object secondArgument, object thirdArgument)
+      {
+         long currTime = CanDisplayMessage(false);
+         if (currTime < 0)
+            return;
+
+         string msg = string.Format(format, firstArgument, secondArgument, thirdArgument);
+         SetInternal(msg, currTime);
       }
 
       /// <summary>

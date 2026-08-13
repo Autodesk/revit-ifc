@@ -70,7 +70,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          bool valid = true;
 
@@ -85,24 +85,28 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
          else if (element is Stairs || element is StairsRun)
          {
-            Stairs stairs;
-            if (element is StairsRun)
+            ElementId stairsTypeId = element.GetTypeId();
+
+            if (ParameterUtil.TryGetDoubleValueFromElement(stairsTypeId,
+                BuiltInParameter.STAIRSTYPE_MINIMUM_TREAD_WIDTH_INSIDE_BOUNDARY) is double treadLengthAtInnerSide)
             {
-               StairsRun stairsRun = element as StairsRun;
-               stairs = stairsRun.GetStairs();
-            }
-            else
-               stairs = element as Stairs;
-
-            StairsType stairsType = stairs.Document.GetElement(stairs.GetTypeId()) as StairsType;
-
-            double treadLengthAtInnerSide;
-            if (ParameterUtil.GetDoubleValueFromElement(stairsType,
-                BuiltInParameter.STAIRSTYPE_MINIMUM_TREAD_WIDTH_INSIDE_BOUNDARY, out treadLengthAtInnerSide) != null)
                m_TreadLengthAtInnerSide = UnitUtil.ScaleLength(treadLengthAtInnerSide);
+            }
 
             if (m_TreadLengthAtInnerSide <= 0)
+            {
+               Stairs stairs;
+               if (element is StairsRun stairsRun)
+               {
+                  stairs = stairsRun.GetStairs();
+               }
+               else
+               {
+                  stairs = element as Stairs;
+               }
+                
                m_TreadLengthAtInnerSide = UnitUtil.ScaleLength(stairs.ActualTreadDepth);
+            }
          }
          else
          {
@@ -110,8 +114,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
 
          // Get override from parameter
-         double treadLengthAtInnerSideOverride = 0.0;
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out treadLengthAtInnerSideOverride, entryMap.CompatibleRevitParameterName) != null)
+         if (ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, entryMap.CompatibleRevitParameterName) is double treadLengthAtInnerSideOverride)
          {
             m_TreadLengthAtInnerSide = UnitUtil.ScaleArea(treadLengthAtInnerSideOverride);
          }

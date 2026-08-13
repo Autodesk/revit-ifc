@@ -1532,4 +1532,10 @@ Build: {1}
   <data name="FilterBuiltinProperties" xml:space="preserve">
     <value>Built-in properties</value>
   </data>
+  <data name="StructuralMaterialParams" xml:space="preserve">
+    <value>Structural</value>
+  </data>
+  <data name="FilterExtendedProperties" xml:space="preserve">
+    <value>Extended properties</value>
+  </data>
 </root>
