@@ -413,17 +413,16 @@ namespace Revit.IFC.Import.Utility
             m_ProcessedEntities.Add(new KeyValuePair<IFCEntityType, int>(type, 1));
 
          m_TotalProcessedEntities++;
-         if (m_TotalProcessedEntities % 500 == 0)
-            Importer.TheCache.StatusBar.Set(String.Format(Resources.IFCProcessedEntities, m_TotalProcessedEntities));
+         Importer.TheCache.StatusBar.Set(Resources.IFCProcessedEntities, m_TotalProcessedEntities);
       }
 
       public void ReportPostProcessedEntity(int count, int total)
       {
-         if (total > 0 && (count % 500 == 0))
-         {
-            int percentDone = (int)(((double)count / total) * 100 + 0.1);
-            Importer.TheCache.StatusBar.Set(String.Format(Resources.IFCPostProcessEntities, count, total, percentDone));
-         }
+         if (total == 0)
+            return;
+
+         int percentDone = (int)(((double)count / total) * 100 + 0.1);
+         Importer.TheCache.StatusBar.Set(Resources.IFCPostProcessEntities, count, total, percentDone);
       }
 
       /// <summary>
@@ -477,8 +476,8 @@ namespace Revit.IFC.Import.Utility
          if ((m_TotalCreatedElements % 10 == 0) || (m_TotalCreatedElements == m_TotalElementCount))
          {
             int percentDone = (int)(((double)m_TotalCreatedElements / m_TotalElementCount) * 100 + 0.1);
-            Importer.TheCache.StatusBar.Set(String.Format(Resources.IFCCreatedElementsInProgress, m_TotalCreatedElements,
-                m_TotalElementCount, percentDone));
+            Importer.TheCache.StatusBar.Set(Resources.IFCCreatedElementsInProgress, m_TotalCreatedElements,
+                m_TotalElementCount, percentDone);
          }
       }
 

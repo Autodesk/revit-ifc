@@ -26,7 +26,11 @@ namespace BIM.IFC.Export.UI
 
       private IFCEntityTrie m_EntityTrie = null;
 
-      public string CurrentIFCVersion { get; private set; } = null;
+      public bool LockIFCVersion { get; private set; } = false;
+
+      private static IFCSchemaFileVersion VersionForSession { get; set; } = IFCSchemaFileVersion.IFC4;
+
+      public IFCSchemaFileVersion CurrentIFCVersion { get; private set; } = VersionForSession;
 
       private HashSet<string> PreselectedSet { get; set; } = null;
 
@@ -71,6 +75,11 @@ namespace BIM.IFC.Export.UI
       private bool AllowIfcAnnotation { get; set; } = false;
 
       /// <summary>
+      /// When true, includes additional entities in the tree (e.g. IfcProject, IfcBuilding).
+      /// </summary>
+      private bool ShowExtendedEntities { get; set; } = false;
+
+      /// <summary>
       /// Flag to indicate that the null selection is meant to reset the selected entity
       /// </summary>
       public bool IsReset { get; private set; } = false;
@@ -84,8 +93,6 @@ namespace BIM.IFC.Export.UI
       /// A list of localized names for categories that allow mapping to IfcAnnotation.
       /// </summary>
       private static ISet<string> AllowedCategoriesForIfcAnnotation = new HashSet<string>();
-
-      private static string VersionForSession { get; set; } = IfcSchemaEntityTree.SchemaName(IFCVersion.IFC4x3RV);
 
       private static void InitAllowedCategoryIdsForIfcAnnotation()
       {
@@ -158,7 +165,7 @@ namespace BIM.IFC.Export.UI
             }
          }
 
-         CurrentIFCVersion = null;
+         LockIFCVersion = false;
          PreselectedSet = FillSetFromList(null);
          SingleNodeSelection = true;
          TreeSelectionDesc = null;
@@ -189,7 +196,7 @@ namespace BIM.IFC.Export.UI
             AllowIfcAnnotation = AllowIfcAnnotation || IsIfcAnnotationAllowedForCategory(document, parentNode.MappingInfo.CategoryName);
          }
 
-         CurrentIFCVersion = null;
+         LockIFCVersion = false;
          PreselectedSet = FillSetFromList(null);
          SingleNodeSelection = true;
          TreeSelectionDesc = null;
@@ -209,10 +216,14 @@ namespace BIM.IFC.Export.UI
       /// <param name="selectionStrategy">the selection strategy</param>
       /// <param name="synchronizeSelectionWithType">pre-select the predefined type</param>
       /// <param name="propagatePreselection">initial selection of a node selects all its children</param>
-      public EntityTree(IFCVersion? ifcVersion, string preselectFilter, string desc, bool singleNodeSelection,
-         SelectionStrategyType selectionStrategy, bool synchronizeSelectionWithType, bool propagatePreselection)
+      /// <param name="showExtendedEntities">when true, includes additional entities for property set assignment</param>
+      public EntityTree(IFCSchemaFileVersion? ifcVersion, string preselectFilter, string desc, bool singleNodeSelection,
+         SelectionStrategyType selectionStrategy, bool synchronizeSelectionWithType, bool propagatePreselection,
+         bool showExtendedEntities = false)
       {
-         CurrentIFCVersion = ifcVersion.HasValue ? IfcSchemaEntityTree.SchemaName(ifcVersion.Value) : string.Empty;
+         LockIFCVersion = ifcVersion.HasValue;
+         if (LockIFCVersion)
+            CurrentIFCVersion = ifcVersion.Value;
          PreselectedSet = FillSetFromList(preselectFilter);
          PropagatePreselection = propagatePreselection;
          SingleNodeSelection = singleNodeSelection;
@@ -221,6 +232,7 @@ namespace BIM.IFC.Export.UI
          SelectionStrategy = selectionStrategy;
          DefaultCheckedState = SelectionStrategy == SelectionStrategyType.Exclusion;
          SynchronizeSelectionWithType = synchronizeSelectionWithType;
+         ShowExtendedEntities = showExtendedEntities;
          InitializeEntityTree(null, null, null);
       }
 
@@ -251,14 +263,14 @@ namespace BIM.IFC.Export.UI
          ComboBox_IFCSchema.IsEnabled = false;
          // Assign default
 
-         if (string.IsNullOrEmpty(CurrentIFCVersion))
+         if (!LockIFCVersion)
          {
             CurrentIFCVersion = VersionForSession;
             ComboBox_IFCSchema.IsEnabled = true;
          }
 
-         ComboBox_IFCSchema.ItemsSource = IfcSchemaEntityTree.GetAllCachedSchemaNames();
-         ComboBox_IFCSchema.SelectedItem = CurrentIFCVersion;
+         ComboBox_IFCSchema.ItemsSource = IfcSchemaEntityTree.SupportedSchemaFileNames;
+         ComboBox_IFCSchema.SelectedIndex = (int)CurrentIFCVersion;
          if (SingleNodeSelection)
          {
             Grid_Main.ColumnDefinitions[2].MinWidth = 200;
@@ -379,7 +391,7 @@ namespace BIM.IFC.Export.UI
             // from that node. Allow checks for the tree nodes. Grey out (and Italic) abstract
             // entities.
             m_EntityTrie = new IFCEntityTrie();
-            IfcSchemaEntityTree ifcEntityTree = IfcSchemaEntityTree.GetEntityDictFor(CurrentIFCVersion);
+            IfcSchemaEntityTree ifcEntityTree = IfcSchemaEntityTree.GetEntityDictFor(CurrentIFCVersion, null);
             if (ifcEntityTree != null || TreeView.Items.Count == 0)
             {
                TreeView.Items.Clear();
@@ -422,6 +434,29 @@ namespace BIM.IFC.Export.UI
                   groupNodeItem.Unchecked += new RoutedEventHandler(TreeViewItem_HandleUnchecked);
 
                   groupHeader.Items.Add(GetNode(ifcGroupNode, groupNode, PreselectedSet));//, forcePreselection));
+               }
+
+               if (ShowExtendedEntities)
+               {
+                  TreeViewItem projectNode = new TreeViewItem();
+                  projectNode.Name = "IfcProject";
+
+                  ToggleButton projectNodeItem = new CheckBox();
+                  projectNodeItem.Name = "IfcProject";
+                  projectNodeItem.Content = "IfcProject";
+                  projectNodeItem.FontWeight = FontWeights.Bold;
+                  projectNodeItem.IsChecked = DefaultCheckedState;
+
+                  if (PreselectedSet.Contains("IfcProject"))
+                     projectNodeItem.IsChecked = !DefaultCheckedState;
+
+                  projectNodeItem.Checked += new RoutedEventHandler(TreeViewItem_HandleChecked);
+                  projectNodeItem.Unchecked += new RoutedEventHandler(TreeViewItem_HandleUnchecked);
+
+                  projectNode.Header = projectNodeItem;
+                  TreeViewItemDict.Add("IfcProject", projectNode);
+                  m_EntityTrie.AddIFCEntityToDict("IfcProject");
+                  TreeView.Items.Add(projectNode);
                }
             }
             else
@@ -472,8 +507,9 @@ namespace BIM.IFC.Export.UI
          {
             string ifcClassName = ifcNodeChild.Name;
 
-            // Skip deprecated entity
-            if (IfcSchemaEntityTree.IsDeprecatedOrUnsupported(CurrentIFCVersion, ifcClassName))
+            // Skip deprecated entities always; skip unsupported entities unless showing them for UDP assignment
+            if (IfcSchemaEntityTree.IsDeprecated(CurrentIFCVersion, ifcClassName)
+               || (!ShowExtendedEntities && IfcSchemaEntityTree.IsUnsupported(CurrentIFCVersion, ifcClassName)))
             {
                continue;
             }
@@ -491,7 +527,7 @@ namespace BIM.IFC.Export.UI
                TreeViewItemDict.Add(ifcClassName, childNode);
                m_EntityTrie.AddIFCEntityToDict(ifcClassName);
 
-               if (ifcNodeChild.isAbstract)
+               if (ifcNodeChild.IsAbstract)
                {
                   childNode.Header = ifcClassName;
                   childNode.FontWeight = FontWeights.Normal;
@@ -896,10 +932,14 @@ namespace BIM.IFC.Export.UI
             currSelPdef = PrevSelPDefItem?.Name;
          }
 
-         string selIFCSchema = ComboBox_IFCSchema.SelectedItem.ToString();
-         if (!CurrentIFCVersion.Equals(selIFCSchema))
+         int selIndex = ComboBox_IFCSchema.SelectedIndex;
+         if (selIndex == -1)
+            return;
+
+         IFCSchemaFileVersion schemaFileVersion = (IFCSchemaFileVersion) selIndex;
+         if (CurrentIFCVersion != schemaFileVersion || !LockIFCVersion)
          {
-            CurrentIFCVersion = selIFCSchema;
+            CurrentIFCVersion = schemaFileVersion;
             VersionForSession = CurrentIFCVersion;
             m_EntityTrie = new IFCEntityTrie();
             LoadTreeviewFilterElement();
@@ -917,13 +957,13 @@ namespace BIM.IFC.Export.UI
          }
       }
 
-      void InitializePreDefinedTypeSelection(string ifcSchema, string ifcEntitySelected)
+      void InitializePreDefinedTypeSelection(IFCSchemaFileVersion schemaFileVersion, string ifcEntitySelected)
       {
          if (string.IsNullOrEmpty(ifcEntitySelected))
             return;
 
          TreeView predefinedTypeTreeView = new TreeView();
-         IfcSchemaEntityTree ifcEntityTree = IfcSchemaEntityTree.GetEntityDictFor(ifcSchema);
+         IfcSchemaEntityTree ifcEntityTree = IfcSchemaEntityTree.GetEntityDictFor(schemaFileVersion, null);
          IList<string> predefinedTypeList = IfcSchemaEntityTree.GetPredefinedTypeList(ifcEntityTree, ifcEntitySelected);
 
          if (predefinedTypeList != null && predefinedTypeList.Count > 0)

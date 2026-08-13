@@ -70,15 +70,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          // Check the override first from "IfcSpan" parameter, if not overriden use the geometry data from extrusion
-         double spanVal;
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out spanVal, entryMap.CompatibleRevitParameterName) == null)
-               return false;
-
-         spanVal = UnitUtil.ScaleLength(spanVal);
-         if (spanVal > MathUtil.Eps())
+         if (ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, entryMap.CompatibleRevitParameterName) is double spanVal)
          {
             m_Span = spanVal;
             return true;
@@ -88,9 +83,9 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          {
             return false;
          }
-         m_Span = extrusionCreationData.ScaledLength;
 
          // No support, do nothing. Leave the Span to be the length of the entire beam
+         m_Span = extrusionCreationData.ScaledLength;
          return true;
       }
 

@@ -1,9 +1,6 @@
-﻿using System;
+﻿using Revit.IFC.Common.Enums;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Schema;
 
 namespace Revit.IFC.Common.Utility
 {
@@ -18,12 +15,24 @@ namespace Revit.IFC.Common.Utility
       /// <summary>
       /// Entity node name
       /// </summary>
-      public string Name { get; }
+      public IFCEntityType EntityType { get; private set; } = IFCEntityType.UnKnown;
+
+      /// <summary>
+      /// Entity node name
+      /// </summary>
+      public string Name { get; private set; } = null;
+
+      private void SetNameAndType(string name)
+      {
+         Name = name;
+         // There is some nodes that have abritrary names - ignore those.
+         EntityType = Enum.TryParse(name, true, out IFCEntityType entityType) ? entityType : IFCEntityType.UnKnown;
+      }
 
       /// <summary>
       /// The status whether the entity is Abstract type
       /// </summary>
-      public bool isAbstract { get; set; }
+      public bool IsAbstract { get; set; }
 
       /// <summary>
       /// The predefined type
@@ -37,8 +46,8 @@ namespace Revit.IFC.Common.Utility
       /// <param name="abstractEntity">optional: whether the entity is an abstract type (default is false)</param>
       public IfcSchemaEntityNode(string nodeName, bool abstractEntity = false)
       {
-         Name = nodeName;
-         isAbstract = abstractEntity;
+         SetNameAndType(nodeName);
+         IsAbstract = abstractEntity;
       }
 
       /// <summary>
@@ -49,8 +58,8 @@ namespace Revit.IFC.Common.Utility
       /// <param name="abstractEntity">optional: whether the entity is an abstract type (default is false)</param>
       public IfcSchemaEntityNode(string nodeName, IfcSchemaEntityNode parentNode, string predefTypeEnum, bool abstractEntity = false)
       {
-         Name = nodeName;
-         isAbstract = abstractEntity;
+         SetNameAndType(nodeName);
+         IsAbstract = abstractEntity;
          if (parentNode != null)
             superType = parentNode;
          if (predefTypeEnum != null)
@@ -78,7 +87,7 @@ namespace Revit.IFC.Common.Utility
       public void SetParentNode(IfcSchemaEntityNode parentNode)
       {
          if (superType != null)
-            throw new System.Exception("parentNode cannot be null!");
+            throw new InvalidOperationException("parentNode cannot be null!");
 
          if (superType == null)
             if (parentNode != null)
@@ -100,10 +109,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>the list of subtype nodes</returns>
       public IList<IfcSchemaEntityNode> GetChildren()
       {
-         if (subType == null)
-            return new List<IfcSchemaEntityNode>();
-
-         return subType;
+         return subType ?? [];
       }
 
       /// <summary>
@@ -112,7 +118,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>the list of all the subtype nodes</returns>
       public IList<IfcSchemaEntityNode> GetAllDescendants()
       {
-         List<IfcSchemaEntityNode> res = new List<IfcSchemaEntityNode>();
+         List<IfcSchemaEntityNode> res = [];
          foreach (IfcSchemaEntityNode child in subType)
          {
             res.AddRange(child.GetAllDescendants());
@@ -127,7 +133,7 @@ namespace Revit.IFC.Common.Utility
       /// <returns>the list of supertype following the level order</returns>
       public IList<IfcSchemaEntityNode> GetAllAncestors()
       {
-         List<IfcSchemaEntityNode> res = new List<IfcSchemaEntityNode>();
+         List<IfcSchemaEntityNode> res = [];
 
          IfcSchemaEntityNode node = this;
          while (node.superType != null)
@@ -140,33 +146,22 @@ namespace Revit.IFC.Common.Utility
       }
 
       /// <summary>
-      /// Test whether the supertTypeName is the valid supertype of this entity
+      /// Test whether the superTypeName is the valid supertype of this entity
       /// </summary>
       /// <param name="superTypeName">the name of the potential supertype</param>
       /// <returns>true: is the valid supertype</returns>
-      public bool IsSubTypeOf(string superTypeName, bool strict = true)
+      public bool IsSubTypeOf(IFCEntityType superType, bool strict)
       {
          bool res = false;
 
          IfcSchemaEntityNode node = this;
          while (node.superType != null)
          {
-            if (strict)
+            if (superType == node.superType.EntityType || (!strict && superType == node.EntityType))
             {
-               if (superTypeName.Equals(node.superType.Name, StringComparison.InvariantCultureIgnoreCase))
-               {
-                  return true;
+               return true;
             }
-            }
-            else
-            {
-               if (superTypeName.Equals(node.superType.Name, StringComparison.InvariantCultureIgnoreCase)
-                  || superTypeName.Equals(node.Name, StringComparison.InvariantCultureIgnoreCase))
-               {
-                  return true;
-               }
-            }
-            
+
             node = node.superType;
          }
 
@@ -195,7 +190,7 @@ namespace Revit.IFC.Common.Utility
          // Print itself first and then followed by each subtypes
          IfcSchemaEntityNode node = this;
          string abs = string.Empty;
-         if (node.isAbstract)
+         if (node.IsAbstract)
             abs = " (ABS)";
 
          res += "\n";

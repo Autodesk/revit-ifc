@@ -277,7 +277,7 @@ namespace Revit.IFC.Import.Data
 
          try
          {
-            Importer.TheCache.StatusBar.Set(String.Format(Resources.IFCReadingFile, TheFileName));
+            Importer.TheCache.StatusBar.Set(Resources.IFCReadingFile, TheFileName);
             IFCFile.Read(readOptions, out numErrors, out numWarnings);
          }
          catch (Exception ex)
@@ -1008,7 +1008,7 @@ namespace Revit.IFC.Import.Data
                      Importer.TheLog.LogError(-1, "Unable to create Link Instance for IFC File in Host Document -- Aborting Link.", true);
                   }
 
-                  XYZ hostSharedCoordinatesOrigin = BasePoint.GetSurveyPoint(originalDocument)?.Position;
+                  XYZ hostSharedCoordinatesOrigin = GetGlobalSurveyPointPosition(originalDocument);
                   XYZ hostProjectBasePointShared = BasePoint.GetProjectBasePoint(originalDocument)?.SharedPosition;
                   XYZ hostInternalOriginShared = (hostSharedCoordinatesOrigin == null) ? null : -hostSharedCoordinatesOrigin;
                   if ((hostSharedCoordinatesOrigin == null) || (hostProjectBasePointShared == null) || (hostInternalOriginShared == null))
@@ -1123,6 +1123,26 @@ namespace Revit.IFC.Import.Data
          }
 
          return revitLinkTypeId;
+      }
+
+      /// <summary>
+      /// Gets the survey point position transformed to global coordinates using the project location's rotation.
+      /// </summary>
+      /// <param name="document">The Revit document.</param>
+      /// <returns>The survey point position in global coordinates, or null if not available.</returns>
+      public static XYZ GetGlobalSurveyPointPosition(Document document)
+      {
+         if (document == null)
+            return null;
+
+         XYZ surveyPointPosition = BasePoint.GetSurveyPoint(document)?.Position;
+         if (surveyPointPosition == null)
+            return null;
+
+         ProjectLocation projectLocation = document.ActiveProjectLocation;
+         double tnAngle = projectLocation?.GetProjectPosition(XYZ.Zero)?.Angle ?? 0.0;
+         Transform rotationTrfAtInternal = Transform.CreateRotationAtPoint(XYZ.BasisZ, tnAngle, XYZ.Zero);
+         return rotationTrfAtInternal.OfPoint(surveyPointPosition);
       }
 
       /// <summary>

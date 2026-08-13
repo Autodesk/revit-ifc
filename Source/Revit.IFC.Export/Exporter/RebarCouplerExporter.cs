@@ -105,7 +105,6 @@ namespace Revit.IFC.Export.Exporter
             HashSet<IFCAnyHandle> createdRebarCouplerHandles = new();
             string origInstanceName = NamingUtil.GetNameOverride(coupler, NamingUtil.GetIFCName(coupler));
 
-            bool hasTypeInfo = !IFCAnyHandleUtil.IsNullOrHasNoValue(currentTypeInfo.Style);
             bool bExportAsSingleIFCEntity = !ExporterCacheManager.ExportOptionsCache.ExportBarsInUniformSetsAsSeparateIFCEntities;
             HashSet<IFCAnyHandle> representations = new();
             for (int idx = 0; idx < nCouplerQuantity; idx++)
@@ -153,7 +152,7 @@ namespace Revit.IFC.Export.Exporter
                   using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, coupler, trf, null))
                   {
                      IFCAnyHandle instanceHandle = IFCInstanceExporter.CreateGenericIFCEntity(exportType, file, 
-                        coupler, instanceGUID, ownerHistory,setter.LocalPlacement, productRepresentation);
+                        coupler, currentTypeInfo.Style, instanceGUID, ownerHistory,setter.LocalPlacement, productRepresentation);
 
                      string extraName = bExportAsSingleIFCEntity ? string.Empty : (": " + idx);
                      string instanceName = NamingUtil.GetNameOverride(instanceHandle, coupler, origInstanceName + extraName);
@@ -162,11 +161,6 @@ namespace Revit.IFC.Export.Exporter
                      createdRebarCouplerHandles.Add(instanceHandle);
 
                      productWrapper.AddElement(coupler, instanceHandle, setter, null, true, exportType);
-
-                     if (hasTypeInfo)
-                     {
-                        ExporterCacheManager.TypeRelationsCache.Add(currentTypeInfo.Style, instanceHandle);
-                     }
                   }
                }
             }
@@ -177,7 +171,7 @@ namespace Revit.IFC.Export.Exporter
             {
                // Create a group to hold all of the created IFC entities, if the coupler aren't already in an assembly.  
                // We want to avoid nested groups of groups of couplers.
-               if (coupler.AssemblyInstanceId == ElementId.InvalidElementId)
+               if (MathUtil.IsInvalidElementId(coupler.AssemblyInstanceId))
                {
                   string revitObjectType = NamingUtil.GetFamilyAndTypeName(coupler);
                   string name = NamingUtil.GetNameOverride(coupler, revitObjectType);

@@ -71,10 +71,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         double lengthFromParam = 0;
-         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out lengthFromParam, entryMap.CompatibleRevitParameterName, "IfcQtyLength");
+         (_, double lengthFromParam) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, 
+            entryMap.CompatibleRevitParameterName, "IfcQtyLength");
 
          m_Length = UnitUtil.ScaleLength(lengthFromParam);
 
@@ -84,13 +84,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             StairsRun flight = element as StairsRun;
             double flightLen = flight.GetStairsPath().GetExactLength();
             flightLen = UnitUtil.ScaleLength(flightLen);
-            if (flightLen > MathUtil.Eps())
+            if (flightLen > MathUtil.Eps)
             {
                m_Length = flightLen;
                return true;
             }
             // consider override as specified in a parameter
-            else if (m_Length > MathUtil.Eps())
+            else if (m_Length > MathUtil.Eps)
                return true;
             // exit when none for StairsRun
             else
@@ -98,7 +98,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
          else if (element is Railing)
          {
-            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.CURVE_ELEM_LENGTH, out lengthFromParam);
+            (_, lengthFromParam) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.CURVE_ELEM_LENGTH);
             m_Length = UnitUtil.ScaleLength(lengthFromParam);
          }
          else if (element is Wall)
@@ -115,13 +115,13 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
 
          // For others
-         if (m_Length > MathUtil.Eps())
+         if (m_Length > MathUtil.Eps)
             return true;
 
          if (extrusionCreationData == null)
          {
-            if (ParameterUtil.GetDoubleValueFromElement(element, BuiltInParameter.EXTRUSION_LENGTH, out m_Length) != null)
-               m_Length = UnitUtil.ScaleLength(m_Length);
+            if (ParameterUtil.TryGetDoubleValueFromElement(element.Id, BuiltInParameter.EXTRUSION_LENGTH) is double lengthVal)
+               m_Length = UnitUtil.ScaleLength(lengthVal);
          }
          else
          {
@@ -139,7 +139,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             }
          }
 
-         if (m_Length > MathUtil.Eps())
+         if (m_Length > MathUtil.Eps)
             return true;
 
          return false;

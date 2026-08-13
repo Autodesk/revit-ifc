@@ -69,16 +69,15 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         double crossSectionArea = 0;
-
          // 1. Check override parameter
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out crossSectionArea, 
-            entryMap.CompatibleRevitParameterName, "IfcQtyCrossSectionArea") != null)
+         (EvaluatedParameter parameter, double crossSectionArea) = 
+             ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, entryMap.CompatibleRevitParameterName, "IfcQtyCrossSectionArea");
+         if (parameter != null)
          {
             m_Area = UnitUtil.ScaleArea(crossSectionArea);
-            if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+            if (m_Area > MathUtil.Eps * MathUtil.Eps)
                return true;
          }
 
@@ -86,15 +85,15 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          if (extrusionCreationData != null)
          {
             m_Area = extrusionCreationData.ScaledArea;
-            if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+            if (m_Area > MathUtil.Eps * MathUtil.Eps)
                return true;
          }
 
          // 3. Use the builtin parameter after extrusionCreationData because the HOST_AREA_COMPUTED returns total area
-         if (ParameterUtil.GetDoubleValueFromElement(element, BuiltInParameter.HOST_AREA_COMPUTED, out crossSectionArea) != null)
+         if (ParameterUtil.TryGetDoubleValueFromElement(element.Id, BuiltInParameter.HOST_AREA_COMPUTED) is double areaVal)
          {
-            m_Area = UnitUtil.ScaleArea(crossSectionArea);
-            if (m_Area > MathUtil.Eps() * MathUtil.Eps())
+            m_Area = UnitUtil.ScaleArea(areaVal);
+            if (m_Area > MathUtil.Eps * MathUtil.Eps)
                return true;
          }
          return false;

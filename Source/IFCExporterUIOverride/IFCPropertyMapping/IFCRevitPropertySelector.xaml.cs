@@ -1,4 +1,5 @@
 ﻿using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.ExternalData;
 using Autodesk.UI.Windows;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
@@ -61,6 +62,7 @@ namespace BIM.IFC.Export.UI
    public enum ParameterType
    {
       Builtin,
+      Extended,
       Instance,
       Type,
       Unknown
@@ -92,6 +94,8 @@ namespace BIM.IFC.Export.UI
          All,
          [Description("Built-in")]
          Builtin,
+         [Description("Extended")]
+         Extended,
          [Description("Instance")]
          Instance,
          [Description("Type")]
@@ -140,13 +144,20 @@ namespace BIM.IFC.Export.UI
                .Select(data => new ParameterListItem(data.Name, data.Id, isChecked: false))
                .OrderBy(x => x.Name, StringComparer.CurrentCulture).ToList();
 
+            List<ParameterListItem> extendedParameterItems =   
+               parameterData.Where(param => !string.IsNullOrEmpty(param?.Name) && param.ParameterType == ParameterType.Extended)
+               .Select(data => new ParameterListItem(data.Name, data.Id, isChecked: false))
+               .OrderBy(x => x.Name, StringComparer.CurrentCulture).ToList();
+
             List<ParameterListItem> allParameterItems = typeParameterItems.Union(instanceParameterItems).Union(builtinParameterItems)
+               .Union(extendedParameterItems)
                .OrderBy(x => x.Name, StringComparer.CurrentCulture).ToList();
 
             Dictionary<PropertyFilterEnum, List<ParameterListItem>> filterOptionPairs = new()
             {
                { PropertyFilterEnum.All, allParameterItems },
                { PropertyFilterEnum.Builtin, builtinParameterItems},
+               { PropertyFilterEnum.Extended, extendedParameterItems},
                { PropertyFilterEnum.Instance, instanceParameterItems },
                { PropertyFilterEnum.Type, typeParameterItems }
             };
@@ -208,25 +219,26 @@ namespace BIM.IFC.Export.UI
       }
 
       public IFCRevitPropertySelector(RevitParameterInfo selectedRevitParameter, string selectedPSet,
-         string selectedProperty, string propertyDataType, IFCVersion ifcVersion, PropertySetupType propertySetup,
+         string selectedProperty, string propertyDataType, IFCSchemaFileVersion ifcSchemaVersion, PropertySetupType propertySetup,
          IList<string> applicableEntities, bool isTableProperty)
       {
          SelectedRevitParameter = selectedRevitParameter;
          SelectedProperty = selectedProperty;
          IsTableProperty = isTableProperty;
+         IFCVersion ifcVersion = GetCanonicalIFCVersion(ifcSchemaVersion);
 
 
          InitializeComponent();
          DataContext = this;
          Document doc = IFCCommandOverrideApplication.TheDocument;
-         if (doc == null)
+         if (doc is null)
             return;
 
          // 1. Get the information that defines the applicable Revit parameters for this property/quantity.
          ApplicableParameterInfo applicableParamInfo =
             CreateApplicableParameterInfo(propertySetup, selectedPSet, SelectedProperty, propertyDataType, ifcVersion, applicableEntities);
 
-         if (applicableParamInfo == null)
+         if (applicableParamInfo is null)
             return;
 
          // The list of Revit categories exported to applicable IFC entity types.
@@ -239,7 +251,7 @@ namespace BIM.IFC.Export.UI
 
          // 3. Filter parameters by applicable info.
          Dictionary<ElementId, List<RevitParameterData>> filteredCategoryParametersData = categoryParametersData?
-            .Where(pair => pair.Value != null && pair.Value.Count > 0)
+            .Where(pair => pair.Value is not null && pair.Value.Count > 0)
             .ToDictionary(pair => pair.Key, pair => pair.Value
                .Where(param => applicableParamInfo.IsApplicableParameter(param))
                .ToList());
@@ -267,7 +279,7 @@ namespace BIM.IFC.Export.UI
                   PropertySetDescription psetDescription =
                      IFCPropertyMappingModel.GetCachedIfcCommonPSetDescription(propertySetName, ifcVersion);
 
-                  if (psetDescription == null)
+                  if (psetDescription is null)
                      return null;
 
                   foreach (PropertySetEntry entry in psetDescription.Entries)
@@ -293,7 +305,7 @@ namespace BIM.IFC.Export.UI
                   QuantityDescription quantityDescription =
                      IFCPropertyMappingModel.GetCachedBaseQuantityDescription(propertySetName, ifcVersion);
 
-                  if (quantityDescription == null)
+                  if (quantityDescription is null)
                      return null;
 
                   foreach (QuantityEntry entry in quantityDescription.Entries)
@@ -374,7 +386,7 @@ namespace BIM.IFC.Export.UI
                continue;
 
             // Add categories that are exported to exact ifc entity type 
-            if (_ifcEntityToCategoriesMap.TryGetValue(entityType.ToString(), out HashSet<ElementId> categories) && categories != null)
+            if (_ifcEntityToCategoriesMap.TryGetValue(entityType.ToString(), out HashSet<ElementId> categories) && categories is not null)
                applicableCategories.UnionWith(categories);
 
             // Add categories that are exported to subtypes of the ifc entity type
@@ -388,16 +400,29 @@ namespace BIM.IFC.Export.UI
             }
          }
 
-         if (applicableCategories.Count == 0 && _defaultCategoryId != null)
+         if (applicableCategories.Count == 0 && _defaultCategoryId is not null)
             applicableCategories.Add(_defaultCategoryId);
 
          return applicableCategories;
       }
 
+      private static IFCVersion GetCanonicalIFCVersion(IFCSchemaFileVersion schemaFileVersion)
+      {
+         return schemaFileVersion switch
+         {
+            IFCSchemaFileVersion.IFC2X2 => IFCVersion.IFC2x2,
+            IFCSchemaFileVersion.IFC2X3 => IFCVersion.IFC2x3,
+            IFCSchemaFileVersion.IFC4 => IFCVersion.IFC4,
+            IFCSchemaFileVersion.IFC4RV => IFCVersion.IFC4RV,
+            IFCSchemaFileVersion.IFC4X3 => IFCVersion.IFC4x3,
+            _ => IFCVersion.Default
+         };
+      }
+
       private IFCEntityType GetEntityFromEntityType(IFCEntityType applicableEntityType, IFCVersion ifcVersion)
       {
          string entityName = applicableEntityType.ToString();
-         IfcSchemaEntityTree theTree = IfcSchemaEntityTree.GetEntityDictFor(ifcVersion);
+         IfcSchemaEntityTree theTree = IfcSchemaEntityTree.GetEntityDictFor(ifcVersion, null);
          int typeLen = 4;
          bool isType = entityName.EndsWith("Type", StringComparison.CurrentCultureIgnoreCase);
          if (!isType)
@@ -418,7 +443,7 @@ namespace BIM.IFC.Export.UI
          // Get the instance
          string instName = entityName.Substring(0, entityName.Length - typeLen);
          IfcSchemaEntityNode node = theTree.Find(instName);
-         if (node != null && !node.isAbstract)
+         if (node != null && !node.IsAbstract)
          {
             IFCEntityType instType = IFCEntityType.UnKnown;
             if (IFCEntityType.TryParse(instName, true, out instType))
@@ -427,7 +452,7 @@ namespace BIM.IFC.Export.UI
          else
          {
             // If not found, try non-abstract supertype derived from the type
-            node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(ifcVersion, instName);
+            node = IfcSchemaEntityTree.FindNonAbsInstanceSuperType(theTree, ifcVersion, instName);
             if (node != null)
             {
                IFCEntityType instType = IFCEntityType.UnKnown;
@@ -441,7 +466,7 @@ namespace BIM.IFC.Export.UI
 
       private Dictionary<ElementId, List<RevitParameterData>> GetCategoryParameters(HashSet<ElementId> applicableCategories, ApplicableParameterInfo applicableParamInfo)
       {
-         if ((applicableCategories?.Count ?? 0) == 0 || applicableParamInfo == null)
+         if ((applicableCategories?.Count ?? 0) == 0 || applicableParamInfo is null)
             return null;
 
          Dictionary<ElementId, List<RevitParameterData>> categoryParameters = new();
@@ -450,7 +475,7 @@ namespace BIM.IFC.Export.UI
          foreach (ElementId categoryId in applicableCategories)
          {
             Category category = Category.GetCategory(doc, categoryId);
-            if (category == null)
+            if (category is null)
                continue;
 
             List<RevitParameterData> applicableParameters = GetSingleCategoryParameters(category);
@@ -460,7 +485,7 @@ namespace BIM.IFC.Export.UI
             if ((applicableParameters?.Count ?? 0) == 0)
             {
                Category parentCategory = category.Parent;
-               if (parentCategory != null && !categoryParameters.ContainsKey(parentCategory.Id))
+               if (parentCategory is not null && !categoryParameters.ContainsKey(parentCategory.Id))
                {
                   applicableParameters = GetSingleCategoryParameters(parentCategory);
                   categoryToAdd = parentCategory;
@@ -484,53 +509,111 @@ namespace BIM.IFC.Export.UI
 
          Document document = IFCCommandOverrideApplication.TheDocument;
 
-         List<ElementId> categories = new List<ElementId>() { category.Id };
+         // We do this in two passes.
+         // 1. Get all project parameter elements.
+         // 2. Get all parameters in families.
 
-         // This isn't perfect, but it is the best API we can use at the moment.  It only gets filterable parameters,
-         // but that should be the vast majority of available parameters.
-         ICollection<ElementId> parameters = ParameterFilterUtilities.GetFilterableParametersInCommon(document, categories);
-         foreach (ElementId parameterId in parameters)
+         BindingMap map = IFCCommandOverrideApplication.TheBindings;
+
+         List<ElementId> categories = [category.Id];
+         ICollection<ElementId> parameterIds = ParameterFilterUtilities.GetFilterableParametersInCommon(document, categories);
+         foreach (ElementId parameterId in parameterIds)
          {
-            // For positive id parameters, we will get them from ElementBinding, which will tell us instance vs. type.
-            if (parameterId.Value > 0)
-               continue;
+            long parameterIdValue = parameterId.Value;
+            if (parameterIdValue > 0)
+            {
+               ParameterElement parameterElement = document.GetElement(parameterId) as ParameterElement;
 
-            BuiltInParameter builtInParameter = (BuiltInParameter)parameterId.Value;
-            ForgeTypeId forgeTypeId = ParameterUtils.GetParameterTypeId(builtInParameter);
-            if (forgeTypeId?.Empty() ?? true)
+               InternalDefinition parameterDefinition = parameterElement?.GetDefinition();
+               if (parameterDefinition is null)
+                  continue;
+               // Shared or extended parameter.	
+               Autodesk.Revit.DB.Binding binding = map.get_Item(parameterDefinition);
+               if (binding is null && parameterElement is not ExtendedParameterElement)
+                  continue;
+
+               ParameterType parameterType = (binding is not null) ?
+                  ((binding is TypeBinding) ? ParameterType.Type : ParameterType.Instance) :
+                  ParameterType.Extended;
+
+               applicableParameters.Add(new RevitParameterData()
+               {
+                  Name = parameterDefinition.Name,
+                  Id = parameterId,
+                  ParameterType = parameterType,
+                  DataType = parameterDefinition.GetDataType(),
+                  StorageType = StorageType.None
+               });
+
                continue;
-            
+            }
+
+            StorageType storageType = StorageType.None;
+
+            BuiltInParameter builtInParameter = (BuiltInParameter)parameterIdValue;
+            if (PropertyUtil.ProxyParameter.IsProxyParameter(builtInParameter))
+            {
+               storageType = StorageType.String;
+            }
+            else
+            {
+               ForgeTypeId forgeTypeId = ParameterUtils.GetParameterTypeId(builtInParameter);
+               if (forgeTypeId?.Empty() ?? true)
+                  continue;
+               storageType = document.GetTypeOfStorage(forgeTypeId);
+            }
+
             applicableParameters.Add(new RevitParameterData()
             {
                Name = LabelUtils.GetLabelFor(builtInParameter),
                Id = parameterId,
                ParameterType = ParameterType.Builtin,
-               StorageType = document.GetTypeOfStorage(forgeTypeId),
-               DataType = forgeTypeId
+               StorageType = storageType,
+               DataType = null
             });
          }
 
-         BindingMap map = document.ParameterBindings;
-         DefinitionBindingMapIterator it = map.ForwardIterator();
-         while (it.MoveNext())
+         FilteredElementCollector familySymbolCollector = new(document);
+         IList<Element> familySymbols = familySymbolCollector.OfClass(typeof(FamilySymbol)).ToElements();
+         long categoryIdValue = category.Id.Value;
+         HashSet<ElementId> visitedFamilies = [];
+         HashSet<string> foundNames = [];
+         foreach (FamilySymbol familySymbol in familySymbols)
          {
-            InternalDefinition definition = it.Key as InternalDefinition;
-            ElementBinding binding = it.Current as ElementBinding;
-            
-            if (binding == null || definition == null)
+            if ((long) familySymbol?.Category?.Id?.Value != categoryIdValue)
                continue;
 
-            if (!binding.Categories?.Contains(category) ?? true)
+            ElementId familyId = familySymbol.Family.Id;
+            if (visitedFamilies.Contains(familyId))
                continue;
+            visitedFamilies.Add(familyId);
 
-            applicableParameters.Add(new RevitParameterData()
+            ParameterSet parameterSet = familySymbol.Parameters;
+            foreach (Parameter parameter in parameterSet)
             {
-               Name = definition.Name,
-               Id = definition.Id,
-               ParameterType = (binding is TypeBinding) ? ParameterType.Type : ParameterType.Instance,
-               DataType = definition.GetDataType(),
-               StorageType = StorageType.None
-            });
+               ElementId parameterId = parameter?.Id ?? ElementId.InvalidElementId;
+               if (parameterId.Value < 0 || parameter.IsShared)
+                  continue;
+
+               InternalDefinition parameterDefinition = parameter.Definition as InternalDefinition;
+               if (parameterDefinition is null)
+                  continue;
+
+               // We will only include each one once.
+               string name = parameterDefinition.Name;
+               if (foundNames.Contains(name))
+                  continue;
+               foundNames.Add(name);
+
+               applicableParameters.Add(new RevitParameterData()
+               {
+                  Name = name,
+                  Id = parameterId,
+                  ParameterType = ParameterType.Type,
+                  DataType = parameterDefinition.GetDataType(),
+                  StorageType = parameter.StorageType
+               });
+            }
          }
 
          _categoryParametersCache.Add(category.Id, applicableParameters);
@@ -540,8 +623,8 @@ namespace BIM.IFC.Export.UI
 
       private bool PreselectParameter()
       {
-         if (SelectedRevitParameter == null ||
-            SelectedRevitParameter.Id == null || string.IsNullOrEmpty(SelectedRevitParameter.Name))
+         if (SelectedRevitParameter is null ||
+            SelectedRevitParameter.Id is null || string.IsNullOrEmpty(SelectedRevitParameter.Name))
             return false;
 
          PropertyFilterEnum filterEnum = PropertyFilterEnum.All;
@@ -554,7 +637,7 @@ namespace BIM.IFC.Export.UI
                 group.Value[filterEnum].FirstOrDefault(x => x.Name == SelectedRevitParameter.Name) :
                 group.Value[filterEnum].FirstOrDefault(x => x.Id == SelectedRevitParameter.Id);
 
-            if (initialSelection == null)
+            if (initialSelection is null)
                continue;
 
             initialSelection.IsChecked = true;
@@ -570,6 +653,7 @@ namespace BIM.IFC.Export.UI
          if (!_model.Data.TryGetValue(SelectedCategory, out var parameters) ||
             !parameters.TryGetValue(PropertyFilterEnum.All, out var allParameters) ||
             !parameters.TryGetValue(PropertyFilterEnum.Builtin, out var builtinParameters) ||
+            !parameters.TryGetValue(PropertyFilterEnum.Extended, out var extendedParameters) ||
             !parameters.TryGetValue(PropertyFilterEnum.Instance, out var instanceParameters) ||
             !parameters.TryGetValue(PropertyFilterEnum.Type, out var typeParameters))
             return;
@@ -577,6 +661,7 @@ namespace BIM.IFC.Export.UI
          ParametersFilter.Clear();
          ParametersFilter.Add(new RevitParameterFilter { Name = Properties.Resources.FilterAllProperties, Items = allParameters });
          ParametersFilter.Add(new RevitParameterFilter { Name = Properties.Resources.FilterBuiltinProperties, Items = builtinParameters });
+         ParametersFilter.Add(new RevitParameterFilter { Name = Properties.Resources.FilterExtendedProperties, Items = extendedParameters });
          ParametersFilter.Add(new RevitParameterFilter { Name = Properties.Resources.FilterInstanceProperties, Items = instanceParameters });
          ParametersFilter.Add(new RevitParameterFilter { Name = Properties.Resources.FilterTypeProperties, Items = typeParameters });
 
@@ -593,7 +678,7 @@ namespace BIM.IFC.Export.UI
       private static void EnsureCategoryParametersCacheInitialized()
       {
          Document document = IFCCommandOverrideApplication.TheDocument;
-         if (document == null)
+         if (document is null)
             return;
 
          HashSet<long> processedCategoryIds = new();
@@ -601,12 +686,12 @@ namespace BIM.IFC.Export.UI
 
          foreach (var categorySet in _ifcEntityToCategoriesMap.Values)
          {
-            if (categorySet == null)
+            if (categorySet is null)
                continue;
 
             foreach (ElementId categoryId in categorySet)
             {
-               if (categoryId == null || categoryId == ElementId.InvalidElementId)
+               if (categoryId is null || categoryId == ElementId.InvalidElementId)
                   continue;
 
                long categoryKey = categoryId?.Value ?? -1;
@@ -614,7 +699,7 @@ namespace BIM.IFC.Export.UI
                   continue;
 
                Category category = Category.GetCategory(document, categoryId);
-               if (category == null)
+               if (category is null)
                   continue;
 
                processedCategoryIds.Add(categoryKey);
@@ -625,11 +710,11 @@ namespace BIM.IFC.Export.UI
          if (categoriesToProcess.Count == 0)
          {
             List<Category> exportableCategories = GetExportableCategories();
-            if (exportableCategories != null)
+            if (exportableCategories is not null)
             {
                foreach (Category category in exportableCategories)
                {
-                  if (category == null)
+                  if (category is null)
                      continue;
 
                   long categoryId = category.Id?.Value ?? -1;
@@ -645,7 +730,7 @@ namespace BIM.IFC.Export.UI
          foreach (Category category in categoriesToProcess)
          {
             ElementId categoryId = category?.Id;
-            if (category == null || categoryId == null || categoryId == ElementId.InvalidElementId || _categoryParametersCache.ContainsKey(categoryId))
+            if (category is null || categoryId is null || categoryId == ElementId.InvalidElementId || _categoryParametersCache.ContainsKey(categoryId))
                continue;
 
             List<RevitParameterData> parameters = GetSingleCategoryParameters(category);
@@ -675,8 +760,8 @@ namespace BIM.IFC.Export.UI
                break;
          }
 
-         if (SelectedRevitParameter == null ||
-            SelectedRevitParameter.Id != null && !string.IsNullOrEmpty(SelectedRevitParameter.Name))
+         if (SelectedRevitParameter is null ||
+            SelectedRevitParameter.Id is not null && !string.IsNullOrEmpty(SelectedRevitParameter.Name))
             DialogResult = true;
 
          Close();
@@ -690,11 +775,11 @@ namespace BIM.IFC.Export.UI
       private void radioButton_Parameter_Checked(object sender, RoutedEventArgs e)
       {
          RadioButton radioButton = sender as RadioButton;
-         if (e == null || radioButton == null)
+         if (e is null || radioButton is null)
             return;
 
          ParameterListItem checkedListItem = radioButton.DataContext as ParameterListItem;
-         if (checkedListItem == null)
+         if (checkedListItem is null)
             return;
 
          ElementId checkedItemId = checkedListItem.Id;
@@ -723,17 +808,17 @@ namespace BIM.IFC.Export.UI
 
       private void comboBox_PropertyFilter_SelectionChanged(object sender, SelectionChangedEventArgs e)
       {
-         if (SelectedRevitParameter == null || (SelectedRevitParameter.Id != null
+         if (SelectedRevitParameter is null || (SelectedRevitParameter.Id is not null
             && !string.IsNullOrEmpty(SelectedRevitParameter.Name))
             || string.IsNullOrEmpty(SelectedProperty))
             return;
 
          RevitParameterFilter revitParameters = comboBox_PropertyFilter.SelectedItem as RevitParameterFilter;
-         if (revitParameters == null)
+         if (revitParameters is null)
             return;
 
          ParameterListItem parameterItem = revitParameters.Items?.FirstOrDefault(x => string.Compare(x.Name, SelectedProperty) == 0);
-         if (parameterItem == null)
+         if (parameterItem is null)
             return;
 
          parameterItem.IsChecked = true;
@@ -759,19 +844,19 @@ namespace BIM.IFC.Export.UI
          List<Category> categories = new();
 
          Categories settingsCategories = IFCCommandOverrideApplication.TheDocument.Settings.Categories;
-         if (settingsCategories == null)
+         if (settingsCategories is null)
             return categories;
 
          // Get top-level categories from the settings
          List<Category> topLevelCategories = settingsCategories.Cast<Category>().ToList();
-         if (topLevelCategories == null)
+         if (topLevelCategories is null)
             return categories;
 
          // Add subcategories to the list
          List<Category> allCategories = new();
          foreach (Category category in topLevelCategories)
          {
-            if (category == null || category.Id == ElementId.InvalidElementId)
+            if (category is null || category.Id == ElementId.InvalidElementId)
                continue;
 
             allCategories.Add(category);
@@ -781,7 +866,7 @@ namespace BIM.IFC.Export.UI
             {
                Category subCategory = it.Current as Category;
 
-               if (subCategory == null || subCategory.Id == ElementId.InvalidElementId)
+               if (subCategory is null || subCategory.Id == ElementId.InvalidElementId)
                   continue;
 
                allCategories.Add(subCategory);
@@ -790,7 +875,7 @@ namespace BIM.IFC.Export.UI
 
          // Filter categories based on exportability to IFC
          return allCategories.Where(c =>
-            c != null &&
+            c is not null &&
             c.IsValid &&
             c.IsVisibleInUI &&
             !c.IsTagCategory &&
@@ -811,7 +896,7 @@ namespace BIM.IFC.Export.UI
 
          foreach (Category category in categories)
          {
-            if (category == null || category.Id == ElementId.InvalidElementId)
+            if (category is null || category.Id == ElementId.InvalidElementId)
                continue;
 
             if (category.BuiltInCategory == BuiltInCategory.OST_GenericModel)
@@ -838,7 +923,7 @@ namespace BIM.IFC.Export.UI
 
       private static void ProcessSpecialCases(Category category, ref ExportIFCCategoryInfo exportInfo)
       {
-         if (category?.Parent == null || exportInfo == null)
+         if (category?.Parent is null || exportInfo is null)
             return;
 
          string entityName = exportInfo.IFCEntityName;
@@ -854,7 +939,7 @@ namespace BIM.IFC.Export.UI
 
       private static bool IsValidCategoryForParameterMapping(Category category)
       {
-         if (category == null)
+         if (category is null)
             return false;
 
          if (category.BuiltInCategory == BuiltInCategory.OST_ProjectInformation)
@@ -886,10 +971,10 @@ namespace BIM.IFC.Export.UI
 
       public bool IsApplicableParameter(RevitParameterData parameterData)
       {
-         if (parameterData == null)
+         if (parameterData is null)
             return false;
 
-         bool unsetDataType = parameterData.DataType == null || parameterData.DataType.Empty();
+         bool unsetDataType = parameterData.DataType is null || parameterData.DataType.Empty();
          bool unsetStorageType = parameterData.StorageType == StorageType.None;
 
          if (unsetDataType && unsetStorageType)

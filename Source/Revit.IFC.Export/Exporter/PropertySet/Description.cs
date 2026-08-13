@@ -39,7 +39,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <summary>
       /// The name of the property or quantity set.
       /// </summary>
-      public string Name { get; set; } = String.Empty;
+      public string Name { get; set; } = string.Empty;
 
       /// <summary>
       /// The optional description of the property set or quantity.  Null by default.
@@ -54,9 +54,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <summary>
       /// The type of element appropriate for this property or quantity set.
       /// </summary>
-      public HashSet<IFCEntityType> EntityTypes { get; } = new HashSet<IFCEntityType>();
+      public HashSet<IFCEntityType> EntityTypes { get; } = [];
 
       private string m_ObjectType = null;
+      
       /// <summary>
       /// The object type of element appropriate for this property or quantity set.
       /// Primarily used for identifying proxies.
@@ -88,50 +89,40 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       }
 
       /// <summary>
-      /// The pre-defined type of element appropriate for this property or quantity set.
+      /// The pre-defined type(s) of element appropriate for this property or quantity set.
       /// Primarily used for identifying sub-types of MEP objects.
+      /// A property set with multiple predefined types applies to elements matching any of them.
       /// </summary>
-      /// <remarks>Currently limited to one entity type.</remarks>
-      public string PredefinedType { get; set; } = string.Empty;
+      public HashSet<string> PredefinedTypes { get; set; } = new(StringComparer.InvariantCultureIgnoreCase);
+
+      /// <summary>
+      /// Whether this description is restricted to one or more predefined types.
+      /// </summary>
+      public bool HasPredefinedType => PredefinedTypes.Any(pt => !string.IsNullOrEmpty(pt));
 
       /// <summary>
       /// The redirect calculator associated with this property or quantity set.
       /// </summary>
       public DescriptionCalculator DescriptionCalculator { get; set; }
 
-      /// <summary>
-      /// Identifies if the input handle is sub type of one IFCEntityType in the EntityTypes list.
-      /// </summary>
-      /// <param name="handle">The handle.</param>
-      /// <returns>True if it is sub type, false otherwise.</returns>
-      private bool IsSubTypeOfEntityTypes(IFCAnyHandle handle)
+      private bool IsSubTypeOfEntityTypes(IFCEntityType ifcEntityType, out bool isStrictSubtype)
       {
-         // Note that although EntityTypes is represented as a set, we still need to go through each item in the last to check for subtypes.
-         foreach (IFCEntityType entityType in EntityTypes)
-         {
-            if (IFCAnyHandleUtil.IsSubTypeOf(handle, entityType))
-               return true;
-         }
-         return false;
-      }
+         isStrictSubtype = false;
+         if (EntityTypes.Contains(ifcEntityType))
+            return true;
 
-      /// <summary>
-      /// 
-      /// </summary>
-      /// <param name="handle"></param>
-      /// <returns></returns>
-      private bool IsSubTypeOfEntityTypes(IFCEntityType ifcEntityType)
-      {
-         IFCVersion ifcVersion = ExporterCacheManager.ExportOptionsCache.FileVersion;
-         var ifcEntitySchemaTree = IfcSchemaEntityTree.GetEntityDictFor(ExporterCacheManager.ExportOptionsCache.FileVersion);
-         if (ifcEntitySchemaTree == null || ifcEntitySchemaTree.IfcEntityDict == null || ifcEntitySchemaTree.IfcEntityDict.Count == 0)
+         IfcSchemaEntityTree ifcEntitySchemaTree = ExporterCacheManager.IFCSchemaEntityTree;
+         if ((ifcEntitySchemaTree?.IfcEntityDict?.Count ?? 0) == 0)
             return false;
 
-         // Note that although EntityTypes is represented as a set, we still need to go through each item in the last to check for subtypes.
+         // If we didn't match, check for strict subtype.
          foreach (IFCEntityType entityType in EntityTypes)
          {
-            if (IfcSchemaEntityTree.IsSubTypeOf(ifcVersion, ifcEntityType.ToString(), entityType.ToString(), strict: false))
+            if (ifcEntitySchemaTree.IsStrictSubTypeOf(ifcEntityType, entityType))
+            {
+               isStrictSubtype = true;
                return true;
+            }
          }
          return false;
       }
@@ -144,13 +135,14 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <returns>True if it matches, false otherwise.</returns>
       public bool IsAppropriateType(IFCAnyHandle handle)
       {
-         if (handle == null || !IsSubTypeOfEntityTypes(handle))
+         if (handle == null)
             return false;
-         if (string.IsNullOrEmpty(ObjectType))
-            return true;
 
          IFCEntityType entityType = IFCAnyHandleUtil.GetEntityType(handle);
-         return EntityTypes.Contains(entityType);
+         if (!IsSubTypeOfEntityTypes(entityType, out bool isStrictSubtype))
+            return false;
+         
+         return string.IsNullOrEmpty(ObjectType) || !isStrictSubtype;
       }
 
       /// <summary>
@@ -160,7 +152,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <returns>true if matches</returns>
       public bool IsAppropriateEntityAndObjectType(IFCEntityType entity, string objectType)
       {
-         if (entity == IFCEntityType.UnKnown || !IsSubTypeOfEntityTypes(entity))
+         if (entity == IFCEntityType.UnKnown || !IsSubTypeOfEntityTypes(entity, out _))
          {
             return false;
          }
@@ -204,7 +196,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          if (!EntityTypes.Any())
             return Name;
 
-         string entityName = EntityTypes.First().ToString();
+         string entityName = IFCAnyHandleUtil.GetIFCEntityTypeName(EntityTypes.First());
          if (string.IsNullOrEmpty(entityName) || !entityName.StartsWith("Ifc"))
             return Name;
 

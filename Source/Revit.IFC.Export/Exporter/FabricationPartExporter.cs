@@ -19,9 +19,7 @@
 
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
-using Revit.IFC.Common.Enums;
 using Revit.IFC.Export.Utility;
-using System;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -57,34 +55,23 @@ namespace Revit.IFC.Export.Exporter
           GeometryElement geometryElement, ProductWrapper productWrapper)
       {
          ElementId fabCategory = CategoryUtil.GetSafeCategoryId(fabPart);
-         if (fabCategory != new ElementId(BuiltInCategory.OST_FabricationDuctwork) && fabCategory != new ElementId(BuiltInCategory.OST_FabricationPipework))
-         {
-            // Let the containment and stiffener parts be handled by the generic exporter.
-            return GenericElementExporter.ExportElement(exporterIFC, fabPart, geometryElement, productWrapper);
-         }
 
-         string ifcEnumType;
-         // Let the GetExportTypeImpl method return the correct export type for fabrication straights and fittings.
-         IFCExportInfoPair exportType = ExporterUtil.GetProductExportType(fabPart, out ifcEnumType);
-
-
-
-         // Check the intended IFC entity or type name is in the exclude list specified in the UI
-         IFCEntityType elementClassTypeEnum;
-         if (Enum.TryParse(exportType.ExportInstance.ToString(), out elementClassTypeEnum)
-            || Enum.TryParse(exportType.ExportType.ToString(), out elementClassTypeEnum))
-         {
-            if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
-               return false;
-         }
-
-         bool exported = GenericMEPExporter.Export(exporterIFC, fabPart, geometryElement, exportType, ifcEnumType, productWrapper);
-         if (exported)
+         bool exported = GenericElementExporter.ExportElement(exporterIFC, fabPart, geometryElement, productWrapper);
+         
+         // Fabrication containment and stiffener parts don't need MEP cache registration.
+         if (exported && IsFabricationDuctworkOrPipework(fabCategory))
          {
             // Similar as the design elements, we will add a IfcRelCoversBldgElements for the fabrication parts during the end of export.
             ExporterCacheManager.MEPCache.CoveredElementsCache[fabPart.Id] = fabCategory;
          }
+
          return exported;
+      }
+
+      private static bool IsFabricationDuctworkOrPipework(ElementId categoryId)
+      {
+         return categoryId == new ElementId(BuiltInCategory.OST_FabricationDuctwork)
+             || categoryId == new ElementId(BuiltInCategory.OST_FabricationPipework);
       }
    }
 }

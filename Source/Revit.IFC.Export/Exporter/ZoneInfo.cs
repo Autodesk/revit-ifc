@@ -133,8 +133,8 @@ namespace Revit.IFC.Export.Exporter
             return false;
 
          string zoneNameLabel = GetPropZoneLabel(ZoneInfoLabel.Name);
-         string zoneName;
-         if (ParameterUtil.GetOptionalStringValueFromElementOrSymbol(element, zoneNameLabel, out zoneName) == null)
+         (_, string zoneName) = ParameterUtil.GetStringValueFromElementOrSymbol(element, null, true, zoneNameLabel);
+         if (string.IsNullOrEmpty(zoneName))
             return false;
 
          CurrentPropZoneValues = new Dictionary<ZoneInfoLabel, string>();
@@ -148,7 +148,7 @@ namespace Revit.IFC.Export.Exporter
                   continue;
 
                string zoneValue;
-               ParameterUtil.GetStringValueFromElementOrSymbol(element, propZoneLabel.Value, out zoneValue);
+               (_, zoneValue) = ParameterUtil.GetStringValueFromElementOrSymbol(element, null, false, propZoneLabel.Value);
                CurrentPropZoneValues.Add(propZoneLabel.Key, zoneValue);
             }
          }
@@ -350,7 +350,7 @@ namespace Revit.IFC.Export.Exporter
       /// Get the name of the net planned area property, depending on the current schema, for levels and zones.
       /// </summary>
       /// <returns>The name of the net planned area property.</returns>
-      /// <remarks>Note that PSet_SpaceCommon has had the property "NetPlannedArea" since IFC2x3.</remarks>
+      /// <remarks>Note that Pset_SpaceCommon has had the property "NetPlannedArea" since IFC2x3.</remarks>
       static private string GetLevelAndZoneNetPlannedAreaName()
       {
          return ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 ? "NetAreaPlanned" : "NetPlannedArea";
@@ -360,14 +360,14 @@ namespace Revit.IFC.Export.Exporter
       /// Get the name of the gross planned area property, depending on the current schema, for levels and zones.
       /// </summary>
       /// <returns>The name of the net planned area property.</returns>
-      /// <remarks>Note that PSet_SpaceCommon has had the property "GrossPlannedArea" since IFC2x3.</remarks>
+      /// <remarks>Note that Pset_SpaceCommon has had the property "GrossPlannedArea" since IFC2x3.</remarks>
       static private string GetLevelAndZoneGrossPlannedAreaName()
       {
          return ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4 ? "GrossAreaPlanned" : "GrossPlannedArea";
       }
 
       /// <summary>
-      /// Collect the information needed to create PSet_ZoneCommon.
+      /// Collect the information needed to create Pset_ZoneCommon.
       /// </summary>
       /// <param name="file">The IFC file.</param>
       /// <param name="element">The Revit element.</param>
@@ -419,17 +419,17 @@ namespace Revit.IFC.Export.Exporter
       }
 
       /// <summary>
-      /// Create the PSet_ZoneCommon property set, if applicable.
+      /// Create the Pset_ZoneCommon property set, if applicable.
       /// </summary>
       /// <param name="file">The IFCFile parameter.</param>
-      /// <returns>The handle to the PSet_ZoneCommon property set, if created.</returns>
+      /// <returns>The handle to the Pset_ZoneCommon property set, if created.</returns>
       public IFCAnyHandle CreateZoneCommonPSetData(IFCFile file)
       {
          if (ZoneCommonHandles.Count == 0 || ZoneCommonGUID == null)
             return null;
 
          return IFCInstanceExporter.CreatePropertySet(file, ZoneCommonGUID,
-            ExporterCacheManager.OwnerHistoryHandle, "PSet_ZoneCommon", null,
+            ExporterCacheManager.OwnerHistoryHandle, "Pset_ZoneCommon", null,
             ZoneCommonHandles.Values.ToHashSet());
       }
 
@@ -441,16 +441,14 @@ namespace Revit.IFC.Export.Exporter
       /// <summary>
       /// The associated room handles.
       /// </summary>
-      public HashSet<IFCAnyHandle> RoomHandles { get; } = new HashSet<IFCAnyHandle>();
+      public HashSet<IFCAnyHandle> RoomHandles { get; } = [];
 
       /// <summary>
       /// A list of the names of already created IfcClassificationReferences.
       /// </summary>
-      public IDictionary<string, IFCAnyHandle> ClassificationReferences { get; set; } = 
-         new Dictionary<string, IFCAnyHandle>();
+      public Dictionary<string, IFCAnyHandle> ClassificationReferences { get; set; } = [];
 
-      public IDictionary<string, IFCAnyHandle> ZoneCommonHandles { get; set; } =
-         new Dictionary<string, IFCAnyHandle>();
+      public Dictionary<string, IFCAnyHandle> ZoneCommonHandles { get; set; } = [];
 
       /// <summary>
       /// The GUID for the Pset_ZoneCommon.

@@ -22,6 +22,28 @@ namespace Revit.IFC.Export.Toolkit
          return GetValidIFCPredefinedTypeType(/*element,*/ typeName, null, theTypeEnumstr);
       }
 
+      public static HashSet<(string, string)> DeprecatedValues4 = new()
+      {
+         ("IFCWALLTYPE", "ELEMENTEDCASE"),
+         ("IFCWALLTYPE", "POLYGONAL"),
+         ("IFCWALLTYPE", "STANDARD")
+      };
+
+      public static HashSet<(string, string)> DeprecatedValues4x3 = new()
+      {
+         ("IFCWALLTYPE", "POLYGONAL"),
+         ("IFCWALLTYPE", "STANDARD")
+      };
+
+      private static bool IsDeprecatedPredefinedType(IFCVersion version, string theTypeEnumStr, string predefinedType)
+      {
+         if (version < IFCVersion.IFC4 || string.IsNullOrEmpty(theTypeEnumStr) || string.IsNullOrEmpty(predefinedType))
+            return false;
+
+         (string, string) valueToCheck = (theTypeEnumStr.ToUpper(), predefinedType.ToUpper());
+         return (version == IFCVersion.IFC4) ? DeprecatedValues4.Contains(valueToCheck) : DeprecatedValues4x3.Contains(valueToCheck);
+      }
+
       /// <summary>
       /// Get the IFC type from shared parameters, from a type name, or from a default value.
       /// </summary>
@@ -51,13 +73,16 @@ namespace Revit.IFC.Export.Toolkit
                ifcVer = IFCVersion.IFC4;
             }
 
-            IfcSchemaEntityTree schemaTree = IfcSchemaEntityTree.GetEntityDictFor(ifcVer);
+            IfcSchemaEntityTree schemaTree = IfcSchemaEntityTree.GetEntityDictFor(ifcVer, null);
             if (schemaTree != null && typeName != null)
             {
                IList<string> pdefTypeList = IfcSchemaEntityTree.GetPredefinedTypeList(schemaTree, theTypeEnumStr);
                if (pdefTypeList != null && pdefTypeList.Contains(typeName, StringComparer.InvariantCultureIgnoreCase))
                   enumValue = typeName;
             }
+
+            if (IsDeprecatedPredefinedType(ifcVer, theTypeEnumStr, enumValue))
+               enumValue = null;
          }
 
          if (string.IsNullOrEmpty(enumValue) && !string.IsNullOrEmpty(defaultValue))

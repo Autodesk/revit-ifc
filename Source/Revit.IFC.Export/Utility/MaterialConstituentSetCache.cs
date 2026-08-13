@@ -120,7 +120,7 @@ namespace Revit.IFC.Export.Utility
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(constituentSetHandle))
             return;
 
-         if (elementId != ElementId.InvalidElementId && !ElementIdToHandle.ContainsKey(elementId.Value))
+         if (!MathUtil.IsInvalidElementId(elementId) && !ElementIdToHandle.ContainsKey(elementId.Value))
             ElementIdToHandle[elementId.Value] = constituentSetHandle;
 
          if (!MatConstituentSetDictionary.ContainsKey(constituents))

@@ -88,12 +88,12 @@ namespace BIM.IFC.Export.UI
       /// <summary>
       /// An arbitrary type string, if PredefinedType is user defined.
       /// </summary>
-      public string UserDefinedType 
-      { 
-         get 
-         { 
-            return m_UserDefinedType; 
-         } 
+      public string UserDefinedType
+      {
+         get
+         {
+            return m_UserDefinedType;
+         }
          set
          {
             m_UserDefinedType = value;
@@ -251,7 +251,7 @@ namespace BIM.IFC.Export.UI
          {
             bool isCategory = string.IsNullOrEmpty(mappingPair.Key.SubCategoryName);
             bool isSpecialSubCategory = (mappingPair.Key.CustomSubCategoryId != CustomSubCategoryId.None);
-            
+
             string categoryName;
             if (isCategory)
             {
@@ -265,7 +265,7 @@ namespace BIM.IFC.Export.UI
             {
                categoryName = mappingPair.Key.SubCategoryName;
             }
-            
+
 
             // Export all checkbox becomes indeterminate
             if ((!mappingPair.Value.IFCExportFlag) && (ExportFlagAll != null))
@@ -476,8 +476,8 @@ namespace BIM.IFC.Export.UI
 
       private void button_Add_Click(object sender, RoutedEventArgs e)
       {
-         IFCTemplateData data = new(Properties.Resources.NewTemplateDefaultName, 
-            IFCCategoryTemplate.ListNames(IFCCommandOverrideApplication.TheDocument), 
+         IFCTemplateData data = new(Properties.Resources.NewTemplateDefaultName,
+            IFCCategoryTemplate.ListNames(IFCCommandOverrideApplication.TheDocument),
             isCategoryMapping: true, IFCTemplateData.DialogTypeEnum.Template);
          IFCNewTemplate settingsTemplateDialog = new(data);
          settingsTemplateDialog.Owner = this;
@@ -545,7 +545,7 @@ namespace BIM.IFC.Export.UI
             if (parentMappingInfo != null)
                parentMappingInfo.ExportFlag = UpdateCheckboxFlag(currMappingNode.Parent.Children);
          }
-         
+
          ExportFlagAll = UpdateCheckboxFlag(currentManager.ToList());
       }
 
@@ -557,7 +557,7 @@ namespace BIM.IFC.Export.UI
          bool existsUnchecked = nodesList?.Any(node => (node.MappingInfo?.ExportFlag == false)) ?? false;
          if (existsUnchecked)
             return null;
-         
+
          return true;
       }
 
@@ -773,8 +773,14 @@ namespace BIM.IFC.Export.UI
                string fileName = ModelPathUtils.ConvertModelPathToUserVisiblePath(modelPath);
                currTemplate.ExportToFile(IFCCommandOverrideApplication.TheDocument, fileName);
             }
-            catch (Exception)
+            catch (IOException ex)
             {
+               IFCCommandOverrideApplication.TheDocument?.Application?.WriteJournalComment("IFC warning: Category mapping export file write failed - " + ex.Message, true);
+               return;
+            }
+            catch (Autodesk.Revit.Exceptions.FileAccessException ex)
+            {
+               IFCCommandOverrideApplication.TheDocument?.Application?.WriteJournalComment("IFC warning: Category mapping export file write failed - " + ex.Message, true);
                return;
             }
          }
@@ -784,7 +790,7 @@ namespace BIM.IFC.Export.UI
       {
          FileOpenDialog openDialog = new FileOpenDialog(Properties.Resources.ExportCategoryMappingFilter);
          openDialog.Title = Properties.Resources.ImportCategoryMappingDialogName;
-         
+
          if (openDialog.Show() == ItemSelectionDialogResult.Confirmed)
          {
             // TODO: Support cloud paths.
@@ -796,7 +802,7 @@ namespace BIM.IFC.Export.UI
             try
             {
                IFCCategoryTemplate importedTemplate = IFCCategoryTemplate.ImportFromFile(IFCCommandOverrideApplication.TheDocument, fileName, uniqueTemplateName);
-               
+
                if (importedTemplate != null && !importedTemplate.IsValidCategoryMappingFile)
                {
                   using (Autodesk.Revit.UI.TaskDialog taskDialog = new Autodesk.Revit.UI.TaskDialog(Properties.Resources.IFCExport))
@@ -810,8 +816,24 @@ namespace BIM.IFC.Export.UI
 
                importedTemplate?.UpdateCategoryList(IFCCommandOverrideApplication.TheDocument);
             }
-            catch (Exception)
+            catch (IOException ex)
             {
+               IFCCommandOverrideApplication.TheDocument?.Application?.WriteJournalComment("IFC warning: Category mapping import file read failed - " + ex.Message, true);
+               return;
+            }
+            catch (Autodesk.Revit.Exceptions.FileAccessException ex)
+            {
+               IFCCommandOverrideApplication.TheDocument?.Application?.WriteJournalComment("IFC warning: Category mapping import file read failed - " + ex.Message, true);
+               return;
+            }
+            catch (Autodesk.Revit.Exceptions.InvalidOperationException ex)
+            {
+               IFCCommandOverrideApplication.TheDocument?.Application?.WriteJournalComment("IFC warning: Category mapping import failed - " + ex.Message, true);
+               return;
+            }
+            catch (Autodesk.Revit.Exceptions.ArgumentException ex)
+            {
+               IFCCommandOverrideApplication.TheDocument?.Application?.WriteJournalComment("IFC warning: Category mapping import failed - " + ex.Message, true);
                return;
             }
 
@@ -829,7 +851,7 @@ namespace BIM.IFC.Export.UI
 
          UpdateTemplateFromGrid();
 
-         IFCTemplateData data = new(currentTemplate.Name, GetAllTemplateNames(), 
+         IFCTemplateData data = new(currentTemplate.Name, GetAllTemplateNames(),
             isCategoryMapping: true, IFCTemplateData.DialogTypeEnum.Template);
          data.MakeUniqueName();
 
@@ -846,11 +868,17 @@ namespace BIM.IFC.Export.UI
             {
                IFCCategoryTemplate importedTemplate = currentTemplate.CopyTemplate(IFCCommandOverrideApplication.TheDocument, copyTemplateName);
             }
-            catch (Exception)
+            catch (Autodesk.Revit.Exceptions.InvalidOperationException ex)
             {
+               IFCCommandOverrideApplication.TheDocument?.Application?.WriteJournalComment("IFC warning: Category mapping copy failed - " + ex.Message, true);
                return;
             }
-            
+            catch (Autodesk.Revit.Exceptions.ArgumentException ex)
+            {
+               IFCCommandOverrideApplication.TheDocument?.Application?.WriteJournalComment("IFC warning: Category mapping copy failed - " + ex.Message, true);
+               return;
+            }
+
             listBox_MappingTemplates.Items.Add(copyTemplateName);
             listBox_MappingTemplates.SelectedItem = copyTemplateName;
          }
@@ -902,7 +930,7 @@ namespace BIM.IFC.Export.UI
          {
             return;
          }
-         
+
          ExportIFCCategoryKey key = CreateKeyFromMappingNode(currMappingNode);
          if (key == null)
          {
@@ -964,7 +992,7 @@ namespace BIM.IFC.Export.UI
                parentMappingInfo.ExportFlag = UpdateCheckboxFlag(currMappingNode.Parent.Children);
          }
       }
-         
+
       private void button_Reset_Click(object sender, RoutedEventArgs e)
       {
          IFCCategoryTemplate currentTemplate = GetCurrentTemplate();

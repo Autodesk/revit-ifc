@@ -96,14 +96,15 @@ namespace Revit.IFC.Export.Exporter.PropertySet
             }
             else
             {
-               if (PropertyUtil.GetQuantityDoubleValueFromParameter(element, RevitParameterName, RevitBuiltInParameter, parentEntry.QuantityType, out double dblVal))
+               success = PropertyUtil.GetQuantityDoubleValueFromParameter(element, RevitParameterName, RevitBuiltInParameter, parentEntry.QuantityType, out double dblVal);
+               if (success)
                   val = dblVal;
             }
          }
          
          if (PropertyCalculator != null && !success)
          {
-            success = PropertyCalculator.Calculate(exporterIFC, extrusionCreationData, element, elementType, this);
+            success = PropertyCalculator.Calculate(exporterIFC, null, extrusionCreationData, element, elementType, this);
             if (success && parentEntry.QuantityType == QuantityType.Count)
                val = PropertyCalculator.GetIntValue();
             else
@@ -127,7 +128,8 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                   break;
                case QuantityType.Weight:
                case QuantityType.Mass:
-                  // NOTE: There is no distinction between weight and mass currently in IFC4.quantityHnd = IFCInstanceExporter.CreateQuantityWeight(file, parentEntry.PropertyName, parentEntry.MethodOfMeasurement, null, (double)val);
+                  // NOTE: There is no distinction between weight and mass currently in IFC4.
+                  quantityHnd = IFCInstanceExporter.CreateQuantityWeight(file, parentEntry.PropertyName, parentEntry.MethodOfMeasurement, null, (double)val);
                   break;
                case QuantityType.Count:
                   quantityHnd = IFCInstanceExporter.CreateQuantityCount(file, parentEntry.PropertyName, parentEntry.MethodOfMeasurement, null, (int)val);

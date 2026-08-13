@@ -98,7 +98,7 @@ namespace Revit.IFC.Export.Utility
          IFCAnyHandle overrideContainerHnd = null;
          if (ExporterCacheManager.LevelInfoCache.LevelsByName.TryGetValue(containerName, out ElementId elementId))
          {
-            if (elementId != ElementId.InvalidElementId)
+            if (!MathUtil.IsInvalidElementId(elementId))
             {
                IFCLevelInfo levelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(elementId);
                if (levelInfo != null)
@@ -328,7 +328,7 @@ namespace Revit.IFC.Export.Utility
             if (levelParameter != null && levelParameter.StorageType == StorageType.ElementId)
             {
                ElementId levelId = levelParameter.AsElementId();
-               if (levelId != ElementId.InvalidElementId)
+               if (!MathUtil.IsInvalidElementId(levelId))
                   return levelId;
             }
          }
@@ -343,13 +343,13 @@ namespace Revit.IFC.Export.Utility
          else if (elem is SlabEdge)
          {
             ElementId levelId = ExporterCacheManager.LevelInfoCache.GetSlabEdgeLevelId(elem.Id);
-            if (levelId != ElementId.InvalidElementId)
+            if (!MathUtil.IsInvalidElementId(levelId))
                return levelId;
          }
          else if (elem is Part)
          {
             ElementId levelId = elem.LevelId;
-            if (levelId != null && levelId != ElementId.InvalidElementId)
+            if (!MathUtil.IsInvalidElementId(levelId))
             {
                return levelId;
             }
@@ -363,6 +363,16 @@ namespace Revit.IFC.Export.Utility
                {
                   return hostElement.LevelId;
                }
+            }
+         }
+         else if (elem is FabricationPartInsulationLining insulationOrLining)
+         {
+            ElementId ownerPartId = insulationOrLining.OwnerId;
+            if (ownerPartId != ElementId.InvalidElementId)
+            {
+               Element ownerPart = elem.Document.GetElement(ownerPartId);
+               if (ownerPart != null)
+                  return GetBaseLevelIdForElement(ownerPart);
             }
          }
 
@@ -457,7 +467,7 @@ namespace Revit.IFC.Export.Utility
             // If the base level of the element is set, we will start "looking" at that level.  Anything below the base level will be included with the base level.
             // We will only do this if the base level is a building story.
             ElementId firstLevelId = GetBaseLevelIdForElement(element);
-            bool foundFirstLevel = firstLevelId == ElementId.InvalidElementId;
+            bool foundFirstLevel = MathUtil.IsInvalidElementId(firstLevelId);
 
             IList<ElementId> levelIds = ExporterCacheManager.LevelInfoCache.GetBuildingStoriesByElevation();
             foreach (ElementId levelId in levelIds)
@@ -470,7 +480,7 @@ namespace Revit.IFC.Export.Utility
                      foundFirstLevel = true;
                }
 
-               if (skipToNextLevel != ElementId.InvalidElementId && levelId != skipToNextLevel)
+               if (!MathUtil.IsInvalidElementId(skipToNextLevel) && levelId != skipToNextLevel)
                   continue;
 
                IFCLevelInfo levelInfo = ExporterCacheManager.LevelInfoCache.GetLevelInfo(levelId);
@@ -511,7 +521,7 @@ namespace Revit.IFC.Export.Utility
                if (ranges.Count > 0)
                {
                   IFCRange lastSpan = ranges.Last();
-                  if (lastSpan.End > currentSpan.End - MathUtil.Eps())
+                  if (lastSpan.End > currentSpan.End - MathUtil.Eps)
                      continue;
 
                   currentSpan.Start = Math.Max(currentSpan.Start, lastSpan.End);
@@ -528,24 +538,26 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Gets IFCElementComposition types having "COMPLEX","ELEMENT","PARTIAL" values for levels
       /// </summary>
-      /// <param name="element">The element </param>
-      public static IFCElementComposition GetElementCompositionTypeOverride(Element element)
+      /// <param name="element">The element.</param>
+      /// <returns>The override if set, null otherwise.</returns>
+      /// <remarks>ElementComposition is not optional before IFC4, so the entity creation function will
+      /// set a null value to ELEMENT in that case.</remarks>
+      public static IFCElementComposition? GetElementCompositionTypeOverride(Element element)
       {
          string nameOverride = "IfcElementCompositionType";
 
          // If the IfcElementCompositionType is not set by the user, 
-         // it sets the value to .ELEMENT by default
+         // it sets the value to .ELEMENT by default for IFC2x3, and nothing for IFC4.
          string overrideValue = NamingUtil.GetOverrideStringValue(element, nameOverride, "Element");
 
          IFCElementComposition ifcElementCompositionType;
 
-         if (Enum.TryParse<IFCElementComposition>(overrideValue, true, out ifcElementCompositionType))
+         if (Enum.TryParse(overrideValue, true, out ifcElementCompositionType))
          {
             return ifcElementCompositionType;
          }
 
-         return IFCElementComposition.Element;
-
+         return null;
       }
 
       public static double LevelExtension { get; set; } = 10.0 / (12.0 * 2.54);

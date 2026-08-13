@@ -572,7 +572,7 @@ namespace Revit.IFC.Import.Data
          }
          else if (string.Compare(unitType, "THERMALTRANSMITTANCEUNIT", true) == 0)
          {
-            Spec = SpecTypeId.ThermalTransmittance;
+            Spec = SpecTypeId.HeatTransferCoefficient;
             UnitSystem = UnitSystem.Metric;
 
             // Support W / (K * m^2) or kg / (K * s^3)

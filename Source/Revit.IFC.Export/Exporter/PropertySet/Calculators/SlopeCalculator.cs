@@ -22,8 +22,6 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Utility;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
 {
@@ -58,21 +56,18 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>True if the operation succeed, false otherwise.</returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
+         ElementId elementId = element.Id;
          double slope = double.NaN;
          // We may have an extrusionCreationData that doesn't have anything set.  We will check this by seeing if there is a valid length set.
          // This works for Beam 
          if (extrusionCreationData == null || MathUtil.IsAlmostZero(extrusionCreationData.ScaledLength))
          {
             // Try looking for parameters that we can calculate slope from.
-            double startParamHeight = 0.0;
-            double endParamHeight = 0.0;
-            double length = 0.0;
-
-            if ((ParameterUtil.GetDoubleValueFromElement(element, BuiltInParameter.STRUCTURAL_BEAM_END0_ELEVATION, out startParamHeight) != null) &&
-               (ParameterUtil.GetDoubleValueFromElement(element, BuiltInParameter.STRUCTURAL_BEAM_END1_ELEVATION, out endParamHeight) != null) &&
-               (ParameterUtil.GetDoubleValueFromElement(element, BuiltInParameter.INSTANCE_LENGTH_PARAM, out length) != null))
+            if (ParameterUtil.TryGetDoubleValueFromElement(elementId, BuiltInParameter.STRUCTURAL_BEAM_END0_ELEVATION) is double startParamHeight &&
+                ParameterUtil.TryGetDoubleValueFromElement(elementId, BuiltInParameter.STRUCTURAL_BEAM_END1_ELEVATION) is double endParamHeight &&
+                ParameterUtil.TryGetDoubleValueFromElement(elementId, BuiltInParameter.INSTANCE_LENGTH_PARAM) is double length)
             {
                if (!MathUtil.IsAlmostZero(length))
                {
@@ -88,22 +83,23 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          }
 
          // This works for Ramp/RampFlight
-         if (ParameterUtil.GetDoubleValueFromElement(element, BuiltInParameter.RAMP_ATTR_MIN_INV_SLOPE, out slope) != null)
+         if (ParameterUtil.TryGetDoubleValueFromElement(elementId, BuiltInParameter.RAMP_ATTR_MIN_INV_SLOPE) is double slopeVal)
          {
-            m_Slope = UnitUtil.ScaleAngle(Math.Atan(slope));
+            m_Slope = UnitUtil.ScaleAngle(Math.Atan(slopeVal));
             return true;
          }
 
          // For other elements with ExtrusionData. Parameter will take precedence (override)
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Slope", out slope) != null)
+         (EvaluatedParameter parameter, slopeVal) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, "Slope");
+         if (parameter != null)
          {
-            m_Slope = UnitUtil.ScaleAngle(Math.Atan(slope));
+            m_Slope = UnitUtil.ScaleAngle(Math.Atan(slopeVal));
             return true;
          }
 
          if (extrusionCreationData != null)
          {
-            if (extrusionCreationData.Slope > MathUtil.Eps())
+            if (extrusionCreationData.Slope > MathUtil.Eps)
             {
                m_Slope = extrusionCreationData.Slope;
                return true;

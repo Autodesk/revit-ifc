@@ -97,9 +97,6 @@ namespace Revit.IFC.Export.Exporter
             // Check for containment override
             using (PlacementSetter setter = PlacementSetter.Create(exporterIFC, element, null))
             {
-               IFCAnyHandle localPlacement = setter.LocalPlacement;
-
-               bool allowAdvancedCurve = !ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4;
                const GeometryUtil.TrimCurvePreference trimCurvePreference = GeometryUtil.TrimCurvePreference.UsePolyLineOrTrim;
 
                IList<IFCAnyHandle> curves = new List<IFCAnyHandle>();
@@ -107,42 +104,51 @@ namespace Revit.IFC.Export.Exporter
                   GeometryUtil.GetCurvesFromGeometryElement(geometryElement);
                foreach (Curve curve in curvesFromGeomElem)
                {
+                  Curve exportCurve = RepresentationUtil.DocumentMirrorStateManager.GetCurve(curve);
                   curves.AddIfNotNull(GeometryUtil.CreateIFCCurveFromRevitCurve(file,
-                     exporterIFC, curve, allowAdvancedCurve, null, trimCurvePreference));
+                     exporterIFC, exportCurve, true, null, trimCurvePreference));
                }
 
-               HashSet<IFCAnyHandle> curveSet = new HashSet<IFCAnyHandle>(curves);
+               HashSet<IFCAnyHandle> curveSet = [.. curves];
                IFCAnyHandle repItemHnd = IFCInstanceExporter.CreateGeometricCurveSet(file, curveSet);
 
                IFCAnyHandle curveStyle = file.CreateStyle(exporterIFC, repItemHnd);
 
+               IFCAnyHandle curveAnnotationHnd = null;
+               CurveAnnotationCache annotationCache = null;
+
                if (exportingAnnotation)
                {
-                  CurveAnnotationCache annotationCache = ExporterCacheManager.CurveAnnotationCache;
-                  IFCAnyHandle curveAnno = annotationCache.GetAnnotation(sketchPlaneId, curveStyle);
-                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(curveAnno))
-                  {
-                     AddCurvesToAnnotation(curveAnno, curves);
-                  }
-                  else
-                  {
-                     curveAnno = CreateCurveAnnotation(exporterIFC, element,
-                        categoryId, Transform.Identity, setter,
-                        localPlacement, repItemHnd, ifcEnumType);
-                     productWrapper.AddAnnotation(curveAnno, setter.LevelInfo, true);
+                  annotationCache = ExporterCacheManager.CurveAnnotationCache;
+                  curveAnnotationHnd = annotationCache.GetAnnotation(sketchPlaneId, curveStyle);
+               }
 
-                     annotationCache.AddAnnotation(sketchPlaneId, curveStyle, curveAnno);
-                  }
+               IFCAnyHandle localPlacement = setter.LocalPlacement;
+
+               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(curveAnnotationHnd))
+               {
+                  AddCurvesToAnnotation(curveAnnotationHnd, curves);
+                  // TODO_CERT: We created this placement as a side effect of creating the setter, but we don't need to use it in this case.
+                  // Figure out how not to create it in the first place.
+                  localPlacement.Delete();
                }
                else
                {
-                  string guid = GUIDUtil.CreateGUID(element);
-                  IFCAnyHandle productHandle = CreateAnnotationProductRepresentation(exporterIFC,
-                     file, element, categoryId, repItemHnd);
-                  IFCAnyHandle curveHandle = IFCInstanceExporter.CreateGenericIFCEntity(exportType,
-                     file, element, guid, ExporterCacheManager.OwnerHistoryHandle,
-                     localPlacement, productHandle);
-                  productWrapper.AddElement(element, curveHandle, setter.LevelInfo, null, true, exportType);
+                  if (exportingAnnotation)
+                  {
+                     curveAnnotationHnd = CreateCurveAnnotation(exporterIFC, element, categoryId, Transform.Identity, setter,
+                        localPlacement, repItemHnd, ifcEnumType);
+                     productWrapper.AddAnnotation(curveAnnotationHnd, setter.LevelInfo, true);
+                     annotationCache.AddAnnotation(sketchPlaneId, curveStyle, curveAnnotationHnd);
+                  }
+                  else
+                  {
+                     string guid = GUIDUtil.CreateGUID(element);
+                     IFCAnyHandle productHandle = CreateAnnotationProductRepresentation(exporterIFC, file, element, categoryId, repItemHnd);
+                     IFCAnyHandle curveHandle = IFCInstanceExporter.CreateGenericIFCEntity(exportType, file, element, null, guid,
+                        ExporterCacheManager.OwnerHistoryHandle, localPlacement, productHandle);
+                     productWrapper.AddElement(element, curveHandle, setter.LevelInfo, null, true, exportType);
+                  }
                }
             }
             transaction.Commit();

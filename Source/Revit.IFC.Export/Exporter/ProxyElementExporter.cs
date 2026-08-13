@@ -53,7 +53,7 @@ namespace Revit.IFC.Export.Exporter
 
          using (IFCTransaction tr = new IFCTransaction(file))
          {
-            exported = (GenericElementExporter.ExportSimpleGenericElement(exporterIFC, element, geometryElement, productWrapper, exportType) != null);
+            exported = GenericElementExporter.ExportSimpleGenericElement(exporterIFC, element, geometryElement, productWrapper, exportType);
             if (exported)
                tr.Commit();
          }

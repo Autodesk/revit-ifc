@@ -1,4 +1,4 @@
-﻿using Autodesk.Revit.DB;
+using Autodesk.Revit.DB;
 using Autodesk.Windows;
 using BIM.IFC.Export.UI.Properties;
 using Revit.IFC.Export.Exporter;
@@ -283,10 +283,25 @@ namespace BIM.IFC.Export.UI
                .Select(param => new PropertyMappingInfo(string.Empty, param.Value.parameterName, new ElementId(param.Key), propertySetup,
                param.Value.dataType))
                .ToList();
-            setupInfo.PSetMappingInfos.Add(new PSetMappingInfo(group.Key, propertySetup, propertyInfos, setupInfo));
+            setupInfo.PSetMappingInfos.Add(new PSetMappingInfo(group.Key, propertySetup, propertyInfos, setupInfo,
+               GetLocalizedMaterialPropertySetName(group.Key)));
          }
 
          return setupInfo;
+      }
+
+      /// <summary>
+      /// Returns the localized display name for a material property set.
+      /// </summary>
+      private static string GetLocalizedMaterialPropertySetName(string materialPropertyType)
+      {
+         return materialPropertyType switch
+         {
+            nameof(MaterialPropertiesUtil.MaterialPropertyType.Identity) => Resources.IdentityMaterialParams,
+            nameof(MaterialPropertiesUtil.MaterialPropertyType.Structural) => Resources.StructuralMaterialParams,
+            nameof(MaterialPropertiesUtil.MaterialPropertyType.Thermal) => Resources.ThermalMaterialParams,
+            _ => materialPropertyType
+         };
       }
 
       public SetupMappingInfo InitializeSchedules()
@@ -343,15 +358,23 @@ namespace BIM.IFC.Export.UI
                         if (processedScheduleIds.Contains(parameterId))
                            continue;
 
+                        ForgeTypeId proxyDataTypeId = null;
                         InternalDefinition paramDefinition = null;
                         if (ParameterUtils.IsBuiltInParameter(parameterId))
                         {
-                           ForgeTypeId paramTypeId = ParameterUtils.GetParameterTypeId((BuiltInParameter)parameterId.Value);
-                           if (paramTypeId?.Empty() ?? true)
-                              continue;
+                           BuiltInParameter builtInParameterId = (BuiltInParameter)parameterId.Value;
+                           if (PropertyUtil.ProxyParameter.IsProxyParameter(builtInParameterId))
+                           {
+                              proxyDataTypeId = new ForgeTypeId("autodesk.spec:spec.string-2.0.0");
+                           }
+                           else
+                           {
+                              ForgeTypeId paramTypeId = ParameterUtils.GetParameterTypeId(builtInParameterId);
+                              if (paramTypeId?.Empty() ?? true)
+                                 continue;
 
-                           paramDefinition = ParameterUtils.GetDefinition(paramTypeId);
-
+                              paramDefinition = ParameterUtils.GetDefinition(paramTypeId);
+                           }
                         }
                         else
                         {
@@ -362,7 +385,7 @@ namespace BIM.IFC.Export.UI
                            paramDefinition = paramElement?.GetDefinition();
                         }
 
-                        ForgeTypeId dataTypeId = paramDefinition?.GetDataType();
+                        ForgeTypeId dataTypeId = proxyDataTypeId ?? paramDefinition?.GetDataType();
                         if ((dataTypeId?.Empty() ?? true) == false)
                            typeString = LabelUtils.GetLabelForSpec(dataTypeId);
 
@@ -487,15 +510,22 @@ namespace BIM.IFC.Export.UI
             if (paramId.Equals(ElementId.InvalidElementId))
                continue;
 
-            InternalDefinition paramDefinition = ParameterUtils.GetDefinition(paramTypeId);
-            if (paramDefinition == null)
-               continue;
-
-            string dataTypeName = string.Empty;
-            ForgeTypeId dataTypeId = paramDefinition.GetDataType();
-            if (!dataTypeId?.Empty() ?? false)
-               dataTypeName = LabelUtils.GetLabelForSpec(dataTypeId);
-
+            string dataTypeName = null;
+            InternalDefinition paramDefinition = null;
+            if (PropertyUtil.ProxyParameter.IsProxyParameter((BuiltInParameter)paramId.Value))
+            {
+               dataTypeName = LabelUtils.GetLabelForSpec(new ForgeTypeId("autodesk.spec:spec.string-2.0.0"));
+            }
+            else
+            {
+               paramDefinition = ParameterUtils.GetDefinition(paramTypeId);
+               if (paramDefinition == null)
+                  continue;   
+               ForgeTypeId dataTypeId = paramDefinition.GetDataType();
+               if (!dataTypeId?.Empty() ?? false)
+                  dataTypeName = LabelUtils.GetLabelForSpec(dataTypeId);
+            }
+               
             ForgeTypeId groupTypeId = ParameterUtils.GetBuiltInParameterGroupTypeId(paramTypeId);
             if (groupTypeId == null)
                continue;
@@ -507,7 +537,7 @@ namespace BIM.IFC.Export.UI
             BuiltInParametersCache.TryGetValue(groupName, out var parameterList);
             if (parameterList == null)
             {
-               parameterList = new();
+               parameterList = [];
                BuiltInParametersCache.Add(groupName, parameterList);
             }
             parameterList.Add((paramId, (paramName, dataTypeName)));
@@ -772,9 +802,15 @@ namespace BIM.IFC.Export.UI
    public class PSetMappingInfo : INotifyPropertyChanged
    {
       /// <summary>
-      /// The name of the property set.
+      /// The name of the property set (used as internal identifier for template matching).
       /// </summary>
       public string Name { get; set; }
+
+      /// <summary>
+      /// The localized display name of the property set (used for UI display).
+      /// Falls back to Name if not explicitly set.
+      /// </summary>
+      public string DisplayName { get; set; }
 
       /// <summary>
       /// Flag to determine if a property set is exported or not.
@@ -812,9 +848,11 @@ namespace BIM.IFC.Export.UI
 
       public string AutomationId { get; set; }
 
-      public PSetMappingInfo(string name, PropertySetupType propertySetup, List<PropertyMappingInfo> propertyInfos, SetupMappingInfo parentSetup)
+      public PSetMappingInfo(string name, PropertySetupType propertySetup, List<PropertyMappingInfo> propertyInfos, SetupMappingInfo parentSetup,
+         string displayName = null)
       {
          Name = name;
+         DisplayName = displayName ?? name;
          Type = IFCPropertyMappingModel.GetMappingType(propertySetup);
          PropertyInfos = propertyInfos;
          ParentSetup = parentSetup;

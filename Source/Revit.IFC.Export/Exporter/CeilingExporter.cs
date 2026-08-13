@@ -1,4 +1,4 @@
-﻿//
+//
 // BIM IFC library: this library works with Autodesk(R) Revit(R) to export IFC files containing model geometry.
 // Copyright (C) 2012-2016  Autodesk, Inc.
 // 
@@ -79,7 +79,7 @@ namespace Revit.IFC.Export.Exporter
 
          using (IFCTransaction transaction = new(file))
          {
-            // For IFC4RV export, Element will be split into its parts(temporarily) in order to export the wall by its parts
+            // For Reference View export, Element will be split into its parts(temporarily) in order to export the wall by its parts
             ExporterUtil.ExportPartAs exportPartAs = ExporterUtil.CanExportParts(element);
             bool exportByComponents = exportPartAs == ExporterUtil.ExportPartAs.ShapeAspect;
             bool exportParts = exportPartAs == ExporterUtil.ExportPartAs.Part;
@@ -151,41 +151,27 @@ namespace Revit.IFC.Export.Exporter
                   if (ExporterCacheManager.ExportCeilingGrids())
                   {
                      IList<Curve> ceilingGridLines = (element as Ceiling)?.GetCeilingGridLines(true);
-                     HashSet<IFCAnyHandle> repItems = new();
                      if (ceilingGridLines != null)
                      {
-                        Transform localPlacementOffset = ExporterUtil.GetTransformFromLocalPlacementHnd(setter.LocalPlacement, true);
-                        if (localPlacementOffset.IsIdentity)
-                        {
-                           localPlacementOffset = null;
-                        }
-                        else
-                        {
-                           localPlacementOffset = localPlacementOffset.Inverse;
-                        }
+                        Transform localPlacementOffset = 
+                           ExporterUtil.GetTransformFromLocalPlacementHnd(setter.LocalPlacement, true);
 
-                        foreach (Curve ceilingGrid in ceilingGridLines)
-                        {
-                           Curve transformedCeilingGrid = 
-                              localPlacementOffset != null ? ceilingGrid.CreateTransformed(localPlacementOffset) : ceilingGrid;
-                           repItems.AddIfNotNull(GeometryUtil.CreateIFCCurveFromRevitCurve(file, exporterIFC,
-                              transformedCeilingGrid, false, null, GeometryUtil.TrimCurvePreference.UsePolyLineOrTrim));
-                        }
-                     }
+                        IFCAnyHandle footprintShapeRep = RepresentationUtil.CreateFootPrintShapeRepresentation(
+                           exporterIFC, element, categoryId, ceilingGridLines, localPlacementOffset, XYZ.BasisZ);
 
-                     if (repItems.Count > 0)
-                     {
-                        IFCAnyHandle contextOfItemsFootprint = exporterIFC.Get3DContextHandle("FootPrint");
-                        IFCAnyHandle footprintShapeRep = RepresentationUtil.CreateBaseShapeRepresentation(exporterIFC, contextOfItemsFootprint,
-                           "FootPrint", "Curve2D", repItems);
-                        List<IFCAnyHandle> newRep = new() { footprintShapeRep };
-                        IFCAnyHandleUtil.AddRepresentations(prodRep, newRep);
+                        if (!IFCAnyHandleUtil.IsNullOrHasNoValue(footprintShapeRep))
+                        {
+                           List<IFCAnyHandle> newRep = [footprintShapeRep];
+                           IFCAnyHandleUtil.AddRepresentations(prodRep, newRep);
+                        }
                      }
                   }
 
+                  IFCExportInfoPair exportInfo = new(IFCEntityType.IfcCovering, IFCEntityType.IfcCoveringType, coveringType);
+                  IFCAnyHandle typeHnd = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, productWrapper);
 
-                  IFCAnyHandle covering = IFCInstanceExporter.CreateCovering(exporterIFC, element, instanceGUID, ExporterCacheManager.OwnerHistoryHandle,
-                      setter.LocalPlacement, prodRep, coveringType);
+                  IFCAnyHandle covering = IFCInstanceExporter.CreateCovering(file, element, typeHnd, instanceGUID, 
+                     ExporterCacheManager.OwnerHistoryHandle, setter.LocalPlacement, prodRep, coveringType);
 
                   ExporterCacheManager.ElementToHandleCache.Register(element.Id, covering);
 
@@ -194,11 +180,8 @@ namespace Revit.IFC.Export.Exporter
                      PartExporter.ExportHostPart(exporterIFC, element, covering, setter, setter.LocalPlacement, null, setMaterialNameToPartName);
                   }
                   
-
                   ExporterUtil.AddIntoComplexPropertyCache(covering, layersetInfo);
 
-                  IFCExportInfoPair exportInfo = new(IFCEntityType.IfcCovering, IFCEntityType.IfcCoveringType, coveringType);
-                  IFCAnyHandle typeHnd = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, productWrapper);
                   ExporterCacheManager.TypeRelationsCache.Add(typeHnd, covering);
 
                   bool containInSpace = false;

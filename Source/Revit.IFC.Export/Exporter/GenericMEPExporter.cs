@@ -39,10 +39,11 @@ namespace Revit.IFC.Export.Exporter
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="element">The element.</param>
       /// <param name="geometryElement">The geometry element.</param>
-      /// <param name="exportType">The export type of the element.
-      /// <param name="ifcEnumType">The sub-type of the element.</param></param>
+      /// <param name="exportType">The export type of the element.</param>
+      /// <param name="ifcEnumType">The sub-type of the element.</param>
       /// <param name="productWrapper">The ProductWrapper.</param>
       /// <returns>True if an entity was created, false otherwise.</returns>
+      /// <remarks>Exports geometry as IfcExtrudedAreaSolid representation when possible.</remarks>
       public static bool Export(ExporterIFC exporterIFC, Element element, GeometryElement geometryElement,
           IFCExportInfoPair exportType, string ifcEnumType, ProductWrapper productWrapper)
       {
@@ -86,7 +87,7 @@ namespace Revit.IFC.Export.Exporter
                            return false;
                         }
 
-                        ExportAsMappedItem(exporterIFC, element, exportType, 
+                        ExportAsMappedItem(exporterIFC, element, exportType,
                            extraParams, setter, false, localPlacementToUse,
                            productRepresentation, productWrapper);
                      }
@@ -142,14 +143,14 @@ namespace Revit.IFC.Export.Exporter
                            }
                            else
                            {
-                              List<GeometryObject> exportedGeometries = [ geometryElement ];
+                              List<GeometryObject> exportedGeometries = [geometryElement];
                               bodyData = BodyExporter.ExportBody(exporterIFC, element, catId,
                                                                  ElementId.InvalidElementId,
                                                                  exportedGeometries, bodyExporterOptions,
                                                                  extraParams);
                            }
 
-                           List<IFCAnyHandle> bodyReps = [ bodyData.RepresentationHnd ];
+                           List<IFCAnyHandle> bodyReps = [bodyData.RepresentationHnd];
 
                            IFCAnyHandle productRepresentation =
                                IFCInstanceExporter.CreateProductDefinitionShape(exporterIFC.GetFile(), null,
@@ -161,7 +162,7 @@ namespace Revit.IFC.Export.Exporter
                            }
 
                            ExportAsMappedItem(exporterIFC, element, exportType,
-                              extraParams, setter, true, localPlacementToUse, 
+                              extraParams, setter, true, localPlacementToUse,
                               productRepresentation, productWrapper);
                         }
                      }
@@ -174,9 +175,9 @@ namespace Revit.IFC.Export.Exporter
          return true;
       }
 
-      private static void ExportAsMappedItem(ExporterIFC exporterIFC, Element element, 
+      private static void ExportAsMappedItem(ExporterIFC exporterIFC, Element element,
          IFCExportInfoPair exportType, IFCExportBodyParams extraParams,
-         PlacementSetter setter, bool isSplitByLevel, IFCAnyHandle localPlacementToUse, 
+         PlacementSetter setter, bool isSplitByLevel, IFCAnyHandle localPlacementToUse,
          IFCAnyHandle productRepresentation, ProductWrapper productWrapper)
       {
          IFCAnyHandle ownerHistory = ExporterCacheManager.OwnerHistoryHandle;
@@ -193,8 +194,8 @@ namespace Revit.IFC.Export.Exporter
          {
             bool containedInAssembly = ExporterUtil.IsContainedInAssembly(element);
             var typeKey = new TypeObjectKey(typeId, ElementId.InvalidElementId, false, exportType, ElementId.InvalidElementId, containedInAssembly);
-            
-            FamilyTypeInfo currentTypeInfo = 
+
+            FamilyTypeInfo currentTypeInfo =
                ExporterCacheManager.FamilySymbolToTypeInfoCache.Find(typeKey);
 
             if (!currentTypeInfo.IsValid())
@@ -213,7 +214,7 @@ namespace Revit.IFC.Export.Exporter
                   Element elementType = element.Document.GetElement(element.GetTypeId());
                   matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(element.get_Geometry(geomOptions), elementType, element);
 
-                  if (matId != ElementId.InvalidElementId)
+                  if (!MathUtil.IsInvalidElementId(matId))
                   {
                      currentTypeInfo.MaterialIdList = new List<ElementId>() { matId };
                      hasMaterialAssociatedToType = true;
@@ -250,19 +251,19 @@ namespace Revit.IFC.Export.Exporter
 
          // For MEP object creation
          IFCAnyHandle instanceHandle = IFCInstanceExporter.CreateGenericIFCEntity(exportType,
-            exporterIFC.GetFile(), element, instanceGUID, ownerHistory, localPlacementToUse, 
+            exporterIFC.GetFile(), element, styleHandle, instanceGUID, ownerHistory, localPlacementToUse, 
             productRepresentation);
-         
+
          if (IFCAnyHandleUtil.IsNullOrHasNoValue(instanceHandle))
             return;
-         if (matId == ElementId.InvalidElementId && !hasMaterialAssociatedToType)
+         if (MathUtil.IsInvalidElementId(matId) && !hasMaterialAssociatedToType)
          {
             matId = BodyExporter.GetBestMaterialIdFromGeometryOrParameter(element.get_Geometry(geomOptions), element);
-            if (matId != ElementId.InvalidElementId)
+            if (!MathUtil.IsInvalidElementId(matId))
                CategoryUtil.CreateMaterialAssociation(exporterIFC, instanceHandle, matId);
          }
 
-         if (roomId != ElementId.InvalidElementId)
+         if (!MathUtil.IsInvalidElementId(roomId))
          {
             //exporterIFC.RelateSpatialElement(roomId, instanceHandle);
             ExporterCacheManager.SpaceInfoCache.RelateToSpace(roomId, instanceHandle);
@@ -274,9 +275,6 @@ namespace Revit.IFC.Export.Exporter
          }
 
          OpeningUtil.CreateOpeningsIfNecessary(instanceHandle, element, extraParams, null, exporterIFC, localPlacementToUse, setter, productWrapper);
-
-         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(styleHandle))
-            ExporterCacheManager.TypeRelationsCache.Add(styleHandle, instanceHandle);
 
          ExporterCacheManager.MEPCache.Register(element, instanceHandle);
 

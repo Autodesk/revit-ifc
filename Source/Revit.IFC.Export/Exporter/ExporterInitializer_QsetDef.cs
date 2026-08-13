@@ -1,4 +1,4 @@
-/********************************************************************************************************************************
+﻿/********************************************************************************************************************************
 ** NOTE: This code is generated from IFC psd files automatically by RevitIFCTools.                                            **
 **       DO NOT change it manually as it will be overwritten the next time this file is re-generated!!                        **
 ********************************************************************************************************************************/
@@ -155,7 +155,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetActuatorBaseQuantities.EntityTypes.Add(IFCEntityType.IfcActuator);
             qtoSetActuatorBaseQuantities.EntityTypes.Add(IFCEntityType.IfcActuatorType);
-            qtoSetActuatorBaseQuantities.ObjectType = "IfcActuator,IfcActuatorType";
+            qtoSetActuatorBaseQuantities.ObjectType = "IfcActuator";
             ifcPSE = new QuantityEntry("Qto_ActuatorBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -196,7 +196,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetAirTerminalBaseQuantities.EntityTypes.Add(IFCEntityType.IfcAirTerminal);
             qtoSetAirTerminalBaseQuantities.EntityTypes.Add(IFCEntityType.IfcAirTerminalType);
-            qtoSetAirTerminalBaseQuantities.ObjectType = "IfcAirTerminal,IfcAirTerminalType";
+            qtoSetAirTerminalBaseQuantities.ObjectType = "IfcAirTerminal";
             ifcPSE = new QuantityEntry("Qto_AirTerminalBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -271,7 +271,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetAirTerminalBoxTypeBaseQuantities.EntityTypes.Add(IFCEntityType.IfcAirTerminalBox);
             qtoSetAirTerminalBoxTypeBaseQuantities.EntityTypes.Add(IFCEntityType.IfcAirTerminalBoxType);
-            qtoSetAirTerminalBoxTypeBaseQuantities.ObjectType = "IfcAirTerminalBox,IfcAirTerminalBoxType";
+            qtoSetAirTerminalBoxTypeBaseQuantities.ObjectType = "IfcAirTerminalBox";
             ifcPSE = new QuantityEntry("Qto_AirTerminalBoxTypeBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -312,7 +312,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetAirToAirHeatRecoveryBaseQuantities.EntityTypes.Add(IFCEntityType.IfcAirToAirHeatRecovery);
             qtoSetAirToAirHeatRecoveryBaseQuantities.EntityTypes.Add(IFCEntityType.IfcAirToAirHeatRecoveryType);
-            qtoSetAirToAirHeatRecoveryBaseQuantities.ObjectType = "IfcAirToAirHeatRecovery,IfcAirToAirHeatRecoveryType";
+            qtoSetAirToAirHeatRecoveryBaseQuantities.ObjectType = "IfcAirToAirHeatRecovery";
             ifcPSE = new QuantityEntry("Qto_AirToAirHeatRecoveryBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -353,7 +353,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetAlarmBaseQuantities.EntityTypes.Add(IFCEntityType.IfcAlarm);
             qtoSetAlarmBaseQuantities.EntityTypes.Add(IFCEntityType.IfcAlarmType);
-            qtoSetAlarmBaseQuantities.ObjectType = "IfcAlarm,IfcAlarmType";
+            qtoSetAlarmBaseQuantities.ObjectType = "IfcAlarm";
             ifcPSE = new QuantityEntry("Qto_AlarmBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -436,7 +436,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetAudioVisualApplianceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcAudioVisualAppliance);
             qtoSetAudioVisualApplianceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcAudioVisualApplianceType);
-            qtoSetAudioVisualApplianceBaseQuantities.ObjectType = "IfcAudioVisualAppliance,IfcAudioVisualApplianceType";
+            qtoSetAudioVisualApplianceBaseQuantities.ObjectType = "IfcAudioVisualAppliance";
             ifcPSE = new QuantityEntry("Qto_AudioVisualApplianceBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -477,7 +477,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetBeamBaseQuantities.EntityTypes.Add(IFCEntityType.IfcBeam);
             qtoSetBeamBaseQuantities.EntityTypes.Add(IFCEntityType.IfcBeamType);
-            qtoSetBeamBaseQuantities.ObjectType = "IfcBeam,IfcBeamType";
+            qtoSetBeamBaseQuantities.ObjectType = "IfcBeam";
             ifcPSE = new QuantityEntry("Qto_BeamBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -875,7 +875,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetBoilerBaseQuantities.EntityTypes.Add(IFCEntityType.IfcBoiler);
             qtoSetBoilerBaseQuantities.EntityTypes.Add(IFCEntityType.IfcBoilerType);
-            qtoSetBoilerBaseQuantities.ObjectType = "IfcBoiler,IfcBoilerType";
+            qtoSetBoilerBaseQuantities.ObjectType = "IfcBoiler";
             ifcPSE = new QuantityEntry("Qto_BoilerBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -1032,13 +1032,13 @@ namespace Revit.IFC.Export.Exporter
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetBuildingBaseQuantities.AddEntry(ifcPSE);
 
-            ifcPSE = new QuantityEntry("Qto_BuildingBaseQuantities.FootprintArea", "FootprintArea");
-            ifcPSE.PropertyName = "FootprintArea";
+            ifcPSE = new QuantityEntry("Qto_BuildingBaseQuantities.FootPrintArea", "FootPrintArea");
+            ifcPSE.PropertyName = "FootPrintArea";
             ifcPSE.QuantityType = QuantityType.Area;
             ifcPSE.AddLocalizedParameterName(LanguageType.German, "Bebaute Fläche");
-            ifcPSE.AddLocalizedParameterName(LanguageType.English_USA, "Footprint Area");
+            ifcPSE.AddLocalizedParameterName(LanguageType.English_USA, "FootPrint Area");
             ifcPSE.AddLocalizedParameterName(LanguageType.Japanese, "建築面積");
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.FootprintAreaCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.FootPrintAreaCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetBuildingBaseQuantities.AddEntry(ifcPSE);
@@ -1203,7 +1203,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetBuildingElementProxyQuantities.EntityTypes.Add(IFCEntityType.IfcBuildingElementProxy);
             qtoSetBuildingElementProxyQuantities.EntityTypes.Add(IFCEntityType.IfcBuildingElementProxyType);
-            qtoSetBuildingElementProxyQuantities.ObjectType = "IfcBuildingElementProxy,IfcBuildingElementProxyType";
+            qtoSetBuildingElementProxyQuantities.ObjectType = "IfcBuildingElementProxy";
             ifcPSE = new QuantityEntry("Qto_BuildingElementProxyQuantities.NetSurfaceArea", "NetSurfaceArea");
             ifcPSE.PropertyName = "NetSurfaceArea";
             ifcPSE.QuantityType = QuantityType.Area;
@@ -1497,7 +1497,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetBurnerBaseQuantities.EntityTypes.Add(IFCEntityType.IfcBurner);
             qtoSetBurnerBaseQuantities.EntityTypes.Add(IFCEntityType.IfcBurnerType);
-            qtoSetBurnerBaseQuantities.ObjectType = "IfcBurner,IfcBurnerType";
+            qtoSetBurnerBaseQuantities.ObjectType = "IfcBurner";
             ifcPSE = new QuantityEntry("Qto_BurnerBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -1538,7 +1538,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetCableCarrierFittingBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCableCarrierFitting);
             qtoSetCableCarrierFittingBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCableCarrierFittingType);
-            qtoSetCableCarrierFittingBaseQuantities.ObjectType = "IfcCableCarrierFitting,IfcCableCarrierFittingType";
+            qtoSetCableCarrierFittingBaseQuantities.ObjectType = "IfcCableCarrierFitting";
             ifcPSE = new QuantityEntry("Qto_CableCarrierFittingBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -1579,7 +1579,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetCableCarrierSegmentBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegment);
             qtoSetCableCarrierSegmentBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegmentType);
-            qtoSetCableCarrierSegmentBaseQuantities.ObjectType = "IfcCableCarrierSegment,IfcCableCarrierSegmentType";
+            qtoSetCableCarrierSegmentBaseQuantities.ObjectType = "IfcCableCarrierSegment";
             ifcPSE = new QuantityEntry("Qto_CableCarrierSegmentBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -1671,7 +1671,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetCableFittingBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCableFitting);
             qtoSetCableFittingBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCableFittingType);
-            qtoSetCableFittingBaseQuantities.ObjectType = "IfcCableFitting,IfcCableFittingType";
+            qtoSetCableFittingBaseQuantities.ObjectType = "IfcCableFitting";
             ifcPSE = new QuantityEntry("Qto_CableFittingBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -1712,7 +1712,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetCableSegmentBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCableSegment);
             qtoSetCableSegmentBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCableSegmentType);
-            qtoSetCableSegmentBaseQuantities.ObjectType = "IfcCableSegment,IfcCableSegmentType";
+            qtoSetCableSegmentBaseQuantities.ObjectType = "IfcCableSegment";
             ifcPSE = new QuantityEntry("Qto_CableSegmentBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -1804,7 +1804,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetChillerBaseQuantities.EntityTypes.Add(IFCEntityType.IfcChiller);
             qtoSetChillerBaseQuantities.EntityTypes.Add(IFCEntityType.IfcChillerType);
-            qtoSetChillerBaseQuantities.ObjectType = "IfcChiller,IfcChillerType";
+            qtoSetChillerBaseQuantities.ObjectType = "IfcChiller";
             ifcPSE = new QuantityEntry("Qto_ChillerBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -1845,7 +1845,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetChimneyBaseQuantities.EntityTypes.Add(IFCEntityType.IfcChimney);
             qtoSetChimneyBaseQuantities.EntityTypes.Add(IFCEntityType.IfcChimneyType);
-            qtoSetChimneyBaseQuantities.ObjectType = "IfcChimney,IfcChimneyType";
+            qtoSetChimneyBaseQuantities.ObjectType = "IfcChimney";
             ifcPSE = new QuantityEntry("Qto_ChimneyBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -1888,7 +1888,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetCoilBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCoil);
             qtoSetCoilBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCoilType);
-            qtoSetCoilBaseQuantities.ObjectType = "IfcCoil,IfcCoilType";
+            qtoSetCoilBaseQuantities.ObjectType = "IfcCoil";
             ifcPSE = new QuantityEntry("Qto_CoilBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -1929,7 +1929,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetColumnBaseQuantities.EntityTypes.Add(IFCEntityType.IfcColumn);
             qtoSetColumnBaseQuantities.EntityTypes.Add(IFCEntityType.IfcColumnType);
-            qtoSetColumnBaseQuantities.ObjectType = "IfcColumn,IfcColumnType";
+            qtoSetColumnBaseQuantities.ObjectType = "IfcColumn";
             ifcPSE = new QuantityEntry("Qto_ColumnBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -2261,7 +2261,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetCommunicationsApplianceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCommunicationsAppliance);
             qtoSetCommunicationsApplianceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCommunicationsApplianceType);
-            qtoSetCommunicationsApplianceBaseQuantities.ObjectType = "IfcCommunicationsAppliance,IfcCommunicationsApplianceType";
+            qtoSetCommunicationsApplianceBaseQuantities.ObjectType = "IfcCommunicationsAppliance";
             ifcPSE = new QuantityEntry("Qto_CommunicationsApplianceBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -2302,7 +2302,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetCompressorBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCompressor);
             qtoSetCompressorBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCompressorType);
-            qtoSetCompressorBaseQuantities.ObjectType = "IfcCompressor,IfcCompressorType";
+            qtoSetCompressorBaseQuantities.ObjectType = "IfcCompressor";
             ifcPSE = new QuantityEntry("Qto_CompressorBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -2343,7 +2343,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetCondenserBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCondenser);
             qtoSetCondenserBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCondenserType);
-            qtoSetCondenserBaseQuantities.ObjectType = "IfcCondenser,IfcCondenserType";
+            qtoSetCondenserBaseQuantities.ObjectType = "IfcCondenser";
             ifcPSE = new QuantityEntry("Qto_CondenserBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -2385,7 +2385,7 @@ namespace Revit.IFC.Export.Exporter
             qtoSetConduitSegmentBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegment);
             qtoSetConduitSegmentBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCableCarrierSegmentType);
             qtoSetConduitSegmentBaseQuantities.ObjectType = "IfcCableCarrierSegment";
-            qtoSetConduitSegmentBaseQuantities.PredefinedType = "CONDUITSEGMENT";
+            qtoSetConduitSegmentBaseQuantities.PredefinedTypes.Add("CONDUITSEGMENT");
             ifcPSE = new QuantityEntry("Qto_ConduitSegmentBaseQuantities.InnerDiameter", "InnerDiameter");
             ifcPSE.PropertyName = "InnerDiameter";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -2420,7 +2420,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetConstructionEquipmentResourceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcConstructionEquipmentResource);
             qtoSetConstructionEquipmentResourceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcConstructionEquipmentResourceType);
-            qtoSetConstructionEquipmentResourceBaseQuantities.ObjectType = "IfcConstructionEquipmentResource,IfcConstructionEquipmentResourceType";
+            qtoSetConstructionEquipmentResourceBaseQuantities.ObjectType = "IfcConstructionEquipmentResource";
             ifcPSE = new QuantityEntry("Qto_ConstructionEquipmentResourceBaseQuantities.UsageTime", "UsageTime");
             ifcPSE.PropertyName = "UsageTime";
             ifcPSE.QuantityType = QuantityType.Time;
@@ -2478,7 +2478,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetConstructionMaterialResourceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcConstructionMaterialResource);
             qtoSetConstructionMaterialResourceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcConstructionMaterialResourceType);
-            qtoSetConstructionMaterialResourceBaseQuantities.ObjectType = "IfcConstructionMaterialResource,IfcConstructionMaterialResourceType";
+            qtoSetConstructionMaterialResourceBaseQuantities.ObjectType = "IfcConstructionMaterialResource";
             ifcPSE = new QuantityEntry("Qto_ConstructionMaterialResourceBaseQuantities.GrossVolume", "GrossVolume");
             ifcPSE.PropertyName = "GrossVolume";
             ifcPSE.QuantityType = QuantityType.Volume;
@@ -2570,7 +2570,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetControllerBaseQuantities.EntityTypes.Add(IFCEntityType.IfcController);
             qtoSetControllerBaseQuantities.EntityTypes.Add(IFCEntityType.IfcControllerType);
-            qtoSetControllerBaseQuantities.ObjectType = "IfcController,IfcControllerType";
+            qtoSetControllerBaseQuantities.ObjectType = "IfcController";
             ifcPSE = new QuantityEntry("Qto_ControllerBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -2611,7 +2611,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetCooledBeamBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCooledBeam);
             qtoSetCooledBeamBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCooledBeamType);
-            qtoSetCooledBeamBaseQuantities.ObjectType = "IfcCooledBeam,IfcCooledBeamType";
+            qtoSetCooledBeamBaseQuantities.ObjectType = "IfcCooledBeam";
             ifcPSE = new QuantityEntry("Qto_CooledBeamBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -2652,7 +2652,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetCoolingTowerBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCoolingTower);
             qtoSetCoolingTowerBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCoolingTowerType);
-            qtoSetCoolingTowerBaseQuantities.ObjectType = "IfcCoolingTower,IfcCoolingTowerType";
+            qtoSetCoolingTowerBaseQuantities.ObjectType = "IfcCoolingTower";
             ifcPSE = new QuantityEntry("Qto_CoolingTowerBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -2693,7 +2693,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetCourseBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCourse);
             qtoSetCourseBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCourseType);
-            qtoSetCourseBaseQuantities.ObjectType = "IfcCourse,IfcCourseType";
+            qtoSetCourseBaseQuantities.ObjectType = "IfcCourse";
             ifcPSE = new QuantityEntry("Qto_CourseBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -2760,7 +2760,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetCoveringBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCovering);
             qtoSetCoveringBaseQuantities.EntityTypes.Add(IFCEntityType.IfcCoveringType);
-            qtoSetCoveringBaseQuantities.ObjectType = "IfcCovering,IfcCoveringType";
+            qtoSetCoveringBaseQuantities.ObjectType = "IfcCovering";
             ifcPSE = new QuantityEntry("Qto_CoveringBaseQuantities.Width", "Width");
             ifcPSE.PropertyName = "Width";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -2875,7 +2875,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetCurtainWallQuantities.EntityTypes.Add(IFCEntityType.IfcCurtainWall);
             qtoSetCurtainWallQuantities.EntityTypes.Add(IFCEntityType.IfcCurtainWallType);
-            qtoSetCurtainWallQuantities.ObjectType = "IfcCurtainWall,IfcCurtainWallType";
+            qtoSetCurtainWallQuantities.ObjectType = "IfcCurtainWall";
             ifcPSE = new QuantityEntry("Qto_CurtainWallQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -2994,7 +2994,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetDamperBaseQuantities.EntityTypes.Add(IFCEntityType.IfcDamper);
             qtoSetDamperBaseQuantities.EntityTypes.Add(IFCEntityType.IfcDamperType);
-            qtoSetDamperBaseQuantities.ObjectType = "IfcDamper,IfcDamperType";
+            qtoSetDamperBaseQuantities.ObjectType = "IfcDamper";
             ifcPSE = new QuantityEntry("Qto_DamperBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -3035,7 +3035,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetDistributionBoardBaseQuantities.EntityTypes.Add(IFCEntityType.IfcElectricDistributionBoard);
             qtoSetDistributionBoardBaseQuantities.EntityTypes.Add(IFCEntityType.IfcElectricDistributionBoardType);
-            qtoSetDistributionBoardBaseQuantities.ObjectType = "IfcElectricDistributionBoard,IfcElectricDistributionBoardType";
+            qtoSetDistributionBoardBaseQuantities.ObjectType = "IfcElectricDistributionBoard";
             ifcPSE = new QuantityEntry("Qto_DistributionBoardBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -3070,7 +3070,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetDistributionChamberElementBaseQuantities.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElement);
             qtoSetDistributionChamberElementBaseQuantities.EntityTypes.Add(IFCEntityType.IfcDistributionChamberElementType);
-            qtoSetDistributionChamberElementBaseQuantities.ObjectType = "IfcDistributionChamberElement,IfcDistributionChamberElementType";
+            qtoSetDistributionChamberElementBaseQuantities.ObjectType = "IfcDistributionChamberElement";
             ifcPSE = new QuantityEntry("Qto_DistributionChamberElementBaseQuantities.GrossSurfaceArea", "GrossSurfaceArea");
             ifcPSE.PropertyName = "GrossSurfaceArea";
             ifcPSE.QuantityType = QuantityType.Area;
@@ -3170,7 +3170,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetDoorBaseQuantities.EntityTypes.Add(IFCEntityType.IfcDoor);
             qtoSetDoorBaseQuantities.EntityTypes.Add(IFCEntityType.IfcDoorType);
-            qtoSetDoorBaseQuantities.ObjectType = "IfcDoor,IfcDoorType";
+            qtoSetDoorBaseQuantities.ObjectType = "IfcDoor";
             ifcPSE = new QuantityEntry("Qto_DoorBaseQuantities.Width", "Width");
             ifcPSE.PropertyName = "Width";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -3270,7 +3270,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetDuctFittingBaseQuantities.EntityTypes.Add(IFCEntityType.IfcDuctFitting);
             qtoSetDuctFittingBaseQuantities.EntityTypes.Add(IFCEntityType.IfcDuctFittingType);
-            qtoSetDuctFittingBaseQuantities.ObjectType = "IfcDuctFitting,IfcDuctFittingType";
+            qtoSetDuctFittingBaseQuantities.ObjectType = "IfcDuctFitting";
             ifcPSE = new QuantityEntry("Qto_DuctFittingBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -3379,7 +3379,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetDuctSegmentBaseQuantities.EntityTypes.Add(IFCEntityType.IfcDuctSegment);
             qtoSetDuctSegmentBaseQuantities.EntityTypes.Add(IFCEntityType.IfcDuctSegmentType);
-            qtoSetDuctSegmentBaseQuantities.ObjectType = "IfcDuctSegment,IfcDuctSegmentType";
+            qtoSetDuctSegmentBaseQuantities.ObjectType = "IfcDuctSegment";
             ifcPSE = new QuantityEntry("Qto_DuctSegmentBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -3488,7 +3488,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetDuctSilencerBaseQuantities.EntityTypes.Add(IFCEntityType.IfcDuctSilencer);
             qtoSetDuctSilencerBaseQuantities.EntityTypes.Add(IFCEntityType.IfcDuctSilencerType);
-            qtoSetDuctSilencerBaseQuantities.ObjectType = "IfcDuctSilencer,IfcDuctSilencerType";
+            qtoSetDuctSilencerBaseQuantities.ObjectType = "IfcDuctSilencer";
             ifcPSE = new QuantityEntry("Qto_DuctSilencerBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -3653,7 +3653,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetElectricApplianceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcElectricAppliance);
             qtoSetElectricApplianceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcElectricApplianceType);
-            qtoSetElectricApplianceBaseQuantities.ObjectType = "IfcElectricAppliance,IfcElectricApplianceType";
+            qtoSetElectricApplianceBaseQuantities.ObjectType = "IfcElectricAppliance";
             ifcPSE = new QuantityEntry("Qto_ElectricApplianceBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -3730,7 +3730,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetElectricFlowStorageDeviceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcElectricFlowStorageDevice);
             qtoSetElectricFlowStorageDeviceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcElectricFlowStorageDeviceType);
-            qtoSetElectricFlowStorageDeviceBaseQuantities.ObjectType = "IfcElectricFlowStorageDevice,IfcElectricFlowStorageDeviceType";
+            qtoSetElectricFlowStorageDeviceBaseQuantities.ObjectType = "IfcElectricFlowStorageDevice";
             ifcPSE = new QuantityEntry("Qto_ElectricFlowStorageDeviceBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -3771,7 +3771,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetElectricGeneratorBaseQuantities.EntityTypes.Add(IFCEntityType.IfcElectricGenerator);
             qtoSetElectricGeneratorBaseQuantities.EntityTypes.Add(IFCEntityType.IfcElectricGeneratorType);
-            qtoSetElectricGeneratorBaseQuantities.ObjectType = "IfcElectricGenerator,IfcElectricGeneratorType";
+            qtoSetElectricGeneratorBaseQuantities.ObjectType = "IfcElectricGenerator";
             ifcPSE = new QuantityEntry("Qto_ElectricGeneratorBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -3812,7 +3812,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetElectricMotorBaseQuantities.EntityTypes.Add(IFCEntityType.IfcElectricMotor);
             qtoSetElectricMotorBaseQuantities.EntityTypes.Add(IFCEntityType.IfcElectricMotorType);
-            qtoSetElectricMotorBaseQuantities.ObjectType = "IfcElectricMotor,IfcElectricMotorType";
+            qtoSetElectricMotorBaseQuantities.ObjectType = "IfcElectricMotor";
             ifcPSE = new QuantityEntry("Qto_ElectricMotorBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -3853,7 +3853,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetElectricTimeControlBaseQuantities.EntityTypes.Add(IFCEntityType.IfcElectricTimeControl);
             qtoSetElectricTimeControlBaseQuantities.EntityTypes.Add(IFCEntityType.IfcElectricTimeControlType);
-            qtoSetElectricTimeControlBaseQuantities.ObjectType = "IfcElectricTimeControl,IfcElectricTimeControlType";
+            qtoSetElectricTimeControlBaseQuantities.ObjectType = "IfcElectricTimeControl";
             ifcPSE = new QuantityEntry("Qto_ElectricTimeControlBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -3894,7 +3894,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetEvaporativeCoolerBaseQuantities.EntityTypes.Add(IFCEntityType.IfcEvaporativeCooler);
             qtoSetEvaporativeCoolerBaseQuantities.EntityTypes.Add(IFCEntityType.IfcEvaporativeCoolerType);
-            qtoSetEvaporativeCoolerBaseQuantities.ObjectType = "IfcEvaporativeCooler,IfcEvaporativeCoolerType";
+            qtoSetEvaporativeCoolerBaseQuantities.ObjectType = "IfcEvaporativeCooler";
             ifcPSE = new QuantityEntry("Qto_EvaporativeCoolerBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -3935,7 +3935,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetEvaporatorBaseQuantities.EntityTypes.Add(IFCEntityType.IfcEvaporator);
             qtoSetEvaporatorBaseQuantities.EntityTypes.Add(IFCEntityType.IfcEvaporatorType);
-            qtoSetEvaporatorBaseQuantities.ObjectType = "IfcEvaporator,IfcEvaporatorType";
+            qtoSetEvaporatorBaseQuantities.ObjectType = "IfcEvaporator";
             ifcPSE = new QuantityEntry("Qto_EvaporatorBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -4034,7 +4034,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetFanBaseQuantities.EntityTypes.Add(IFCEntityType.IfcFan);
             qtoSetFanBaseQuantities.EntityTypes.Add(IFCEntityType.IfcFanType);
-            qtoSetFanBaseQuantities.ObjectType = "IfcFan,IfcFanType";
+            qtoSetFanBaseQuantities.ObjectType = "IfcFan";
             ifcPSE = new QuantityEntry("Qto_FanBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -4075,7 +4075,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetFilterBaseQuantities.EntityTypes.Add(IFCEntityType.IfcFilter);
             qtoSetFilterBaseQuantities.EntityTypes.Add(IFCEntityType.IfcFilterType);
-            qtoSetFilterBaseQuantities.ObjectType = "IfcFilter,IfcFilterType";
+            qtoSetFilterBaseQuantities.ObjectType = "IfcFilter";
             ifcPSE = new QuantityEntry("Qto_FilterBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -4116,7 +4116,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetFireSuppressionTerminalBaseQuantities.EntityTypes.Add(IFCEntityType.IfcFireSuppressionTerminal);
             qtoSetFireSuppressionTerminalBaseQuantities.EntityTypes.Add(IFCEntityType.IfcFireSuppressionTerminalType);
-            qtoSetFireSuppressionTerminalBaseQuantities.ObjectType = "IfcFireSuppressionTerminal,IfcFireSuppressionTerminalType";
+            qtoSetFireSuppressionTerminalBaseQuantities.ObjectType = "IfcFireSuppressionTerminal";
             ifcPSE = new QuantityEntry("Qto_FireSuppressionTerminalBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -4157,7 +4157,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetFlowInstrumentBaseQuantities.EntityTypes.Add(IFCEntityType.IfcFlowInstrument);
             qtoSetFlowInstrumentBaseQuantities.EntityTypes.Add(IFCEntityType.IfcFlowInstrumentType);
-            qtoSetFlowInstrumentBaseQuantities.ObjectType = "IfcFlowInstrument,IfcFlowInstrumentType";
+            qtoSetFlowInstrumentBaseQuantities.ObjectType = "IfcFlowInstrument";
             ifcPSE = new QuantityEntry("Qto_FlowInstrumentBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -4198,7 +4198,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetFlowMeterBaseQuantities.EntityTypes.Add(IFCEntityType.IfcFlowMeter);
             qtoSetFlowMeterBaseQuantities.EntityTypes.Add(IFCEntityType.IfcFlowMeterType);
-            qtoSetFlowMeterBaseQuantities.ObjectType = "IfcFlowMeter,IfcFlowMeterType";
+            qtoSetFlowMeterBaseQuantities.ObjectType = "IfcFlowMeter";
             ifcPSE = new QuantityEntry("Qto_FlowMeterBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -4239,7 +4239,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetFootingBaseQuantities.EntityTypes.Add(IFCEntityType.IfcFooting);
             qtoSetFootingBaseQuantities.EntityTypes.Add(IFCEntityType.IfcFootingType);
-            qtoSetFootingBaseQuantities.ObjectType = "IfcFooting,IfcFootingType";
+            qtoSetFootingBaseQuantities.ObjectType = "IfcFooting";
             ifcPSE = new QuantityEntry("Qto_FootingBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -4436,7 +4436,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetHeatExchangerBaseQuantities.EntityTypes.Add(IFCEntityType.IfcHeatExchanger);
             qtoSetHeatExchangerBaseQuantities.EntityTypes.Add(IFCEntityType.IfcHeatExchangerType);
-            qtoSetHeatExchangerBaseQuantities.ObjectType = "IfcHeatExchanger,IfcHeatExchangerType";
+            qtoSetHeatExchangerBaseQuantities.ObjectType = "IfcHeatExchanger";
             ifcPSE = new QuantityEntry("Qto_HeatExchangerBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -4477,7 +4477,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetHumidifierBaseQuantities.EntityTypes.Add(IFCEntityType.IfcHumidifier);
             qtoSetHumidifierBaseQuantities.EntityTypes.Add(IFCEntityType.IfcHumidifierType);
-            qtoSetHumidifierBaseQuantities.ObjectType = "IfcHumidifier,IfcHumidifierType";
+            qtoSetHumidifierBaseQuantities.ObjectType = "IfcHumidifier";
             ifcPSE = new QuantityEntry("Qto_HumidifierBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -4518,7 +4518,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetImpactProtectionDeviceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcImpactProtectionDevice);
             qtoSetImpactProtectionDeviceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcImpactProtectionDeviceType);
-            qtoSetImpactProtectionDeviceBaseQuantities.ObjectType = "IfcImpactProtectionDevice,IfcImpactProtectionDeviceType";
+            qtoSetImpactProtectionDeviceBaseQuantities.ObjectType = "IfcImpactProtectionDevice";
             ifcPSE = new QuantityEntry("Qto_ImpactProtectionDeviceBaseQuantities.Weight", "Weight");
             ifcPSE.PropertyName = "Weight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -4545,7 +4545,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetInterceptorBaseQuantities.EntityTypes.Add(IFCEntityType.IfcInterceptor);
             qtoSetInterceptorBaseQuantities.EntityTypes.Add(IFCEntityType.IfcInterceptorType);
-            qtoSetInterceptorBaseQuantities.ObjectType = "IfcInterceptor,IfcInterceptorType";
+            qtoSetInterceptorBaseQuantities.ObjectType = "IfcInterceptor";
             ifcPSE = new QuantityEntry("Qto_InterceptorBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -4586,7 +4586,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetJunctionBoxBaseQuantities.EntityTypes.Add(IFCEntityType.IfcJunctionBox);
             qtoSetJunctionBoxBaseQuantities.EntityTypes.Add(IFCEntityType.IfcJunctionBoxType);
-            qtoSetJunctionBoxBaseQuantities.ObjectType = "IfcJunctionBox,IfcJunctionBoxType";
+            qtoSetJunctionBoxBaseQuantities.ObjectType = "IfcJunctionBox";
             ifcPSE = new QuantityEntry("Qto_JunctionBoxBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -4668,7 +4668,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetKerbBaseQuantities.EntityTypes.Add(IFCEntityType.IfcKerb);
             qtoSetKerbBaseQuantities.EntityTypes.Add(IFCEntityType.IfcKerbType);
-            qtoSetKerbBaseQuantities.ObjectType = "IfcKerb,IfcKerbType";
+            qtoSetKerbBaseQuantities.ObjectType = "IfcKerb";
             ifcPSE = new QuantityEntry("Qto_KerbBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -4735,7 +4735,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetLaborResourceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcLaborResource);
             qtoSetLaborResourceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcLaborResourceType);
-            qtoSetLaborResourceBaseQuantities.ObjectType = "IfcLaborResource,IfcLaborResourceType";
+            qtoSetLaborResourceBaseQuantities.ObjectType = "IfcLaborResource";
             ifcPSE = new QuantityEntry("Qto_LaborResourceBaseQuantities.StandardWork", "StandardWork");
             ifcPSE.PropertyName = "StandardWork";
             ifcPSE.QuantityType = QuantityType.Time;
@@ -4793,7 +4793,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetLampBaseQuantities.EntityTypes.Add(IFCEntityType.IfcLamp);
             qtoSetLampBaseQuantities.EntityTypes.Add(IFCEntityType.IfcLampType);
-            qtoSetLampBaseQuantities.ObjectType = "IfcLamp,IfcLampType";
+            qtoSetLampBaseQuantities.ObjectType = "IfcLamp";
             ifcPSE = new QuantityEntry("Qto_LampBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -4834,7 +4834,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetLightFixtureBaseQuantities.EntityTypes.Add(IFCEntityType.IfcLightFixture);
             qtoSetLightFixtureBaseQuantities.EntityTypes.Add(IFCEntityType.IfcLightFixtureType);
-            qtoSetLightFixtureBaseQuantities.ObjectType = "IfcLightFixture,IfcLightFixtureType";
+            qtoSetLightFixtureBaseQuantities.ObjectType = "IfcLightFixture";
             ifcPSE = new QuantityEntry("Qto_LightFixtureBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -4967,7 +4967,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetMemberBaseQuantities.EntityTypes.Add(IFCEntityType.IfcMember);
             qtoSetMemberBaseQuantities.EntityTypes.Add(IFCEntityType.IfcMemberType);
-            qtoSetMemberBaseQuantities.ObjectType = "IfcMember,IfcMemberType";
+            qtoSetMemberBaseQuantities.ObjectType = "IfcMember";
             ifcPSE = new QuantityEntry("Qto_MemberBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -5291,7 +5291,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetMotorConnectionBaseQuantities.EntityTypes.Add(IFCEntityType.IfcMotorConnection);
             qtoSetMotorConnectionBaseQuantities.EntityTypes.Add(IFCEntityType.IfcMotorConnectionType);
-            qtoSetMotorConnectionBaseQuantities.ObjectType = "IfcMotorConnection,IfcMotorConnectionType";
+            qtoSetMotorConnectionBaseQuantities.ObjectType = "IfcMotorConnection";
             ifcPSE = new QuantityEntry("Qto_MotorConnectionBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -5484,7 +5484,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetOutletBaseQuantities.EntityTypes.Add(IFCEntityType.IfcOutlet);
             qtoSetOutletBaseQuantities.EntityTypes.Add(IFCEntityType.IfcOutletType);
-            qtoSetOutletBaseQuantities.ObjectType = "IfcOutlet,IfcOutletType";
+            qtoSetOutletBaseQuantities.ObjectType = "IfcOutlet";
             ifcPSE = new QuantityEntry("Qto_OutletBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -5525,7 +5525,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetPavementBaseQuantities.EntityTypes.Add(IFCEntityType.IfcPavement);
             qtoSetPavementBaseQuantities.EntityTypes.Add(IFCEntityType.IfcPavementType);
-            qtoSetPavementBaseQuantities.ObjectType = "IfcPavement,IfcPavementType";
+            qtoSetPavementBaseQuantities.ObjectType = "IfcPavement";
             ifcPSE = new QuantityEntry("Qto_PavementBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -5601,7 +5601,7 @@ namespace Revit.IFC.Export.Exporter
             qtoSetPictorialSignQuantities.EntityTypes.Add(IFCEntityType.IfcSign);
             qtoSetPictorialSignQuantities.EntityTypes.Add(IFCEntityType.IfcSignType);
             qtoSetPictorialSignQuantities.ObjectType = "IfcSign";
-            qtoSetPictorialSignQuantities.PredefinedType = "PICTORAL";
+            qtoSetPictorialSignQuantities.PredefinedTypes.Add("PICTORAL");
             ifcPSE = new QuantityEntry("Qto_PictorialSignQuantities.Area", "Area");
             ifcPSE.PropertyName = "Area";
             ifcPSE.QuantityType = QuantityType.Area;
@@ -5636,7 +5636,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetPileBaseQuantities.EntityTypes.Add(IFCEntityType.IfcPile);
             qtoSetPileBaseQuantities.EntityTypes.Add(IFCEntityType.IfcPileType);
-            qtoSetPileBaseQuantities.ObjectType = "IfcPile,IfcPileType";
+            qtoSetPileBaseQuantities.ObjectType = "IfcPile";
             ifcPSE = new QuantityEntry("Qto_PileBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -5796,7 +5796,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetPipeFittingBaseQuantities.EntityTypes.Add(IFCEntityType.IfcPipeFitting);
             qtoSetPipeFittingBaseQuantities.EntityTypes.Add(IFCEntityType.IfcPipeFittingType);
-            qtoSetPipeFittingBaseQuantities.ObjectType = "IfcPipeFitting,IfcPipeFittingType";
+            qtoSetPipeFittingBaseQuantities.ObjectType = "IfcPipeFitting";
             ifcPSE = new QuantityEntry("Qto_PipeFittingBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -5922,7 +5922,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetPipeSegmentBaseQuantities.EntityTypes.Add(IFCEntityType.IfcPipeSegment);
             qtoSetPipeSegmentBaseQuantities.EntityTypes.Add(IFCEntityType.IfcPipeSegmentType);
-            qtoSetPipeSegmentBaseQuantities.ObjectType = "IfcPipeSegment,IfcPipeSegmentType";
+            qtoSetPipeSegmentBaseQuantities.ObjectType = "IfcPipeSegment";
             ifcPSE = new QuantityEntry("Qto_PipeSegmentBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -6056,7 +6056,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetPlateBaseQuantities.EntityTypes.Add(IFCEntityType.IfcPlate);
             qtoSetPlateBaseQuantities.EntityTypes.Add(IFCEntityType.IfcPlateType);
-            qtoSetPlateBaseQuantities.ObjectType = "IfcPlate,IfcPlateType";
+            qtoSetPlateBaseQuantities.ObjectType = "IfcPlate";
             ifcPSE = new QuantityEntry("Qto_PlateBaseQuantities.Width", "Width");
             ifcPSE.PropertyName = "Width";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -6305,7 +6305,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetProtectiveDeviceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcProtectiveDevice);
             qtoSetProtectiveDeviceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceType);
-            qtoSetProtectiveDeviceBaseQuantities.ObjectType = "IfcProtectiveDevice,IfcProtectiveDeviceType";
+            qtoSetProtectiveDeviceBaseQuantities.ObjectType = "IfcProtectiveDevice";
             ifcPSE = new QuantityEntry("Qto_ProtectiveDeviceBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -6346,7 +6346,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetProtectiveDeviceTrippingUnitBaseQuantities.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceTrippingUnit);
             qtoSetProtectiveDeviceTrippingUnitBaseQuantities.EntityTypes.Add(IFCEntityType.IfcProtectiveDeviceTrippingUnitType);
-            qtoSetProtectiveDeviceTrippingUnitBaseQuantities.ObjectType = "IfcProtectiveDeviceTrippingUnit,IfcProtectiveDeviceTrippingUnitType";
+            qtoSetProtectiveDeviceTrippingUnitBaseQuantities.ObjectType = "IfcProtectiveDeviceTrippingUnit";
             ifcPSE = new QuantityEntry("Qto_ProtectiveDeviceTrippingUnitBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -6387,7 +6387,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetPumpBaseQuantities.EntityTypes.Add(IFCEntityType.IfcPump);
             qtoSetPumpBaseQuantities.EntityTypes.Add(IFCEntityType.IfcPumpType);
-            qtoSetPumpBaseQuantities.ObjectType = "IfcPump,IfcPumpType";
+            qtoSetPumpBaseQuantities.ObjectType = "IfcPump";
             ifcPSE = new QuantityEntry("Qto_PumpBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -6428,7 +6428,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetRailBaseQuantities.EntityTypes.Add(IFCEntityType.IfcRail);
             qtoSetRailBaseQuantities.EntityTypes.Add(IFCEntityType.IfcRailType);
-            qtoSetRailBaseQuantities.ObjectType = "IfcRail,IfcRailType";
+            qtoSetRailBaseQuantities.ObjectType = "IfcRail";
             ifcPSE = new QuantityEntry("Qto_RailBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -6471,7 +6471,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetRailingBaseQuantities.EntityTypes.Add(IFCEntityType.IfcRailing);
             qtoSetRailingBaseQuantities.EntityTypes.Add(IFCEntityType.IfcRailingType);
-            qtoSetRailingBaseQuantities.ObjectType = "IfcRailing,IfcRailingType";
+            qtoSetRailingBaseQuantities.ObjectType = "IfcRailing";
             ifcPSE = new QuantityEntry("Qto_RailingBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -6514,7 +6514,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetRampFlightBaseQuantities.EntityTypes.Add(IFCEntityType.IfcRampFlight);
             qtoSetRampFlightBaseQuantities.EntityTypes.Add(IFCEntityType.IfcRampFlightType);
-            qtoSetRampFlightBaseQuantities.ObjectType = "IfcRampFlight,IfcRampFlightType";
+            qtoSetRampFlightBaseQuantities.ObjectType = "IfcRampFlight";
             ifcPSE = new QuantityEntry("Qto_RampFlightBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -6704,7 +6704,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetReinforcingElementBaseQuantities.EntityTypes.Add(IFCEntityType.IfcReinforcingElement);
             qtoSetReinforcingElementBaseQuantities.EntityTypes.Add(IFCEntityType.IfcReinforcingElementType);
-            qtoSetReinforcingElementBaseQuantities.ObjectType = "IfcReinforcingElement,IfcReinforcingElementType";
+            qtoSetReinforcingElementBaseQuantities.ObjectType = "IfcReinforcingElement";
             ifcPSE = new QuantityEntry("Qto_ReinforcingElementBaseQuantities.Count", "Count");
             ifcPSE.PropertyName = "Count";
             ifcPSE.QuantityType = QuantityType.Count;
@@ -6776,7 +6776,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetRoofBaseQuantities.EntityTypes.Add(IFCEntityType.IfcRoof);
             qtoSetRoofBaseQuantities.EntityTypes.Add(IFCEntityType.IfcRoofType);
-            qtoSetRoofBaseQuantities.ObjectType = "IfcRoof,IfcRoofType";
+            qtoSetRoofBaseQuantities.ObjectType = "IfcRoof";
             ifcPSE = new QuantityEntry("Qto_RoofBaseQuantities.GrossArea", "GrossArea");
             ifcPSE.PropertyName = "GrossArea";
             ifcPSE.QuantityType = QuantityType.Area;
@@ -6880,7 +6880,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetSanitaryTerminalBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminal);
             qtoSetSanitaryTerminalBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSanitaryTerminalType);
-            qtoSetSanitaryTerminalBaseQuantities.ObjectType = "IfcSanitaryTerminal,IfcSanitaryTerminalType";
+            qtoSetSanitaryTerminalBaseQuantities.ObjectType = "IfcSanitaryTerminal";
             ifcPSE = new QuantityEntry("Qto_SanitaryTerminalBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -6921,7 +6921,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetSensorBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSensor);
             qtoSetSensorBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSensorType);
-            qtoSetSensorBaseQuantities.ObjectType = "IfcSensor,IfcSensorType";
+            qtoSetSensorBaseQuantities.ObjectType = "IfcSensor";
             ifcPSE = new QuantityEntry("Qto_SensorBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -6962,7 +6962,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetSignalBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSignal);
             qtoSetSignalBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSignalType);
-            qtoSetSignalBaseQuantities.ObjectType = "IfcSignal,IfcSignalType";
+            qtoSetSignalBaseQuantities.ObjectType = "IfcSignal";
             ifcPSE = new QuantityEntry("Qto_SignalBaseQuantities.Weight", "Weight");
             ifcPSE.PropertyName = "Weight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -6989,7 +6989,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetSignBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSign);
             qtoSetSignBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSignType);
-            qtoSetSignBaseQuantities.ObjectType = "IfcSign,IfcSignType";
+            qtoSetSignBaseQuantities.ObjectType = "IfcSign";
             ifcPSE = new QuantityEntry("Qto_SignBaseQuantities.Height", "Height");
             ifcPSE.PropertyName = "Height";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -7143,7 +7143,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetSlabBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSlab);
             qtoSetSlabBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSlabType);
-            qtoSetSlabBaseQuantities.ObjectType = "IfcSlab,IfcSlabType";
+            qtoSetSlabBaseQuantities.ObjectType = "IfcSlab";
             ifcPSE = new QuantityEntry("Qto_SlabBaseQuantities.Width", "Width");
             ifcPSE.PropertyName = "Width";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -7478,7 +7478,7 @@ namespace Revit.IFC.Export.Exporter
             qtoSetSleeperBaseQuantities.EntityTypes.Add(IFCEntityType.IfcTrackElement);
             qtoSetSleeperBaseQuantities.EntityTypes.Add(IFCEntityType.IfcTrackElementType);
             qtoSetSleeperBaseQuantities.ObjectType = "IfcTrackElement";
-            qtoSetSleeperBaseQuantities.PredefinedType = "SLEEPER";
+            qtoSetSleeperBaseQuantities.PredefinedTypes.Add("SLEEPER");
             ifcPSE = new QuantityEntry("Qto_SleeperBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -7521,7 +7521,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetSolarDeviceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSolarDevice);
             qtoSetSolarDeviceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSolarDeviceType);
-            qtoSetSolarDeviceBaseQuantities.ObjectType = "IfcSolarDevice,IfcSolarDeviceType";
+            qtoSetSolarDeviceBaseQuantities.ObjectType = "IfcSolarDevice";
             ifcPSE = new QuantityEntry("Qto_SolarDeviceBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -7579,7 +7579,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetSpaceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSpace);
             qtoSetSpaceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSpaceType);
-            qtoSetSpaceBaseQuantities.ObjectType = "IfcSpace,IfcSpaceType";
+            qtoSetSpaceBaseQuantities.ObjectType = "IfcSpace";
             ifcPSE = new QuantityEntry("Qto_SpaceBaseQuantities.Height", "Height");
             ifcPSE.PropertyName = "Height";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -8004,7 +8004,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetSpaceHeaterBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSpaceHeater);
             qtoSetSpaceHeaterBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSpaceHeaterType);
-            qtoSetSpaceHeaterBaseQuantities.ObjectType = "IfcSpaceHeater,IfcSpaceHeaterType";
+            qtoSetSpaceHeaterBaseQuantities.ObjectType = "IfcSpaceHeater";
             ifcPSE = new QuantityEntry("Qto_SpaceHeaterBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -8079,7 +8079,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetSpatialZoneBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSpatialZone);
             qtoSetSpatialZoneBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSpatialZoneType);
-            qtoSetSpatialZoneBaseQuantities.ObjectType = "IfcSpatialZone,IfcSpatialZoneType";
+            qtoSetSpatialZoneBaseQuantities.ObjectType = "IfcSpatialZone";
             ifcPSE = new QuantityEntry("Qto_SpatialZoneBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -8122,7 +8122,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetStackTerminalBaseQuantities.EntityTypes.Add(IFCEntityType.IfcStackTerminal);
             qtoSetStackTerminalBaseQuantities.EntityTypes.Add(IFCEntityType.IfcStackTerminalType);
-            qtoSetStackTerminalBaseQuantities.ObjectType = "IfcStackTerminal,IfcStackTerminalType";
+            qtoSetStackTerminalBaseQuantities.ObjectType = "IfcStackTerminal";
             ifcPSE = new QuantityEntry("Qto_StackTerminalBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -8163,7 +8163,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetStairFlightBaseQuantities.EntityTypes.Add(IFCEntityType.IfcStairFlight);
             qtoSetStairFlightBaseQuantities.EntityTypes.Add(IFCEntityType.IfcStairFlightType);
-            qtoSetStairFlightBaseQuantities.ObjectType = "IfcStairFlight,IfcStairFlightType";
+            qtoSetStairFlightBaseQuantities.ObjectType = "IfcStairFlight";
             ifcPSE = new QuantityEntry("Qto_StairFlightBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -8275,7 +8275,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetSwitchingDeviceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSwitchingDevice);
             qtoSetSwitchingDeviceBaseQuantities.EntityTypes.Add(IFCEntityType.IfcSwitchingDeviceType);
-            qtoSetSwitchingDeviceBaseQuantities.ObjectType = "IfcSwitchingDevice,IfcSwitchingDeviceType";
+            qtoSetSwitchingDeviceBaseQuantities.ObjectType = "IfcSwitchingDevice";
             ifcPSE = new QuantityEntry("Qto_SwitchingDeviceBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -8316,7 +8316,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetTankBaseQuantities.EntityTypes.Add(IFCEntityType.IfcTank);
             qtoSetTankBaseQuantities.EntityTypes.Add(IFCEntityType.IfcTankType);
-            qtoSetTankBaseQuantities.ObjectType = "IfcTank,IfcTankType";
+            qtoSetTankBaseQuantities.ObjectType = "IfcTank";
             ifcPSE = new QuantityEntry("Qto_TankBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -8391,7 +8391,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetTransformerBaseQuantities.EntityTypes.Add(IFCEntityType.IfcTransformer);
             qtoSetTransformerBaseQuantities.EntityTypes.Add(IFCEntityType.IfcTransformerType);
-            qtoSetTransformerBaseQuantities.ObjectType = "IfcTransformer,IfcTransformerType";
+            qtoSetTransformerBaseQuantities.ObjectType = "IfcTransformer";
             ifcPSE = new QuantityEntry("Qto_TransformerBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -8432,7 +8432,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetTubeBundleBaseQuantities.EntityTypes.Add(IFCEntityType.IfcTubeBundle);
             qtoSetTubeBundleBaseQuantities.EntityTypes.Add(IFCEntityType.IfcTubeBundleType);
-            qtoSetTubeBundleBaseQuantities.ObjectType = "IfcTubeBundle,IfcTubeBundleType";
+            qtoSetTubeBundleBaseQuantities.ObjectType = "IfcTubeBundle";
             ifcPSE = new QuantityEntry("Qto_TubeBundleBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -8490,7 +8490,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetUnitaryControlElementBaseQuantities.EntityTypes.Add(IFCEntityType.IfcUnitaryControlElement);
             qtoSetUnitaryControlElementBaseQuantities.EntityTypes.Add(IFCEntityType.IfcUnitaryControlElementType);
-            qtoSetUnitaryControlElementBaseQuantities.ObjectType = "IfcUnitaryControlElement,IfcUnitaryControlElementType";
+            qtoSetUnitaryControlElementBaseQuantities.ObjectType = "IfcUnitaryControlElement";
             ifcPSE = new QuantityEntry("Qto_UnitaryControlElementBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -8531,7 +8531,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetUnitaryEquipmentBaseQuantities.EntityTypes.Add(IFCEntityType.IfcUnitaryEquipment);
             qtoSetUnitaryEquipmentBaseQuantities.EntityTypes.Add(IFCEntityType.IfcUnitaryEquipmentType);
-            qtoSetUnitaryEquipmentBaseQuantities.ObjectType = "IfcUnitaryEquipment,IfcUnitaryEquipmentType";
+            qtoSetUnitaryEquipmentBaseQuantities.ObjectType = "IfcUnitaryEquipment";
             ifcPSE = new QuantityEntry("Qto_UnitaryEquipmentBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -8572,7 +8572,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetValveBaseQuantities.EntityTypes.Add(IFCEntityType.IfcValve);
             qtoSetValveBaseQuantities.EntityTypes.Add(IFCEntityType.IfcValveType);
-            qtoSetValveBaseQuantities.ObjectType = "IfcValve,IfcValveType";
+            qtoSetValveBaseQuantities.ObjectType = "IfcValve";
             ifcPSE = new QuantityEntry("Qto_ValveBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -8612,17 +8612,13 @@ namespace Revit.IFC.Export.Exporter
          if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3 && certifiedEntityAndPsetList.AllowPsetToBeCreated(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), "Qto_VehicleBaseQuantities"))
          {
             qtoSetVehicleBaseQuantities.EntityTypes.Add(IFCEntityType.IfcVehicle);
-            qtoSetVehicleBaseQuantities.EntityTypes.Add(IFCEntityType.IfcVehicle);
-            qtoSetVehicleBaseQuantities.EntityTypes.Add(IFCEntityType.IfcVehicle);
-            qtoSetVehicleBaseQuantities.EntityTypes.Add(IFCEntityType.IfcVehicle);
-            qtoSetVehicleBaseQuantities.EntityTypes.Add(IFCEntityType.IfcVehicle);
-            qtoSetVehicleBaseQuantities.EntityTypes.Add(IFCEntityType.IfcVehicleType);
-            qtoSetVehicleBaseQuantities.EntityTypes.Add(IFCEntityType.IfcVehicleType);
-            qtoSetVehicleBaseQuantities.EntityTypes.Add(IFCEntityType.IfcVehicleType);
-            qtoSetVehicleBaseQuantities.EntityTypes.Add(IFCEntityType.IfcVehicleType);
             qtoSetVehicleBaseQuantities.EntityTypes.Add(IFCEntityType.IfcVehicleType);
             qtoSetVehicleBaseQuantities.ObjectType = "IfcVehicle";
-            qtoSetVehicleBaseQuantities.PredefinedType = "VEHICLETRACKED";
+            qtoSetVehicleBaseQuantities.PredefinedTypes.Add("ROLLINGSTOCK");
+            qtoSetVehicleBaseQuantities.PredefinedTypes.Add("VEHICLEAIR");
+            qtoSetVehicleBaseQuantities.PredefinedTypes.Add("VEHICLEMARINE");
+            qtoSetVehicleBaseQuantities.PredefinedTypes.Add("VEHICLE");
+            qtoSetVehicleBaseQuantities.PredefinedTypes.Add("VEHICLETRACKED");
             ifcPSE = new QuantityEntry("Qto_VehicleBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -8665,7 +8661,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetVibrationIsolatorBaseQuantities.EntityTypes.Add(IFCEntityType.IfcVibrationIsolator);
             qtoSetVibrationIsolatorBaseQuantities.EntityTypes.Add(IFCEntityType.IfcVibrationIsolatorType);
-            qtoSetVibrationIsolatorBaseQuantities.ObjectType = "IfcVibrationIsolator,IfcVibrationIsolatorType";
+            qtoSetVibrationIsolatorBaseQuantities.ObjectType = "IfcVibrationIsolator";
             ifcPSE = new QuantityEntry("Qto_VibrationIsolatorBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -8756,7 +8752,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetWallBaseQuantities.EntityTypes.Add(IFCEntityType.IfcWall);
             qtoSetWallBaseQuantities.EntityTypes.Add(IFCEntityType.IfcWallType);
-            qtoSetWallBaseQuantities.ObjectType = "IfcWall,IfcWallType";
+            qtoSetWallBaseQuantities.ObjectType = "IfcWall";
             ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.Length", "Length");
             ifcPSE.PropertyName = "Length";
             ifcPSE.QuantityType = QuantityType.Length;
@@ -8883,24 +8879,24 @@ namespace Revit.IFC.Export.Exporter
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetWallBaseQuantities.AddEntry(ifcPSE);
 
-            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.GrossFootprintArea", "GrossFootprintArea");
-            ifcPSE.PropertyName = "GrossFootprintArea";
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.GrossFootPrintArea", "GrossFootPrintArea");
+            ifcPSE.PropertyName = "GrossFootPrintArea";
             ifcPSE.QuantityType = QuantityType.Area;
             ifcPSE.AddLocalizedParameterName(LanguageType.German, "Bruttogrundfläche");
-            ifcPSE.AddLocalizedParameterName(LanguageType.English_USA, "Gross Footprint Area");
+            ifcPSE.AddLocalizedParameterName(LanguageType.English_USA, "Gross FootPrint Area");
             ifcPSE.AddLocalizedParameterName(LanguageType.Japanese, "フットプリント面積");
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossFootprintAreaCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.GrossFootPrintAreaCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetWallBaseQuantities.AddEntry(ifcPSE);
 
-            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.NetFootprintArea", "NetFootprintArea");
-            ifcPSE.PropertyName = "NetFootprintArea";
+            ifcPSE = new QuantityEntry("Qto_WallBaseQuantities.NetFootPrintArea", "NetFootPrintArea");
+            ifcPSE.PropertyName = "NetFootPrintArea";
             ifcPSE.QuantityType = QuantityType.Area;
             ifcPSE.AddLocalizedParameterName(LanguageType.German, "Nettogrundfläche");
-            ifcPSE.AddLocalizedParameterName(LanguageType.English_USA, "Net Footprint Area");
+            ifcPSE.AddLocalizedParameterName(LanguageType.English_USA, "Net FootPrint Area");
             ifcPSE.AddLocalizedParameterName(LanguageType.Japanese, "正味フットプリント面積");
-            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetFootprintAreaCalculator");
+            calcType = System.Reflection.Assembly.GetExecutingAssembly().GetType("Revit.IFC.Export.Exporter.PropertySet.Calculators.NetFootPrintAreaCalculator");
             if (calcType != null)
                ifcPSE.PropertyCalculator = (PropertyCalculator) calcType.GetConstructor(Type.EmptyTypes).Invoke(new object[]{});
             qtoSetWallBaseQuantities.AddEntry(ifcPSE);
@@ -9177,7 +9173,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetWasteTerminalBaseQuantities.EntityTypes.Add(IFCEntityType.IfcWasteTerminal);
             qtoSetWasteTerminalBaseQuantities.EntityTypes.Add(IFCEntityType.IfcWasteTerminalType);
-            qtoSetWasteTerminalBaseQuantities.ObjectType = "IfcWasteTerminal,IfcWasteTerminalType";
+            qtoSetWasteTerminalBaseQuantities.ObjectType = "IfcWasteTerminal";
             ifcPSE = new QuantityEntry("Qto_WasteTerminalBaseQuantities.GrossWeight", "GrossWeight");
             ifcPSE.PropertyName = "GrossWeight";
             ifcPSE.QuantityType = QuantityType.Mass;
@@ -9218,7 +9214,7 @@ namespace Revit.IFC.Export.Exporter
          {
             qtoSetWindowBaseQuantities.EntityTypes.Add(IFCEntityType.IfcWindow);
             qtoSetWindowBaseQuantities.EntityTypes.Add(IFCEntityType.IfcWindowType);
-            qtoSetWindowBaseQuantities.ObjectType = "IfcWindow,IfcWindowType";
+            qtoSetWindowBaseQuantities.ObjectType = "IfcWindow";
             ifcPSE = new QuantityEntry("Qto_WindowBaseQuantities.Width", "Width");
             ifcPSE.PropertyName = "Width";
             ifcPSE.QuantityType = QuantityType.Length;

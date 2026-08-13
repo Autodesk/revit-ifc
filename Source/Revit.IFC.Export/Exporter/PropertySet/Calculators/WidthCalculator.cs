@@ -71,7 +71,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
          ShapeCalculator shapeCalculator = ShapeCalculator.Instance;
          if (shapeCalculator != null && shapeCalculator.GetCurrentElement() == element)
@@ -84,42 +84,46 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
                   // This is already scaled.
                   double? width = IFCAnyHandleUtil.GetDoubleAttribute(rectProfile, "XDim");
                   m_Width = width.HasValue ? width.Value : 0.0;
-                  if (m_Width > MathUtil.Eps())
+                  if (m_Width > MathUtil.Eps)
                      return true;
                }
             }
          }
 
-         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Width, entryMap.CompatibleRevitParameterName, "IfcQtyWidth");
+         (_, m_Width) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, entryMap.CompatibleRevitParameterName, "IfcQtyWidth");
 
-         m_Width = UnitUtil.ScaleLength(m_Width);
-         if (m_Width > MathUtil.Eps())
+         if (m_Width > MathUtil.Eps)
+         {
+            m_Width = UnitUtil.ScaleLength(m_Width);
             return true;
+         }
 
          ElementId categoryId = CategoryUtil.GetSafeCategoryId(element); 
          IFCAnyHandle hnd = ExporterCacheManager.ElementToHandleCache.Find(element.Id);
 
          if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcDoor) || categoryId == new ElementId(BuiltInCategory.OST_Doors))
          {
-            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.DOOR_WIDTH, out m_Width);
+            (_, m_Width) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.DOOR_WIDTH);
          }
          else if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcWindow) || categoryId == new ElementId(BuiltInCategory.OST_Windows))
          {
-            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.WINDOW_WIDTH, out m_Width);
+            (_, m_Width) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.WINDOW_WIDTH);
          }
          else if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcRampFlight)
             || IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcStairFlight))
          {
-            ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.STAIRS_ATTR_TREAD_WIDTH, out m_Width);
+            (_, m_Width) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, BuiltInParameter.STAIRS_ATTR_TREAD_WIDTH);
          }
          else if (IFCAnyHandleUtil.IsSubTypeOf(hnd, IFCEntityType.IfcCurtainWall))
          {
             m_Width = (element as Wall)?.Width ?? 0.0;
          }
 
-         m_Width = UnitUtil.ScaleLength(m_Width);
-         if (m_Width > MathUtil.Eps())
+         if (m_Width > MathUtil.Eps)
+         {
+            m_Width = UnitUtil.ScaleLength(m_Width);
             return true;
+         }
 
          if (extrusionCreationData == null)
             return false;
@@ -134,7 +138,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
             m_Width = extrusionCreationData.ScaledWidth;
          }
 
-         return m_Width > MathUtil.Eps();
+         return m_Width > MathUtil.Eps;
       }
 
       /// <summary>

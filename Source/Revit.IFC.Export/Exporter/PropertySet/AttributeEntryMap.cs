@@ -37,30 +37,10 @@ namespace Revit.IFC.Export.Exporter.PropertySet
    {
       public AttributeEntryMap()
       {
-
       }
+
       public AttributeEntryMap(string name, BuiltInParameter builtInParameter) : base(name, builtInParameter)
       {
-
-      }
-
-
-      internal string AsString(Element element)
-      {
-         if (element == null)
-            return null;
-         Parameter parameter = null;
-         if (RevitBuiltInParameter != BuiltInParameter.INVALID)
-         {
-            parameter = element.get_Parameter(RevitBuiltInParameter);
-         }
-         else
-         {
-            parameter = ParameterUtil.GetParameterFromName(element.Id, RevitParameterName);
-         }
-         if (parameter == null)
-            return null;
-         return parameter.AsString();
       }
    }
 }

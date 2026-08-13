@@ -88,23 +88,24 @@ namespace Revit.IFC.Export.Exporter
 
                   string instanceGUID = GUIDUtil.CreateGUID(element);
                   IFCExportInfoPair exportInfo = new IFCExportInfoPair(Common.Enums.IFCEntityType.IfcPile, ifcEnumType);
-
-                  IFCAnyHandle pile = IFCInstanceExporter.CreatePile(exporterIFC, element, instanceGUID, ExporterCacheManager.OwnerHistoryHandle,
-                      ecData.GetLocalPlacement(), prodRep, ifcEnumType, null);
-
                   // TODO: to allow shared geometry for Piles. For now, Pile export will not use shared geometry
-                  if (exportInfo.ExportType != Common.Enums.IFCEntityType.UnKnown)
-                  {
-                     IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, productWrapper);
-                     ExporterCacheManager.TypeRelationsCache.Add(type, pile);
-                  }
+                  IFCAnyHandle type = (exportInfo.ExportType != Common.Enums.IFCEntityType.UnKnown) ?
+                     ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, productWrapper) : null;
+                  
+                  IFCAnyHandle pile = IFCInstanceExporter.CreatePile(file, element, type, instanceGUID, 
+                     ExporterCacheManager.OwnerHistoryHandle, ecData.GetLocalPlacement(), prodRep, ifcEnumType, null);
+                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(pile))
+                     return;
+
+                  ExporterCacheManager.TypeRelationsCache.Add(type, pile);
+
                   if (exportParts)
                   {
                      PartExporter.ExportHostPart(exporterIFC, element, pile, setter, setter.LocalPlacement, null);
                   }
                   else
                   {
-                     if (matId != ElementId.InvalidElementId)
+                     if (!MathUtil.IsInvalidElementId(matId))
                      {
                         CategoryUtil.CreateMaterialAssociation(exporterIFC, pile, matId);
                      }

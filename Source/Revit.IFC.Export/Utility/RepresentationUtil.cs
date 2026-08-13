@@ -17,16 +17,15 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
+using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.IFC;
+using Revit.IFC.Common.Enums;
+using Revit.IFC.Common.Utility;
+using Revit.IFC.Export.Exporter;
+using Revit.IFC.Export.Toolkit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.IFC;
-using Revit.IFC.Export.Exporter;
-using Revit.IFC.Export.Toolkit;
-using Revit.IFC.Common.Utility;
-using Revit.IFC.Common.Enums;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -36,20 +35,168 @@ namespace Revit.IFC.Export.Utility
    public class RepresentationUtil
    {
       /// <summary>
+      /// A public class that manages the state of document mirroring.
+      /// </summary>
+      public class DocumentMirrorState
+      {
+         private bool AllowMirror { get; set; } = true;
+
+         /// <summary>
+         /// A state class that determines if we are exporting a type entity to IFC.
+         /// </summary>
+         /// <remarks>We want to suppress mirroring when we are exporting geometries in type entities,
+         /// and instead </remarks>
+         public class AllowMirrorManager : IDisposable
+         {
+            /// <summary>
+            /// The constructor for the ExportingType class.
+            /// </summary>
+            public AllowMirrorManager(bool allowMirror)
+            {
+               PreviousAllowMirror = DocumentMirrorStateManager.AllowMirror;
+               DocumentMirrorStateManager.AllowMirror = allowMirror;
+            }
+
+            public void Dispose()
+            {
+               DocumentMirrorStateManager.AllowMirror = PreviousAllowMirror;
+            }
+
+            private bool PreviousAllowMirror { get; set; } = false;
+         }
+
+         /// <summary>
+         /// Returns true if the current export context is a mirrored link, regardless of AllowMirror state.
+         /// </summary>
+         public static bool IsExportingMirroredLink()
+         {
+            return ExporterStateManager.FederatedLinkManager.IsMirrored ||
+               ExporterCacheManager.ExportOptionsCache.SeperatedLinkManager.IsMirrored;
+         }
+
+         public bool IsMirrored()
+         {
+            return AllowMirror && IsExportingMirroredLink();
+         }
+
+         /// <summary>
+         /// A convenience function that determines whether we are in a mirrored document.
+         /// </summary>
+         /// <param name="identifier">The identifier string.</param>
+         /// <returns>True if we are in a mirrored document, false otherwise.</returns>
+         public bool MirrorRepresentation(string identifier)
+         {
+            return IsMirrored() && string.Compare(identifier, "Body", true) == 0;
+         }
+
+         public Transform GetBaseTransform()
+         {
+            return GetAppropriateTransform(null);
+         }
+
+         public Transform GetAppropriateTransform(Transform originalTransform)
+         {
+            if (originalTransform == null)
+            {
+               return IsMirrored() ? FederatedLinkManager.MirrorTransform : Transform.Identity;
+            }
+
+            return IsMirrored() ? originalTransform.Multiply(FederatedLinkManager.MirrorTransform) : originalTransform;
+         }
+
+         /// <summary>
+         /// Determines whether offset transforms are allowed in the current context.
+         /// </summary>
+         /// <param name="originalAllowOffset">The original value.</param>
+         /// <returns>true if offset transforms are allowed; otherwise, false.</returns>
+         /// <remarks>Offset transforms are disallowed if the document is mirrored. This method checks
+         /// the current state and returns a value indicating whether offset transforms can be applied.</remarks>
+         public bool AllowOffsetTransform(bool originalAllowOffset)
+         {
+            // If we are in a mirrored document, we cannot allow offset transform.
+            return !IsMirrored() && originalAllowOffset;
+         }
+
+         /// <summary>
+         /// Returns a transformed point based on the current mirroring state.
+         /// </summary>
+         /// <param name="originalPoint">The original point to be transformed.</param>
+         /// <returns>The transformed point if the current state is mirrored; otherwise, the original point.</returns>
+         /// <remarks>This method checks whether the current state is mirrored and applies a mirror
+         /// transform to the specified point if necessary. If the state is not mirrored, the original point is 
+         /// returned unchanged.</remarks>
+         public XYZ GetPoint(XYZ originalPoint)
+         {
+            if (!IsMirrored())
+            {
+               return originalPoint;
+            }
+
+            // Apply the mirror transform to the point.
+            return FederatedLinkManager.MirrorTransform.OfPoint(originalPoint);
+         }
+
+         /// <summary>
+         /// Returns a transformed curve based on the current mirroring state.
+         /// </summary>
+         /// <param name="originalCurve">The original curve.</param>
+         /// <returns>The potentially mirrored curve, depending on the current state.</returns>
+         public Curve GetCurve(Curve originalCurve)
+         {
+            if (!IsMirrored())
+            {
+               return originalCurve;
+            }
+
+            return GeometryUtil.CreateTransformedCurve(originalCurve, FederatedLinkManager.MirrorTransform);
+         }
+      }
+
+      public static DocumentMirrorState DocumentMirrorStateManager { get; } = new();
+
+
+      private static IFCAnyHandle CreateMirroredRepresentation(IFCFile file, IFCAnyHandle baseRepresentation, 
+         IFCAnyHandle contextOfItems, string identifier)
+      {
+         Transform mirrorTransform = FederatedLinkManager.MirrorTransform;
+         if (mirrorTransform == null)
+            return baseRepresentation;
+
+         IFCAnyHandle origin = ExporterUtil.CreateAxis2Placement3D(file);
+         IFCAnyHandle representationMap = IFCInstanceExporter.CreateRepresentationMap(file, origin, baseRepresentation);
+         IFCAnyHandle mappedItem = ExporterUtil.CreateMappedItemFromTransform(file, representationMap, mirrorTransform);
+
+         HashSet<IFCAnyHandle> mappedItems = new() { mappedItem };
+         string mappedRepresentationType = ShapeRepresentationType.MappedRepresentation.ToString();
+         IFCAnyHandle representation = IFCInstanceExporter.CreateShapeRepresentation(file, contextOfItems, identifier,
+            mappedRepresentationType, mappedItems);
+
+         return representation;
+      }
+
+      /// <summary>
       /// Creates a shape representation and register it to shape representation layer.
       /// </summary>
-      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="file">The IFCFile object, the contains information for writing out the data.</param>
       /// <param name="contextOfItems">The context for which the different subtypes of representation are valid.</param>
       /// <param name="identifier">The identifier for the representation.</param>
       /// <param name="representationType">The type handle for the representation.</param>
       /// <param name="items">Collection of geometric representation items that are defined for this representation.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateBaseShapeRepresentation(ExporterIFC exporterIFC, IFCAnyHandle contextOfItems,
-         string identifier, string representationType, ISet<IFCAnyHandle> items)
+      public static IFCAnyHandle CreateBaseShapeRepresentation(IFCFile file, 
+         IFCAnyHandle contextOfItems, string identifier, string representationType, ISet<IFCAnyHandle> items)
       {
-         IFCFile file = exporterIFC.GetFile();
-         IFCAnyHandle newShapeRepresentation = IFCInstanceExporter.CreateShapeRepresentation(file, contextOfItems, identifier, representationType, items);
-         return newShapeRepresentation;
+         IFCAnyHandle baseRepresentation = IFCInstanceExporter.CreateShapeRepresentation(file, contextOfItems, identifier, representationType, items);
+
+         // We don't want to double-mirror types, so we will only apply the mirror transform to instance entities.
+         // We could apply the mirror transform to type entities, but then we would have more complicated transform
+         // logic for the instances.
+         if (!DocumentMirrorStateManager.MirrorRepresentation(identifier))
+         {
+            return baseRepresentation;
+         }
+
+         return CreateMirroredRepresentation(file, baseRepresentation, contextOfItems, identifier);
       }
 
       /// <summary>
@@ -80,7 +227,9 @@ namespace Revit.IFC.Export.Utility
          }
          
          if (!string.IsNullOrWhiteSpace(ifcCADLayerOverride))
-            return CreateShapeRepresentation(exporterIFC, contextOfItems, identifierOpt, representationTypeOpt, items, ifcCADLayerOverride);
+         {
+            return CreateShapeRepresentation(exporterIFC.GetFile(), contextOfItems, identifierOpt, representationTypeOpt, items, ifcCADLayerOverride);
+         }
 
          return CreateShapeRepresentation(exporterIFC, element, categoryId, contextOfItems, identifierOpt, representationTypeOpt, items);
       }
@@ -93,12 +242,11 @@ namespace Revit.IFC.Export.Utility
       public static string GetPresentationLayerOverride(Element element)
       {
          // Search for old "IFCCadLayer" or new "IfcPresentationLayer".
-         string ifcCADLayer = null;
-         if ((ParameterUtil.GetStringValueFromElementOrSymbol(element, "IFCCadLayer", out ifcCADLayer) == null) ||
-             string.IsNullOrWhiteSpace(ifcCADLayer))
+         (_, string ifcCADLayer) = ParameterUtil.GetStringValueFromElementOrSymbol(element, null, false, "IFCCadLayer");
+         if (string.IsNullOrWhiteSpace(ifcCADLayer))
          {
-            if ((ParameterUtil.GetStringValueFromElementOrSymbol(element, "IfcPresentationLayer", out ifcCADLayer) == null) ||
-                string.IsNullOrWhiteSpace(ifcCADLayer))
+            (_, ifcCADLayer) = ParameterUtil.GetStringValueFromElementOrSymbol(element, null, false, "IfcPresentationLayer");
+            if (string.IsNullOrWhiteSpace(ifcCADLayer))
             {
                ifcCADLayer = ExporterStateManager.GetCurrentCADLayerOverride();
             }
@@ -110,6 +258,7 @@ namespace Revit.IFC.Export.Utility
       /// Creates a shape representation and register it to shape representation layer.
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="element">The element associated with the shape representation.</param>
       /// <param name="categoryId">The category id.</param>
       /// <param name="contextOfItems">The context for which the different subtypes of representation are valid.</param>
       /// <param name="identifier">The identifier for the representation.</param>
@@ -119,8 +268,10 @@ namespace Revit.IFC.Export.Utility
       public static IFCAnyHandle CreateShapeRepresentation(ExporterIFC exporterIFC, Element element, ElementId categoryId, IFCAnyHandle contextOfItems,
          string identifier, string representationType, ISet<IFCAnyHandle> items)
       {
-         IFCAnyHandle newShapeRepresentation = CreateBaseShapeRepresentation(exporterIFC, contextOfItems, identifier, representationType, items);
-         if (!IFCAnyHandleUtil.IsNullOrHasNoValue(newShapeRepresentation) &&
+         IFCFile file = exporterIFC.GetFile();
+         IFCAnyHandle newShapeRepresentation = CreateBaseShapeRepresentation(file, contextOfItems, 
+            identifier, representationType, items);
+         if (element != null && !IFCAnyHandleUtil.IsNullOrHasNoValue(newShapeRepresentation) &&
             !ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
          {
             string ifcCADLayer = 
@@ -153,10 +304,10 @@ namespace Revit.IFC.Export.Utility
       /// <param name="items">Collection of geometric representation items that are defined for this representation.</param>
       /// <param name="ifcCADLayer">The IFC CAD layer name.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateShapeRepresentation(ExporterIFC exporterIFC, IFCAnyHandle contextOfItems,
+      public static IFCAnyHandle CreateShapeRepresentation(IFCFile file, IFCAnyHandle contextOfItems,
          string identifier, string representationType, ISet<IFCAnyHandle> items, string ifcCADLayer)
       {
-         IFCAnyHandle newShapeRepresentation = CreateBaseShapeRepresentation(exporterIFC, contextOfItems, identifier, representationType, items);
+         IFCAnyHandle newShapeRepresentation = CreateBaseShapeRepresentation(file, contextOfItems, identifier, representationType, items);
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(newShapeRepresentation))
          {
             if (!string.IsNullOrWhiteSpace(ifcCADLayer))
@@ -169,37 +320,88 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Delete a Shape Representation. We will also delete it from a PresentationLayerSetCache if it is registered in there during the creation to remove an invalid item
+      /// Delete representation items from a list. We will also delete each from a PresentationLayerSetCache 
+      /// if it is registered in there during the creation to remove an invalid item.
       /// </summary>
-      /// <param name="handleToDelete">handle to delete</param>
-      public static void DeleteShapeRepresentation(IFCAnyHandle handleToDelete)
+      /// <param name="bodyItems">The list of items to delete from.</param>
+      /// <param name="numToDelete">The number of items to delete from the front of the list.</param>
+      public static void DeleteRepresentationItems(IList<IFCAnyHandle> bodyItems, int numToDelete)
       {
-         // As the shape representation might be already asigned to Presentation Layer (and in the cache), we need to remove it from there
-         foreach (KeyValuePair<string, ICollection<IFCAnyHandle>> presentationLayerSet in ExporterCacheManager.PresentationLayerSetCache)
+         for (int ii = 0; ii < numToDelete && bodyItems.Count > 0; ii++)
          {
-            if (presentationLayerSet.Value.Contains(handleToDelete))
-               presentationLayerSet.Value.Remove(handleToDelete);
+            IFCAnyHandle handleToDelete = bodyItems[0];
+            foreach (KeyValuePair<string, ICollection<IFCAnyHandle>> presentationLayerSet in ExporterCacheManager.PresentationLayerSetCache)
+            {
+               if (presentationLayerSet.Value.Contains(handleToDelete))
+                  presentationLayerSet.Value.Remove(handleToDelete);
+            }
+            handleToDelete.Delete();
+            bodyItems.RemoveAt(0);
          }
-         handleToDelete.Delete();
+      }
+
+      public static IFCAnyHandle CreateAxisShapeRepresentation(ExporterIFC exporterIFC, Element element,
+         ElementId categoryId, IList<Curve> curves)
+      {
+         Transform lcs = DocumentMirrorStateManager.GetBaseTransform();
+
+         IFCAnyHandle curve = GeometryUtil.CreateIFCCurveFromCurves(exporterIFC, curves, lcs, XYZ.BasisZ, isAxisCurve: true);
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(curve))
+         {
+            return null;
+         }
+
+         IFCRepresentationIdentifier repId = IFCRepresentationIdentifier.Axis;
+         string representationOpt = repId.ToString();
+         string representationTypeOpt = ShapeRepresentationType.Curve2D.ToString();
+         IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(repId);
+
+         HashSet<IFCAnyHandle> bodyItems = new() { curve };
+         return CreateShapeRepresentation(exporterIFC, element, categoryId, contextOfItems,
+            representationOpt, representationTypeOpt, bodyItems);
       }
 
       /// <summary>
-      /// Creates a shape representation and register it to shape representation layer.
+      /// Creates a FootPrint shape representation and register it to shape representation layer.
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="element">The Revit element.</param>
       /// <param name="categoryId">The category id.</param>
-      /// <param name="contextOfItems">The context for which the different subtypes of representation are valid.</param>
-      /// <param name="identifierOpt">The identifier for the representation.</param>
-      /// <param name="representationTypeOpt">The type handle for the representation.</param>
-      /// <param name="items">List of geometric representation items that are defined for this representation.</param>
+      /// <param name="curves">The Revit curves to be exported (in world coordinates).</param>
+      /// <param name="originalLCS">The forward local coordinate system (world-from-local).</param>
+      /// <param name="normal">The normal direction.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateShapeRepresentation(ExporterIFC exporterIFC, Element element, ElementId categoryId, IFCAnyHandle contextOfItems,
-         string identifierOpt, string representationTypeOpt, IList<IFCAnyHandle> items)
+      public static IFCAnyHandle CreateFootPrintShapeRepresentation(ExporterIFC exporterIFC, Element element,
+         ElementId categoryId, IList<Curve> curves, Transform originalLCS, XYZ normal)
       {
-         HashSet<IFCAnyHandle> itemSet = new HashSet<IFCAnyHandle>();
-         foreach (IFCAnyHandle axisItem in items)
-            itemSet.Add(axisItem);
-         return CreateShapeRepresentation(exporterIFC, element, categoryId, contextOfItems, identifierOpt, representationTypeOpt, itemSet);
+         Transform worldToLocal = DocumentMirrorStateManager.GetAppropriateTransform(originalLCS).Inverse;
+
+         HashSet<IFCAnyHandle> curveHandles = new();
+
+         IFCFile file = exporterIFC.GetFile();
+         foreach (Curve curve in curves)
+         {
+            Curve transformedCurve = GeometryUtil.CreateTransformedCurve(curve, worldToLocal);
+            curveHandles.AddIfNotNull(GeometryUtil.CreateIFCCurveFromRevitCurve(file, exporterIFC, transformedCurve, 
+               true, null, GeometryUtil.TrimCurvePreference.UsePolyLineOrTrim));
+         }
+
+         if (curveHandles.Count == 0)
+            return null;
+
+         IFCAnyHandle geometricCurveSet = IFCInstanceExporter.CreateGeometricCurveSet(exporterIFC.GetFile(), curveHandles);
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(geometricCurveSet))
+            return null;
+
+         HashSet<IFCAnyHandle> bodyItems = new() { geometricCurveSet };
+
+         IFCRepresentationIdentifier repId = IFCRepresentationIdentifier.FootPrint;
+         string representationOpt = repId.ToString();
+         string representationTypeOpt = ShapeRepresentationType.GeometricCurveSet.ToString();
+         IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(repId);
+
+         return CreateShapeRepresentation(exporterIFC, element, categoryId, contextOfItems,
+            representationOpt, representationTypeOpt, bodyItems);
       }
 
       /// <summary>
@@ -418,9 +620,11 @@ namespace Revit.IFC.Export.Utility
       /// <param name="originalShapeRepresentation">The original shape representation.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreateBoundaryRep(ExporterIFC exporterIFC, Element element, ElementId categoryId,
-          IFCAnyHandle contextOfItems, ISet<IFCAnyHandle> bodyItems, IFCAnyHandle originalRepresentation)
+         ISet<IFCAnyHandle> bodyItems, IFCAnyHandle originalRepresentation)
       {
-         string identifierOpt = "FootPrint"; // this is by IFC2x3 convention, not temporary
+         IFCRepresentationIdentifier repId = IFCRepresentationIdentifier.FootPrint;
+         string identifierOpt = repId.ToString();
+         IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(repId);
 
          string repTypeOpt = ShapeRepresentationType.Curve2D.ToString();  // this is by IFC2x2 convention, not temporary
          IFCAnyHandle bodyRepresentation = CreateOrAppendShapeRepresentation(exporterIFC, element, categoryId,
@@ -447,20 +651,52 @@ namespace Revit.IFC.Export.Utility
          return bodyRepresentation;
       }
 
+      private static IFCAnyHandle CreateBaseGeometricSetRep(ExporterIFC exporterIFC, IFCFile file,
+         Element element, ElementId categoryId, CurveLoop boundary, Transform lcs, IFCRepresentationIdentifier repId)
+      {
+         Transform transform = DocumentMirrorStateManager.GetAppropriateTransform(lcs);
+
+         IFCAnyHandle boundaryHnd = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, boundary, transform, XYZ.BasisZ);
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(boundaryHnd))
+         {
+            return null;
+         }
+
+         IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(repId);
+
+         HashSet<IFCAnyHandle> geomSelectSet = new() { boundaryHnd };
+         HashSet<IFCAnyHandle> boundaryItems = new() { IFCInstanceExporter.CreateGeometricSet(file, geomSelectSet) };
+
+         return CreateGeometricSetRep(exporterIFC, element, categoryId, repId.ToString(), contextOfItems, boundaryItems);
+      }
+
+      public static IFCAnyHandle CreateFootprintGeometricSetRep(ExporterIFC exporterIFC, IFCFile file, 
+         Element element, ElementId categoryId, CurveLoop boundary, Transform lcs)
+      {
+         return CreateBaseGeometricSetRep(exporterIFC, file, element, categoryId, boundary, lcs,
+            IFCRepresentationIdentifier.FootPrint);
+      }
+
+      public static IFCAnyHandle CreateAxisGeometricSetRep(ExporterIFC exporterIFC, IFCFile file,
+         Element element, ElementId categoryId, CurveLoop boundary, Transform lcs)
+      {
+         return CreateBaseGeometricSetRep(exporterIFC, file, element, categoryId, boundary, lcs,
+            IFCRepresentationIdentifier.Axis);
+      }
+
       /// <summary>
       /// Creates a body bounding box representation.
       /// </summary>
-      /// <param name="exporterIFC">The ExporterIFC object.</param>
+      /// <param name="file">The IFCFile object.</param>
       /// <param name="contextOfItems">The context for which the different subtypes of representation are valid.</param>
       /// <param name="boundingBoxItem">Set of geometric representation items that are defined for this representation.</param>
       /// <returns>The handle.</returns>
-      public static IFCAnyHandle CreateBoundingBoxRep(ExporterIFC exporterIFC, IFCAnyHandle contextOfItems, IFCAnyHandle boundingBoxItem)
+      public static IFCAnyHandle CreateBoundingBoxRep(IFCFile file, IFCAnyHandle contextOfItems, IFCAnyHandle boundingBoxItem)
       {
          string identifierOpt = "Box"; // this is by IFC2x2+ convention
          string repTypeOpt = ShapeRepresentationType.BoundingBox.ToString();  // this is by IFC2x2+ convention
-         ISet<IFCAnyHandle> bodyItems = new HashSet<IFCAnyHandle>();
-         bodyItems.Add(boundingBoxItem);
-         IFCAnyHandle bodyRepresentation = CreateBaseShapeRepresentation(exporterIFC, contextOfItems, identifierOpt, repTypeOpt, bodyItems);
+         HashSet<IFCAnyHandle> bodyItems = new() { boundingBoxItem };
+         IFCAnyHandle bodyRepresentation = CreateBaseShapeRepresentation(file, contextOfItems, identifierOpt, repTypeOpt, bodyItems);
          return bodyRepresentation;
       }
 
@@ -488,16 +724,24 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="exporterIFC">The ExporterIFC object.</param>
       /// <param name="categoryId">The category id.</param>
-      /// <param name="contextOfItems">The context for which the different subtypes of representation are valid.</param>
       /// <param name="bodyItems">Set of geometric representation items that are defined for this representation.</param>
       /// <returns>The handle.</returns>
       public static IFCAnyHandle CreatePlanMappedItemRep(ExporterIFC exporterIFC, Element element, ElementId categoryId,
-          IFCAnyHandle contextOfItems, HashSet<IFCAnyHandle> bodyItems)
+         HashSet<IFCAnyHandle> bodyItems)
       {
-         string identifierOpt = "FootPrint"; // this is by IFC2x2+ convention
+         IFCRepresentationIdentifier repId = IFCRepresentationIdentifier.FootPrint;
+         string identifierOpt = repId.ToString();
+         IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(repId);
+
          string repTypeOpt = ShapeRepresentationType.MappedRepresentation.ToString();  // this is by IFC2x2+ convention
          IFCAnyHandle bodyRepresentation = CreateShapeRepresentation(exporterIFC, element, categoryId,
              contextOfItems, identifierOpt, repTypeOpt, bodyItems);
+
+         if (DocumentMirrorStateManager.IsMirrored() && !IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRepresentation))
+         {
+            return CreateMirroredRepresentation(exporterIFC.GetFile(), bodyRepresentation, contextOfItems, identifierOpt);
+         }
+
          return bodyRepresentation;
       }
 
@@ -507,16 +751,17 @@ namespace Revit.IFC.Export.Utility
       /// <param name="exporterIFC">tje ExporterIFC object</param>
       /// <param name="element">the category Id</param>
       /// <param name="categoryId"></param>
-      /// <param name="contextOfItems">he context for which the different subtypes of representation are valid.</param>
       /// <param name="bodyItems">Set of geometric representation items that are defined for this representation.</param>
       /// <returns></returns>
       public static IFCAnyHandle CreateGraphMappedItemRep(ExporterIFC exporterIFC, Element element, ElementId categoryId,
-         IFCAnyHandle contextOfItems, HashSet<IFCAnyHandle> bodyItems)
+         HashSet<IFCAnyHandle> bodyItems)
       {
-         string identifierOpt = "Axis"; // this is by IFC2x2+ convention
+         IFCRepresentationIdentifier repId = IFCRepresentationIdentifier.Axis;
+         string identifierOpt = repId.ToString(); // this is by IFC2x2+ convention
          string repTypeOpt = ShapeRepresentationType.MappedRepresentation.ToString();  // this is by IFC2x2+ convention
+         IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(repId);
          IFCAnyHandle bodyRepresentation = CreateShapeRepresentation(exporterIFC, element, categoryId,
-               contextOfItems, identifierOpt, repTypeOpt, bodyItems);
+            contextOfItems, identifierOpt, repTypeOpt, bodyItems);
          return bodyRepresentation;
       }
 
@@ -560,7 +805,7 @@ namespace Revit.IFC.Export.Utility
           IFCExportBodyParams extrusionCreationData, bool allowOffsetTransform)
       {
          BodyExporterOptions newBodyExporterOptions = new BodyExporterOptions(bodyExporterOptions);
-         newBodyExporterOptions.AllowOffsetTransform = allowOffsetTransform;
+         newBodyExporterOptions.AllowOffsetTransform = DocumentMirrorStateManager.AllowOffsetTransform(allowOffsetTransform);
 
          return CreateAppropriateProductDefinitionShape(exporterIFC, element, categoryId,
              geometryElement, newBodyExporterOptions, extraReps, extrusionCreationData, out _);
@@ -584,48 +829,45 @@ namespace Revit.IFC.Export.Utility
          bodyData = null;
          SolidMeshGeometryInfo info = null;
          IList<GeometryObject> geometryList = new List<GeometryObject>();
+         bool hasKnownMeshes = false;
 
          if (!ExporterCacheManager.ExportOptionsCache.ExportAs2x2)
          {
             info = GeometryUtil.GetSplitSolidMeshGeometry(geometryElement, Transform.Identity);
             IList<Mesh> meshes = info.GetMeshes();
-            if (meshes.Count == 0)
-            {
-               IList<Solid> solidList = info.GetSolids();
-               //foreach (Solid solid in solidList)
-               //{
-               //   geometryList.Add(solid);
-               //}
-               geometryList = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, ref solidList, ref meshes);
-               if (geometryList.Count == 0 && !skipBody)
-                  // If element does not has own geometry but contains sub components as family instance we export it to save parameter data.
-                  if (!(element is FamilyInstance familyInstance && familyInstance.GetSubComponentIds().Any()))
-                     return null;
-            }
+            IList<Solid> solidList = info.GetSolids();
+            geometryList = FamilyExporterUtil.RemoveInvisibleSolidsAndMeshes(element.Document, exporterIFC, ref solidList, ref meshes);
+            
+            // If element does not has own geometry but contains sub components as family instance we export it to save parameter data.
+            if (geometryList.Count == 0 && !skipBody &&
+              !(element is FamilyInstance familyInstance && familyInstance.GetSubComponentIds().Any()))
+               return null;
+
+            hasKnownMeshes = meshes.Count > 0;
          }
 
          if (geometryList.Count == 0)
+         {
             geometryList.Add(geometryElement);
+         }
          else
          {
-            bodyExporterOptions.TryToExportAsExtrusion = true;
+            bodyExporterOptions.TryToExportAsExtrusion = !hasKnownMeshes;
          }
 
          List<IFCAnyHandle> bodyReps = new List<IFCAnyHandle>();
          if (!skipBody)
          {
             ElementId matId = ExporterUtil.GetSingleMaterial(element);
-            if (matId == ElementId.InvalidElementId)
+            if (MathUtil.IsInvalidElementId(matId))
                matId = HostObjectExporter.GetFirstLayerMaterialId(element as HostObject);
 
             bodyData = BodyExporter.ExportBody(exporterIFC, element, categoryId, matId, geometryList,
                 bodyExporterOptions, extrusionCreationData, instanceGeometry:instanceGeometry);
             IFCAnyHandle bodyRep = bodyData.RepresentationHnd;
+            
             if (IFCAnyHandleUtil.IsNullOrHasNoValue(bodyRep))
-            {
-               if (extrusionCreationData != null)
-                  extrusionCreationData.ClearOpenings();
-            }
+               extrusionCreationData?.ClearOpenings();
             else
                bodyReps.Add(bodyRep);
          }
@@ -636,12 +878,11 @@ namespace Revit.IFC.Export.Utility
                bodyReps.Add(hnd);
          }
 
-         Transform boundingBoxTrf = Transform.Identity;
-         if (bodyData != null && bodyData.OffsetTransform != null)
-            boundingBoxTrf = bodyData.OffsetTransform.Inverse;
-         IFCAnyHandle boundingBoxRep = BoundingBoxExporter.ExportBoundingBox(exporterIFC, geometryElement, boundingBoxTrf);
-         if (boundingBoxRep != null)
-            bodyReps.Add(boundingBoxRep);
+         Transform boundingBoxTrf = bodyData?.OffsetTransform?.Inverse ?? Transform.Identity;
+         bodyReps.AddIfNotNull(BoundingBoxExporter.ExportBoundingBox(exporterIFC, geometryElement, boundingBoxTrf));
+
+         if (bodyReps.Count == 0 && !skipBody)
+            return null;
 
          // NOTE: This can create an invalid IfcProductDefinitionShape with no representations.  The expectation is
          // that these will be created later, but at the moment that is not guaranteed.
@@ -717,7 +958,15 @@ namespace Revit.IFC.Export.Utility
          List<IFCAnyHandle> representations = new List<IFCAnyHandle>();
          representations.Add(bodyRep);
          if (exportBoundaryRep && !IFCAnyHandleUtil.IsNullOrHasNoValue(boundaryRep))
+         {
+            if (DocumentMirrorStateManager.IsMirrored())
+            {
+               IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.FootPrint);
+               boundaryRep = CreateMirroredRepresentation(exporterIFC.GetFile(), boundaryRep, contextOfItems, 
+                  IFCRepresentationIdentifier.FootPrint.ToString());
+            }
             representations.Add(boundaryRep);
+         }
 
          IFCAnyHandle boundingBoxRep = BoundingBoxExporter.ExportBoundingBox(exporterIFC, geometryElement, Transform.Identity);
          if (boundingBoxRep != null)
@@ -767,6 +1016,9 @@ namespace Revit.IFC.Export.Utility
       /// <returns>true if it fulfills the StandardCase requirements</returns>
       public static bool RepresentationForStandardCaseFromProduct(IFCEntityType exportType, IFCAnyHandle productHnd)
       {
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(productHnd))
+            return false;
+
          List<IFCAnyHandle> representationHnds = IFCAnyHandleUtil.GetRepresentations(IFCAnyHandleUtil.GetRepresentation(productHnd));
          return RepresentationForStandardCases(exportType, representationHnds);
       }
@@ -791,7 +1043,7 @@ namespace Revit.IFC.Export.Utility
                HashSet<IFCAnyHandle> repItems = null;
                string repType = IFCAnyHandleUtil.GetRepresentationType(repHnd);
                if (repType.Equals("SweptSolid") || repType.Equals("AdvancedSweptSolid") || repType.Equals("Clipping")
-                  || (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView && repType.Equals("Tessellation")))
+                  || (ExporterCacheManager.ExportOptionsCache.ExportAsReferenceView && repType.Equals("Tessellation")))
                   repItems = IFCAnyHandleUtil.GetItems(repHnd);
                else if (repType.Equals("MappedRepresentation"))
                {
@@ -840,7 +1092,7 @@ namespace Revit.IFC.Export.Utility
                         || IFCAnyHandleUtil.IsTypeOf(repItem, Common.Enums.IFCEntityType.IfcFixedReferenceSweptAreaSolid)
                         || IFCAnyHandleUtil.IsTypeOf(repItem, Common.Enums.IFCEntityType.IfcExtrudedAreaSolidTapered)
                         || IFCAnyHandleUtil.IsTypeOf(repItem, Common.Enums.IFCEntityType.IfcRevolvedAreaSolid))
-                        || (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView && IFCAnyHandleUtil.IsSubTypeOf(repItem, Common.Enums.IFCEntityType.IfcTessellatedFaceSet)))
+                        || (ExporterCacheManager.ExportOptionsCache.ExportAsReferenceView && IFCAnyHandleUtil.IsSubTypeOf(repItem, Common.Enums.IFCEntityType.IfcTessellatedFaceSet)))
                   {
                      validGeomCount++;
                      continue;
@@ -996,6 +1248,39 @@ namespace Revit.IFC.Export.Utility
 
             IFCInstanceExporter.CreateStyledItem(file, bodyItem, new() { style }, null);
          }
+      }
+
+      private static IFCAnyHandle ExportBoundingBoxBase(ExporterIFC exporterIFC, XYZ cornerXYZ, double xDim, double yDim, double zDim)
+      {
+         double eps = MathUtil.Eps;
+         if (xDim < eps || yDim < eps || zDim < eps)
+            return null;
+
+         IFCFile file = exporterIFC.GetFile();
+         IFCAnyHandle cornerHnd = ExporterUtil.CreateCartesianPoint(file, cornerXYZ);
+         IFCAnyHandle boundingBoxItem = IFCInstanceExporter.CreateBoundingBox(file, cornerHnd, xDim, yDim, zDim);
+         if (IFCAnyHandleUtil.IsNullOrHasNoValue(boundingBoxItem))
+            return null;
+
+         IFCAnyHandle contextOfItems = ExporterCacheManager.Get3DContextHandle(IFCRepresentationIdentifier.Box);
+         return CreateBoundingBoxRep(file, contextOfItems, boundingBoxItem);
+      }
+
+      public static IFCAnyHandle ExportBoundingBoxFromGeometry(ExporterIFC exporterIFC, IList<Solid> solids, IList<Mesh> meshes, IList<Face> faces,
+          Transform trf)
+      {
+         if (solids.Count == 0 && meshes.Count == 0 && faces.Count == 0)
+            return null;
+
+         Transform geomTrf = BoundingBoxExporter.GetLocalTransform(exporterIFC);
+         geomTrf = geomTrf.Multiply(trf);
+
+         // We want to transform the geometry into the current local coordinate system.
+         BoundingBoxXYZ boundingBox = BoundingBoxExporter.ComputeApproximateBoundingBox(solids, meshes, faces, geomTrf);
+
+         XYZ cornerXYZ = UnitUtil.ScaleLength(boundingBox.Min);
+         XYZ sizeXYZ = UnitUtil.ScaleLength(boundingBox.Max) - cornerXYZ;
+         return ExportBoundingBoxBase(exporterIFC, cornerXYZ, sizeXYZ.X, sizeXYZ.Y, sizeXYZ.Z);
       }
    }
 }

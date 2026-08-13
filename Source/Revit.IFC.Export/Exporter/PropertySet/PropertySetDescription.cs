@@ -1,4 +1,4 @@
-﻿//
+//
 // BIM IFC library: this library works with Autodesk(R) Revit(R) to export IFC files containing model geometry.
 // Copyright (C) 2012  Autodesk, Inc.
 // 
@@ -57,7 +57,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          AddEntry("Pset_RoofCommon", "TotalArea", BuiltInParameter.HOST_AREA_COMPUTED);
          AddEntry("Qto_SpaceBaseQuantities", "GrossPerimeter", BuiltInParameter.ROOM_PERIMETER);
 
-         m_BuiltInGeneralParameterMapping = new Dictionary<string, BuiltInParameter>();
+         m_BuiltInGeneralParameterMapping = new Dictionary<string, BuiltInParameter>(StringComparer.OrdinalIgnoreCase);
          AddEntry("CeilingCovering", BuiltInParameter.ROOM_FINISH_CEILING);
          AddEntry("FireRating", BuiltInParameter.FIRE_RATING);
          AddEntry("FloorCovering", BuiltInParameter.ROOM_FINISH_FLOOR);
@@ -140,7 +140,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          if (mappedRevitParameter != null)
          {
             entry.IsExcluded = !mappedRevitParameter.ExportFlag;
-            
+
             ElementId parameterId = mappedRevitParameter.RevitPropertyId;
             string parameterName = mappedRevitParameter.RevitPropertyName;
             if (ParameterUtils.IsBuiltInParameter(parameterId))
@@ -215,27 +215,28 @@ namespace Revit.IFC.Export.Exporter.PropertySet
       /// <param name="elemTypeToUse">The base element type.</param>
       /// <param name="handle">The handle for which we process the entries.</param>
       /// <returns>A set of property handles.</returns>
-      public ISet<IFCAnyHandle> ProcessEntries(IFCFile file, ExporterIFC exporterIFC, IFCExportBodyParams ifcParams, 
-         ElementOrConnector elementOrConnectorToUse, ElementType elemTypeToUse, IFCAnyHandle handle)
+      public ISet<IFCAnyHandle> ProcessEntries(IFCFile file, ExporterIFC exporterIFC, IFCExportBodyParams ifcParams,
+         ElementOrConnector elementOrConnectorToUse, ElementType elemTypeToUse, IFCAnyHandle handle, IDictionary<string, string> connectorDescription)
       {
          // We need to ensure that we don't have the same property name twice in the same property set.
          // By convention, we will keep the last property with the same name.  This allows for a user-defined
          // property set to look at both the type and the instance for a property value, if the type and instance properties
          // have different names.
-         IDictionary<string, IFCAnyHandle> propertiesByName = new SortedDictionary<string, IFCAnyHandle>();
+         SortedDictionary<string, IFCAnyHandle> propertiesByName = [];
 
          // Get the property from Type for this element if the pset is for schedule or 
          // if element doesn't have an associated type (e.g. IfcRoof)
          bool lookInType = (ExporterUtil.ExportingHostModel() &&
-            ExporterCacheManager.ViewScheduleElementCache.ContainsKey(ViewScheduleId)) || 
-            (AddTypePropertiesToInstance && 
+            ExporterCacheManager.ViewScheduleElementCache.ContainsKey(ViewScheduleId)) ||
+            (AddTypePropertiesToInstance &&
             IFCAnyHandleUtil.IsTypeOneOf(handle, PropertyUtil.EntitiesWithNoRelatedType));
 
          foreach (PropertySetEntry entry in m_Entries)
          {
             try
             {
-               IFCAnyHandle propHnd = entry.ProcessEntry(file, exporterIFC, Name, ifcParams, elementOrConnectorToUse, elemTypeToUse, handle, lookInType, AddTypePropertiesToInstance);
+               IFCAnyHandle propHnd = entry.ProcessEntry(file, exporterIFC, Name, ifcParams, elementOrConnectorToUse, elemTypeToUse, handle,
+                  connectorDescription, lookInType, AddTypePropertiesToInstance);
 
                if (IFCAnyHandleUtil.IsNullOrHasNoValue(propHnd) && ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportMaterialPsets)
                   propHnd = MaterialBuiltInParameterUtil.CreateMaterialPropertyIfBuiltIn(Name, entry.PropertyName, entry.PropertyType, elementOrConnectorToUse?.Element, file);
@@ -247,7 +248,22 @@ namespace Revit.IFC.Export.Exporter.PropertySet
                if (currPropertyName != null)
                   propertiesByName[currPropertyName] = propHnd;
             }
-            catch(Exception) { }
+            catch (Autodesk.Revit.Exceptions.InvalidOperationException ex)
+            {
+               ExporterCacheManager.Document?.Application?.WriteJournalComment("IFC warning: property entry processing failed - " + ex.Message, true);
+            }
+            catch (Autodesk.Revit.Exceptions.ArgumentException ex)
+            {
+               ExporterCacheManager.Document?.Application?.WriteJournalComment("IFC warning: property entry processing failed - " + ex.Message, true);
+            }
+            catch (InvalidOperationException ex)
+            {
+               ExporterCacheManager.Document?.Application?.WriteJournalComment("IFC warning: property entry processing failed - " + ex.Message, true);
+            }
+            catch (FormatException ex)
+            {
+               ExporterCacheManager.Document?.Application?.WriteJournalComment("IFC warning: property entry processing failed - " + ex.Message, true);
+            }
          }
 
          ISet<IFCAnyHandle> props = new HashSet<IFCAnyHandle>(propertiesByName.Values);

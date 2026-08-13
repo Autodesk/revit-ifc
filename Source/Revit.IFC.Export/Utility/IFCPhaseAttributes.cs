@@ -18,11 +18,9 @@
 //
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 using Autodesk.Revit.DB;
+using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Properties;
 
 namespace Revit.IFC.Export.Utility
@@ -62,7 +60,7 @@ namespace Revit.IFC.Export.Utility
       static public bool Validate(long phaseId, Document document)
       {
          ElementId checkPhaseId = new ElementId(phaseId);
-         if (checkPhaseId == ElementId.InvalidElementId)
+         if (MathUtil.IsInvalidElementId(checkPhaseId))
             return false;
 
          Element checkPhase = document?.GetElement(checkPhaseId);

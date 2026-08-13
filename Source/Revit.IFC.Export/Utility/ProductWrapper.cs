@@ -19,9 +19,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
-using Revit.IFC.Common.Enums;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Export.Exporter;
 using Revit.IFC.Export.Exporter.PropertySet;
@@ -39,17 +39,17 @@ namespace Revit.IFC.Export.Utility
    /// ProductWrapper and not the internal IFCProductWrapper will not show up on entity counters in journal files.</remarks>
    public class ProductWrapper :IDisposable
    {
-      HashSet<IFCAnyHandle> CreatedHandles { get; set; } = new HashSet<IFCAnyHandle>();
+      HashSet<IFCAnyHandle> CreatedHandles { get; set; } = [];
 
-      IDictionary<Element, HashSet<IFCAnyHandle>> PropertySetsToCreate { get; set; } = new Dictionary<Element, HashSet<IFCAnyHandle>>();
+      Dictionary<Element, HashSet<IFCAnyHandle>> PropertySetsToCreate { get; set; } = [];
 
-      Dictionary<Tuple<ElementType, IFCExportInfoPair>, KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>>>
-         ElementTypeHandles { get; set; } = new Dictionary<Tuple<ElementType, IFCExportInfoPair>, KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>>>();
-
+      Dictionary<Tuple<ElementType, IFCExportInfoPair>, KeyValuePair<IFCAnyHandle, HashSet<IFCAnyHandle>>> ElementTypeHandles { get; set; } = [];
 
       IFCProductWrapper InternalWrapper { get; set; } = null;
 
       ProductWrapper ParentWrapper { get; set; } = null;
+
+      PlacementSetter ParentSetter { get; set; } = null;
 
       ExporterIFC ExporterIFC { get; set; } = null;
 
@@ -66,7 +66,7 @@ namespace Revit.IFC.Export.Utility
          
          if (!PropertySetsToCreate.TryGetValue(element, out HashSet<IFCAnyHandle> propertySetToCreate))
          {
-            propertySetToCreate = new HashSet<IFCAnyHandle>();
+            propertySetToCreate = [];
             PropertySetsToCreate[element] = propertySetToCreate;
          }
          propertySetToCreate.Add(handle);
@@ -91,7 +91,7 @@ namespace Revit.IFC.Export.Utility
       public void RegisterHandleWithElementType(ElementType elementType, IFCExportInfoPair exportType, 
          IFCAnyHandle prodTypeHnd, HashSet<IFCAnyHandle> existingPropertySets)
       {
-         Tuple<ElementType, IFCExportInfoPair> elTypeKey = new Tuple<ElementType, IFCExportInfoPair>(elementType, exportType);
+         Tuple<ElementType, IFCExportInfoPair> elTypeKey = new(elementType, exportType);
          if (elTypeKey.Item1 == null || IFCAnyHandleUtil.IsNullOrHasNoValue(prodTypeHnd))
             return;
 
@@ -113,7 +113,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>A new ProductWrapper.</returns>
       public static ProductWrapper Create(ExporterIFC exporterIFC, bool allowRelateToLevel)
       {
-         ProductWrapper productWrapper = new ProductWrapper(exporterIFC);
+         ProductWrapper productWrapper = new(exporterIFC);
          productWrapper.InternalWrapper = IFCProductWrapper.Create(exporterIFC, allowRelateToLevel);
          return productWrapper;
       }
@@ -123,11 +123,12 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="parentWrapper">The parent wrapper.</param>
       /// <returns>A new ProductWrapper.</returns>
-      public static ProductWrapper Create(ProductWrapper parentWrapper)
+      public static ProductWrapper Create(ProductWrapper parentWrapper, PlacementSetter parentSetter)
       {
-         ProductWrapper productWrapper = new ProductWrapper(parentWrapper.ExporterIFC);
+         ProductWrapper productWrapper = new(parentWrapper.ExporterIFC);
          productWrapper.InternalWrapper = IFCProductWrapper.Create(parentWrapper.InternalWrapper);
          productWrapper.ParentWrapper = parentWrapper;
+         productWrapper.ParentSetter = parentSetter;
          return productWrapper;
       }
 
@@ -139,7 +140,7 @@ namespace Revit.IFC.Export.Utility
       /// <returns>A new ProductWrapper.</returns>
       public static ProductWrapper Create(ProductWrapper parentWrapper, bool allowRelateToLevel)
       {
-         ProductWrapper productWrapper = new ProductWrapper(parentWrapper.ExporterIFC);
+         ProductWrapper productWrapper = new(parentWrapper.ExporterIFC);
          productWrapper.InternalWrapper = IFCProductWrapper.Create(parentWrapper.InternalWrapper, allowRelateToLevel);
          productWrapper.ParentWrapper = parentWrapper;
          return productWrapper;
@@ -163,8 +164,7 @@ namespace Revit.IFC.Export.Utility
       {
          if (CreatedHandles.Count > 0)
          {
-            foreach (IFCAnyHandle firstHandle in CreatedHandles)
-               return firstHandle;
+            return CreatedHandles.First();
          }
 
          return InternalWrapper.GetAnElement();
@@ -342,7 +342,7 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Adds a material handle to associate with the IfcProduct in this wrapper.
       /// </summary>
-      /// <param name="materialHnd"></param>
+      /// <param name="materialHnd">The IfcMaterial handle.</param>
       public void AddFinishMaterial(IFCAnyHandle materialHnd)
       {
          InternalWrapper.AddFinishMaterial(materialHnd);
@@ -364,6 +364,18 @@ namespace Revit.IFC.Export.Utility
       public IFCExportBodyParams FindExtrusionCreationParameters(IFCAnyHandle handle)
       {
          return new IFCExportBodyParams(InternalWrapper.FindExtrusionCreationParameters(handle));
+      }
+
+      /// <summary>
+      /// Get the parent local placement, if the parent setter exists.
+      /// </summary>
+      /// <returns>The new parent local placement if it exists.</returns>
+      /// <remarks>This is a stopgap routine intended to ensure that local placements are relative to their containers,
+      /// and not orphaned.  This will eventually be moved into the setter code.</remarks>
+      public IFCAnyHandle GetParentLocalPlacement()
+      {
+         // TODO_CERT: Update PlacementSetter to do this.
+         return ParentSetter?.LocalPlacement;
       }
 
       /// <summary>

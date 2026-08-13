@@ -47,7 +47,7 @@ namespace Revit.IFC.Export.Exporter
             return;
 
          // Check the intended IFC entity or type name is in the exclude list specified in the UI
-         Common.Enums.IFCEntityType elementClassTypeEnum = Common.Enums.IFCEntityType.IfcAnnotation;
+         IFCEntityType elementClassTypeEnum = IFCEntityType.IfcAnnotation;
          if (ExporterCacheManager.ExportOptionsCache.IsElementInExcludeList(elementClassTypeEnum))
             return;
 
@@ -71,6 +71,10 @@ namespace Revit.IFC.Export.Exporter
             Transform orientTrf = GeometryUtil.CreateTransformFromPlane(plane);
             XYZ projectionDirection = plane.Normal;
 
+            Transform curveLcs = orientTrf;
+            if (RepresentationUtil.DocumentMirrorState.IsExportingMirroredLink())
+               curveLcs = orientTrf.Multiply(FederatedLinkManager.MirrorTransform);
+
             IList<IList<CurveLoop>> sortedLoops = ExporterIFCUtils.SortCurveLoops(boundaries);
             if (sortedLoops.Count == 0)
                return;
@@ -92,17 +96,25 @@ namespace Revit.IFC.Export.Exporter
                   IList<CurveLoop> curveLoopList = sortedLoops[loopIndex];
                   IFCAnyHandle outerCurve = null;
                   HashSet<IFCAnyHandle> innerCurves = null;
-                  for (int ii = 0; ii < curveLoopList.Count; ii++)
+                  foreach (CurveLoop curveLoop in curveLoopList)
                   {
-                     IFCAnyHandle ifcCurve = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, curveLoopList[ii], orientTrf, projectionDirection);
-                     if (ii == 0)
-                        outerCurve = ifcCurve;
-                     else
+                     IFCAnyHandle ifcCurve = GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC, curveLoop, curveLcs, projectionDirection);
+                     if (IFCAnyHandleUtil.IsNullOrHasNoValue(ifcCurve))
                      {
-                        if (innerCurves == null)
-                           innerCurves = new HashSet<IFCAnyHandle>();
-                        innerCurves.Add(ifcCurve);
+                        if (outerCurve == null)
+                           return;
+                        else
+                           continue;
                      }
+
+                     if (outerCurve == null)
+                     {
+                        outerCurve = ifcCurve;
+                        continue;
+                     }
+
+                     innerCurves ??= new();
+                     innerCurves.Add(ifcCurve);
                   }
 
                   IFCAnyHandle representItem = IFCInstanceExporter.CreateAnnotationFillArea(file,

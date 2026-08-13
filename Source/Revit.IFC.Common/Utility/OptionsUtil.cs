@@ -523,12 +523,9 @@ namespace Revit.IFC.Common.Utility
 
          using (Transaction tr = new Transaction(doc))
          {
-            try
-            {
+            if (!doc.IsModifiable)
                tr.Start("Temp Project Location change");
-            }
-            catch { }
-
+            
             using (SubTransaction tempSiteLocTr = new SubTransaction(doc))
             {
                tempSiteLocTr.Start();

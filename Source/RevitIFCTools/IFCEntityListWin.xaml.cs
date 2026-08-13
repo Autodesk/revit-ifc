@@ -72,7 +72,8 @@ namespace RevitIFCTools
       /// <param name="f">IFCXML schema file</param>
       private void processSchema(FileInfo f)
       {
-         IfcSchemaEntityTree entityTree = new IfcSchemaEntityTree();
+         IfcSchemaEntityTree.TryGetSchemaVersion(f.Name.Replace(".xsd", ""), out IFCSchemaFileVersion schemaFileVersion);
+         IfcSchemaEntityTree entityTree = new IfcSchemaEntityTree(schemaFileVersion);
          ProcessIFCXMLSchema.ProcessIFCSchema(f, ref entityTree);
 
          string schemaName = f.Name.Replace(".xsd", "");
@@ -141,7 +142,8 @@ namespace RevitIFCTools
             ProcessPsetDefinition procPdef = new ProcessPsetDefinition(logF);
 
             string schemaName = f.Name.Replace(".xsd", "");
-            IfcSchemaEntityTree entityTree = IfcSchemaEntityTree.GetEntityDictFor(schemaName, dInfo.FullName);
+            IfcSchemaEntityTree.TryGetSchemaVersion(schemaName, out IFCSchemaFileVersion schemaFileVersion);
+            IfcSchemaEntityTree entityTree = IfcSchemaEntityTree.GetEntityDictFor(schemaFileVersion, dInfo.FullName);
             IDictionary<string, IfcSchemaEntityNode> entDict = entityTree.IfcEntityDict;
             IFCEntityAndPsetList schemaEntities = new IFCEntityAndPsetList();
             schemaEntities.Version = schemaName;
@@ -250,11 +252,11 @@ namespace RevitIFCTools
                IFCEntityInfo entInfo = new IFCEntityInfo();
 
                // The abstract entity type is not going to be listed here as they can never be created
-               if (ent.Value.isAbstract)
+               if (ent.Value.IsAbstract)
                   continue;
 
                // Collect only the IfcProducts or IfcGroup
-               if (!ent.Value.IsSubTypeOf("IfcProduct") && !ent.Value.IsSubTypeOf("IfcGroup", strict:false) && !ent.Value.IsSubTypeOf("IfcTypeProduct"))
+               if (!ent.Value.IsSubTypeOf(IFCEntityType.IfcProduct, true) && !ent.Value.IsSubTypeOf(IFCEntityType.IfcGroup, false) && !ent.Value.IsSubTypeOf(IFCEntityType.IfcTypeProduct, true))
                   continue;
 
                entInfo.Entity = ent.Key;
@@ -273,8 +275,8 @@ namespace RevitIFCTools
                }
 
                // Collect Pset that is applicable to the supertype of this entity
-               IList<IfcSchemaEntityNode> supertypeList = IfcSchemaEntityTree.FindAllSuperTypes(schemaName, entInfo.Entity, 
-                  "IfcProduct", "IfcTypeProduct", "IfcGroup");
+               IList<IfcSchemaEntityNode> supertypeList = IfcSchemaEntityTree.FindAllSuperTypes(entityTree, entInfo.Entity, 
+                  IFCEntityType.IfcProduct, IFCEntityType.IfcTypeProduct, IFCEntityType.IfcGroup);
                if (supertypeList != null && supertypeList.Count > 0)
                {
                   foreach(IfcSchemaEntityNode superType in supertypeList)
@@ -405,7 +407,11 @@ namespace RevitIFCTools
          if (string.IsNullOrEmpty(textBox_type1.Text) || string.IsNullOrEmpty(textBox_type2.Text))
             return;
 
-         bool res = IfcSchemaEntityTree.IsSubTypeOf(schemaName, textBox_type1.Text, textBox_type2.Text);
+         IfcSchemaEntityTree.TryGetSchemaVersion(schemaName, out IFCSchemaFileVersion schemaFileVersion);
+         IfcSchemaEntityTree subtypeTree = IfcSchemaEntityTree.GetEntityDictFor(schemaFileVersion, dInfo.FullName);
+         Enum.TryParse(textBox_type1.Text, true, out IFCEntityType subType1);
+         Enum.TryParse(textBox_type2.Text, true, out IFCEntityType superType1);
+         bool res = subtypeTree.IsSubTypeOf(subType1, superType1, false);
          if (res)
             checkBox_testResult.IsChecked = true;
          else
@@ -424,7 +430,10 @@ namespace RevitIFCTools
          if (string.IsNullOrEmpty(textBox_type1.Text) || string.IsNullOrEmpty(textBox_type2.Text))
             return;
 
-         bool res = IfcSchemaEntityTree.IsSuperTypeOf(schemaName, textBox_type1.Text, textBox_type2.Text);
+         IfcSchemaEntityTree.TryGetSchemaVersion(schemaName, out IFCSchemaFileVersion schemaFileVersion);
+         IfcSchemaEntityTree supertypeTree = IfcSchemaEntityTree.GetEntityDictFor(schemaFileVersion, dInfo.FullName);
+         IfcSchemaEntityNode superTypeNode = supertypeTree.Find(textBox_type1.Text);
+         bool res = superTypeNode != null && superTypeNode.IsSuperTypeOf(textBox_type2.Text);
          if (res)
             checkBox_testResult.IsChecked = true;
          else

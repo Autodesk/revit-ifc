@@ -69,15 +69,16 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <returns>
       /// True if the operation succeed, false otherwise.
       /// </returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         bool valid = true;
-
          // Get override from parameter
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_WaistThickness, entryMap.CompatibleRevitParameterName) != null)
-            m_WaistThickness = UnitUtil.ScaleArea(m_WaistThickness);
+         if (ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, entryMap.CompatibleRevitParameterName) is double waistThicknessVal)
+         {
+            m_WaistThickness = UnitUtil.ScaleArea(waistThicknessVal);
+            return true;
+         }
 
-         return valid;
+         return false;
       }
 
       /// <summary>

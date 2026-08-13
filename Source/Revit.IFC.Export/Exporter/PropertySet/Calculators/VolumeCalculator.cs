@@ -51,14 +51,17 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>True if the operation succeed, false otherwise.</returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         double volumeEps = MathUtil.Eps() * MathUtil.Eps() * MathUtil.Eps();
-         if (ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Volume, entryMap.CompatibleRevitParameterName, "IfcQtyVolume") != null)
+         double volumeEps = MathUtil.Eps * MathUtil.Eps * MathUtil.Eps;
+         if (ParameterUtil.TryGetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, entryMap.CompatibleRevitParameterName,
+            "IfcQtyVolume") is double volume)
          {
-            m_Volume = UnitUtil.ScaleArea(m_Volume);
-            if (m_Volume > volumeEps)
+            if (volume > volumeEps)
+            {
+               m_Volume = UnitUtil.ScaleVolume(volume);
                return true;
+            }
          }
 
          if (extrusionCreationData == null)
@@ -67,7 +70,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
          double area = UnitUtil.UnscaleArea(extrusionCreationData.ScaledArea);
          double height = UnitUtil.UnscaleLength(extrusionCreationData.ScaledHeight);
          m_Volume = UnitUtil.ScaleVolume(area * height);
-         return (m_Volume > volumeEps);
+         return m_Volume > volumeEps;
       }
 
       /// <summary>

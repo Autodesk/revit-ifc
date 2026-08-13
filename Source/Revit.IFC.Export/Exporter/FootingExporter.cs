@@ -23,6 +23,7 @@ using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Export.Utility;
 using Revit.IFC.Export.Toolkit;
 using Revit.IFC.Common.Utility;
+using System.Collections.Generic;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -116,16 +117,16 @@ namespace Revit.IFC.Export.Exporter
 
                   string footingType = GetIFCFootingType(ifcEnumType);    // need to keep it for legacy support when original data follows slightly diff naming
                   IFCExportInfoPair exportInfo = new IFCExportInfoPair(elementClassTypeEnum, footingType);
-
-                  IFCAnyHandle footing = IFCInstanceExporter.CreateFooting(exporterIFC, element, instanceGUID, ExporterCacheManager.OwnerHistoryHandle,
-                      ecData.GetLocalPlacement(), prodRep, footingType);
-
                   // TODO: to allow shared geometry for Footings. For now, Footing export will not use shared geometry
-                  if (exportInfo.ExportType != Common.Enums.IFCEntityType.UnKnown)
-                  {
-                     IFCAnyHandle type = ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, productWrapper);
-                     ExporterCacheManager.TypeRelationsCache.Add(type, footing);
-                  }
+                  IFCAnyHandle typeHandle = (exportInfo.ExportType != Common.Enums.IFCEntityType.UnKnown) ?
+                     ExporterUtil.CreateGenericTypeFromElement(element, exportInfo, file, productWrapper) : null;
+
+                  IFCAnyHandle footing = IFCInstanceExporter.CreateGenericIFCEntity(exportInfo, file, element, typeHandle, instanceGUID,
+                     ExporterCacheManager.OwnerHistoryHandle, ecData.GetLocalPlacement(), prodRep);
+                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(footing))
+                     return;
+
+                  ExporterCacheManager.TypeRelationsCache.Add(typeHandle, footing);
 
                   if (exportParts)
                   {
@@ -133,7 +134,7 @@ namespace Revit.IFC.Export.Exporter
                   }
                   else
                   {
-                     if (matId != ElementId.InvalidElementId)
+                     if (!MathUtil.IsInvalidElementId(matId))
                      {
                         CategoryUtil.CreateMaterialAssociation(exporterIFC, footing, matId);
                      }
@@ -150,6 +151,15 @@ namespace Revit.IFC.Export.Exporter
          }
       }
 
+      static readonly Dictionary<NamingUtil.IFCStringKey, string> FootingTypesPre4 = new()
+      {
+         { new NamingUtil.IFCStringKey("FOOTINGBEAM"), "FOOTING_BEAM" },
+         { new NamingUtil.IFCStringKey("PADFOOTING"), "PAD_FOOTING" },
+         { new NamingUtil.IFCStringKey("PILECAP"), "PILE_CAP" },
+         { new NamingUtil.IFCStringKey("STRIPFOOTING"), "STRIP_FOOTING" },
+         { new NamingUtil.IFCStringKey("USERDEFINED"), "USERDEFINED" }
+      };
+
       /// <summary>
       /// Gets IFC footing type from a string.
       /// </summary>
@@ -157,25 +167,16 @@ namespace Revit.IFC.Export.Exporter
       /// <returns>The IFCFootingType.</returns>
       public static string GetIFCFootingType(string value)
       {
-         if (String.IsNullOrEmpty(value))
+         if (string.IsNullOrEmpty(value))
             return "NOTDEFINED";
 
-         string newValue = NamingUtil.RemoveSpacesAndUnderscores(value);
-
-         if (String.Compare(newValue, "USERDEFINED", true) == 0)
-            return "USERDEFINED";
-         if (String.Compare(newValue, "FOOTINGBEAM", true) == 0)
-            return "FOOTING_BEAM";
-         if (String.Compare(newValue, "PADFOOTING", true) == 0)
-            return "PAD_FOOTING";
-         if (String.Compare(newValue, "PILECAP", true) == 0)
-            return "PILE_CAP";
-         if (String.Compare(newValue, "STRIPFOOTING", true) == 0)
-            return "STRIP_FOOTING";
+         NamingUtil.IFCStringKey compValue = new(value);
+         if (FootingTypesPre4.TryGetValue(compValue, out string footingType))
+            return footingType;
 
          if (!ExporterCacheManager.ExportOptionsCache.ExportAsOlderThanIFC4)
          {
-            if (String.Compare(newValue, "CAISSONFOUNDATION", true) == 0)
+            if (compValue.IsEqualTo("CAISSONFOUNDATION"))
                return "CAISSON_FOUNDATION";
          }
 

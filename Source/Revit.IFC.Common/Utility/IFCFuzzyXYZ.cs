@@ -68,11 +68,11 @@ namespace Revit.IFC.Common.Utility
       /// The constructor.
       /// </summary>
       /// <param name="tol">The tolerance.</param>
-      /// <remarks>If the tolerance is less than MathUtil.Eps(), it will be set to MathUtil.Eps().</remarks>
+      /// <remarks>If the tolerance is less than MathUtil.Eps, it will be set to MathUtil.Eps.</remarks>
       public IFCXYZFuzzyComparer(double tol)
       {
          // Disallow setting a tolerance less than 1e-9.
-         Tolerance = Math.Max(tol, MathUtil.Eps());
+         Tolerance = Math.Max(tol, MathUtil.Eps);
       }
 
       /// <summary>

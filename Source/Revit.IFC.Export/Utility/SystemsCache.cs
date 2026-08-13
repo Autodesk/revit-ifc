@@ -128,13 +128,14 @@ namespace Revit.IFC.Export.Utility
       /// <param name="handle">The entity handle.</param>
       public void AddHandleToElectricalSystem(ElementId systemId, IFCAnyHandle handle)
       {
-         if (!ElectricalSystemsCache.ContainsKey(systemId))
+         try
+         {
+            ElectricalSystemsCache[systemId].AddIfNotNull(handle);
+         }
+         catch (KeyNotFoundException)
+         {
             throw new InvalidOperationException("Error getting system.");
-
-         if (IFCAnyHandleUtil.IsNullOrHasNoValue(handle))
-            return;
-
-         ElectricalSystemsCache[systemId].Add(handle);
+         }
       }
 
       public void Clear()

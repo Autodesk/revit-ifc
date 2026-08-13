@@ -283,7 +283,7 @@ namespace Revit.IFC.Import.Data
 
       private void AddValidLineSegment(IList<IIFCProfileSegment> segments, XYZ startPoint, XYZ endPoint)
       {
-         if (endPoint.DistanceTo(startPoint) > IFCImportFile.TheFile.ShortCurveTolerance - MathUtil.Eps())
+         if (endPoint.DistanceTo(startPoint) > IFCImportFile.TheFile.ShortCurveTolerance - MathUtil.Eps)
             segments.Add(new IFCProfileLineSegment(startPoint, endPoint));
       }
    
@@ -367,7 +367,7 @@ namespace Revit.IFC.Import.Data
             };
 
          double outerFilletRadius = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(profileDef, "OuterFilletRadius", 0.0);
-         bool hasFillet = (outerFilletRadius > MathUtil.Eps()) && (outerFilletRadius < ((Math.Min(xDimVal, yDimVal) / 2.0) - MathUtil.Eps()));
+         bool hasFillet = (outerFilletRadius > MathUtil.Eps) && (outerFilletRadius < ((Math.Min(xDimVal, yDimVal) / 2.0) - MathUtil.Eps));
 
          if (hasFillet)
          {
@@ -386,7 +386,7 @@ namespace Revit.IFC.Import.Data
             Importer.TheLog.LogError(Id, "Couldn't create IfcRectangleHollowProfileDef, ignoring.", true);
 
          double wallThickness = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(profileDef, "WallThickness", 0.0);
-         if ((wallThickness > MathUtil.Eps()) && (wallThickness < ((Math.Min(xDimVal, yDimVal) / 2.0) - MathUtil.Eps())))
+         if ((wallThickness > MathUtil.Eps) && (wallThickness < ((Math.Min(xDimVal, yDimVal) / 2.0) - MathUtil.Eps)))
          {
             double innerXDimVal = xDimVal - wallThickness * 2.0;
             double innerYDimVal = yDimVal - wallThickness * 2.0;
@@ -398,7 +398,7 @@ namespace Revit.IFC.Import.Data
                 };
 
             double innerFilletRadius = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(profileDef, "InnerFilletRadius", 0.0);
-            if ((innerFilletRadius > MathUtil.Eps()) && (innerFilletRadius < ((Math.Min(innerXDimVal, innerYDimVal) / 2.0) - MathUtil.Eps())))
+            if ((innerFilletRadius > MathUtil.Eps) && (innerFilletRadius < ((Math.Min(innerXDimVal, innerYDimVal) / 2.0) - MathUtil.Eps)))
             {
                CurveLoop innerLoop = CreateFilletedRectangleCurveLoop(innerCorners, innerFilletRadius);
                if (innerLoop != null)
@@ -429,10 +429,10 @@ namespace Revit.IFC.Import.Data
          if (!found)
             return;
 
-         if (xDim < MathUtil.Eps())
+         if (xDim < MathUtil.Eps)
             Importer.TheLog.LogError(Id, "IfcRectangleProfileDef has invalid XDim: " + xDim + ", ignoring.", true);
 
-         if (yDim < MathUtil.Eps())
+         if (yDim < MathUtil.Eps)
             Importer.TheLog.LogError(Id, "IfcRectangleProfileDef has invalid YDim: " + yDim + ", ignoring.", true);
 
          if (IFCImportFile.TheFile.SchemaVersionAtLeast(IFCSchemaVersion.IFC2x2) && IFCAnyHandleUtil.IsSubTypeOf(profileDef, IFCEntityType.IfcRectangleHollowProfileDef))
@@ -444,7 +444,7 @@ namespace Revit.IFC.Import.Data
          if (IFCAnyHandleUtil.IsSubTypeOf(profileDef, IFCEntityType.IfcRoundedRectangleProfileDef))
          {
             double roundedRadius = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(profileDef, "RoundingRadius", 0.0);
-            if ((roundedRadius > MathUtil.Eps()) && (roundedRadius <= ((Math.Min(xDim, yDim) / 2.0) + MathUtil.Eps())))
+            if ((roundedRadius > MathUtil.Eps) && (roundedRadius <= ((Math.Min(xDim, yDim) / 2.0) + MathUtil.Eps)))
             {
                ProcessIFCRoundedRectangleProfileDef(profileDef, xDim, yDim, roundedRadius);
                return;
@@ -470,7 +470,7 @@ namespace Revit.IFC.Import.Data
          if (!found)
             return;
 
-         if (radius < MathUtil.Eps())
+         if (radius < MathUtil.Eps)
             Importer.TheLog.LogError(Id, "IfcCircleProfileDef has invalid radius: " + radius + ", ignoring.", true);
 
          // Some internal routines want CurveLoops with bounded components.  Split to avoid problems.
@@ -484,7 +484,7 @@ namespace Revit.IFC.Import.Data
          if (IFCAnyHandleUtil.IsSubTypeOf(profileDef, IFCEntityType.IfcCircleHollowProfileDef))
          {
             double wallThickness = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(profileDef, "WallThickness", 0.0);
-            if (wallThickness > MathUtil.Eps() && wallThickness < radius)
+            if (wallThickness > MathUtil.Eps && wallThickness < radius)
             {
                double innerRadius = radius - wallThickness;
 
@@ -664,7 +664,7 @@ namespace Revit.IFC.Import.Data
 
          double edgeRadius = IFCImportHandleUtil.GetOptionalScaledLengthAttribute(profileDef, "EdgeRadius", 0.0);
          bool filletedEdge = !MathUtil.IsAlmostZero(edgeRadius);
-         if (filletedEdge && (thickness < edgeRadius - MathUtil.Eps()))
+         if (filletedEdge && (thickness < edgeRadius - MathUtil.Eps))
          {
             Importer.TheLog.LogWarning(profileDef.Id, "Fillet edge radius is at least as large as the thicknes of the profile, ignoring the fillet.", false);
             filletedEdge = false;

@@ -1528,6 +1528,15 @@ namespace BIM.IFC.Export.UI.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Extended properties.
+        /// </summary>
+        public static string FilterExtendedProperties {
+            get {
+                return ResourceManager.GetString("FilterExtendedProperties", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Instance properties.
         /// </summary>
         public static string FilterInstanceProperties {
@@ -3921,6 +3930,15 @@ namespace BIM.IFC.Export.UI.Properties {
         public static string String_Revit_CurrentLicenseStatusTitle {
             get {
                 return ResourceManager.GetString("String_Revit_CurrentLicenseStatusTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Structural.
+        /// </summary>
+        public static string StructuralMaterialParams {
+            get {
+                return ResourceManager.GetString("StructuralMaterialParams", resourceCulture);
             }
         }
         

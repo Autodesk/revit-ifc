@@ -58,6 +58,10 @@ namespace Revit.IFC.Export.Exporter
          IFCFile file = exporterIFC.GetFile();
          using (IFCTransaction tr = new(file))
          {
+            IFCExportInfoPair exportAs = ExporterUtil.GetObjectExportType(element, out string ifcEnumType);
+            IFCAnyHandle typeHnd = ExporterUtil.CreateGenericTypeFromElement(element, exportAs,
+               file, productWrapper);
+            
             IFCAnyHandle assemblyInstanceHnd = null;
 
             string guid = GUIDUtil.CreateGUID(element);
@@ -68,7 +72,6 @@ namespace Revit.IFC.Export.Exporter
             bool relateToLevel = true;
             ElementId overrideContainerId = ElementId.InvalidElementId;
 
-            IFCExportInfoPair exportAs = ExporterUtil.GetObjectExportType(element, out string ifcEnumType);
             if (exportAs.ExportInstance == IFCEntityType.IfcSystem)
             {
                string name = NamingUtil.GetNameOverride(element, NamingUtil.GetIFCName(element));
@@ -76,13 +79,8 @@ namespace Revit.IFC.Export.Exporter
                string objectType = NamingUtil.GetDefaultObjectType(element);
                assemblyInstanceHnd = IFCInstanceExporter.CreateSystem(file, guid, ownerHistory, name, description, objectType);
 
-               HashSet<IFCAnyHandle> relatedBuildings = new() { ExporterCacheManager.BuildingHandle };
-               
-               string relServicesBuildingsGuid = GUIDUtil.GenerateIFCGuidFrom(
-                  GUIDUtil.CreateGUIDString(IFCEntityType.IfcRelServicesBuildings, assemblyInstanceHnd));
-               IFCAnyHandle relServicesBuildings = IFCInstanceExporter.CreateRelServicesBuildings(file,
-                  relServicesBuildingsGuid, ExporterCacheManager.OwnerHistoryHandle, null, null, 
-                  assemblyInstanceHnd, relatedBuildings);
+               Exporter.CreateRelServicesBuildings(ExporterCacheManager.BuildingHandle, file,
+                  ExporterCacheManager.OwnerHistoryHandle, assemblyInstanceHnd);
 
                relateToLevel = false; // Already related to the building via IfcRelServicesBuildings.
             }
@@ -91,7 +89,7 @@ namespace Revit.IFC.Export.Exporter
                // Check for containment override
                overrideContainerId = ParameterUtil.OverrideContainmentParameter(element, out IFCAnyHandle overrideContainerHnd);
 
-               if (overrideContainerId == null || overrideContainerId == ElementId.InvalidElementId)
+               if (MathUtil.IsInvalidElementId(overrideContainerId))
                   overrideContainerId = ExporterCacheManager.LevelInfoCache.GetLevelIdOfObject(element);
                using (placementSetter = PlacementSetter.Create(exporterIFC, element, null, null, overrideContainerId, overrideContainerHnd))
                {
@@ -101,7 +99,7 @@ namespace Revit.IFC.Export.Exporter
                   localPlacement = placementSetter.LocalPlacement;
                   levelInfo = placementSetter.LevelInfo;
 
-                  assemblyInstanceHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportAs, file, element, guid,
+                  assemblyInstanceHnd = IFCInstanceExporter.CreateGenericIFCEntity(exportAs, file, element, typeHnd, guid,
                      ownerHistory, localPlacement, representation);
                }
             }
@@ -119,13 +117,6 @@ namespace Revit.IFC.Export.Exporter
 
             ExporterCacheManager.AssemblyInstanceCache.RegisterAssemblyInstance(element.Id,
                assemblyInstanceHnd, overrideContainerId);
-
-            IFCAnyHandle typeHnd = ExporterUtil.CreateGenericTypeFromElement(element, exportAs, 
-               file, productWrapper);
-            if (!IFCAnyHandleUtil.IsNullOrHasNoValue(typeHnd))
-            {
-               ExporterCacheManager.TypeRelationsCache.Add(typeHnd, assemblyInstanceHnd);
-            }
 
             tr.Commit();
             return true;
@@ -157,7 +148,36 @@ namespace Revit.IFC.Export.Exporter
             Transform inverseTrf = relTrf.Inverse;
 
             IFCFile file = exporterIFC.GetFile();
-            IFCAnyHandle relLocalPlacement = ExporterUtil.CreateAxis2Placement3D(file, inverseTrf.Origin, inverseTrf.BasisZ, inverseTrf.BasisX);
+
+            // Doors/windows may carry mirrored transforms in Revit. IFC local placement cannot
+            // represent reflection, so for mirrored doors/windows we keep only translation here.
+            // For non-mirrored cases (including 180-degree rotations), preserve full rotation.
+            bool isDoorOrWindow = IFCAnyHandleUtil.IsSubTypeOf(elementHandle, IFCEntityType.IfcDoor) ||
+                                  IFCAnyHandleUtil.IsSubTypeOf(elementHandle, IFCEntityType.IfcWindow);
+
+            bool useTranslationOnlyForDoorWindow = false;
+            if (isDoorOrWindow)
+            {
+               ElementId elementId = ExporterCacheManager.HandleToElementCache.Find(elementHandle);
+               FamilyInstance familyInstance = ExporterCacheManager.Document?.GetElement(elementId) as FamilyInstance;
+
+               if (familyInstance != null)
+               {
+                  // Family flip/mirror flags are more reliable for door/window orientation
+                  // than transform reflection alone in assembly context.
+                  useTranslationOnlyForDoorWindow =
+                     familyInstance.Mirrored || familyInstance.HandFlipped || familyInstance.FacingFlipped;
+               }
+
+               // Fallback if we couldn't resolve the source element.
+               useTranslationOnlyForDoorWindow |= inverseTrf.HasReflection;
+            }
+
+            IFCAnyHandle relLocalPlacement;
+            if (useTranslationOnlyForDoorWindow)
+               relLocalPlacement = ExporterUtil.CreateAxis2Placement3D(file, inverseTrf.Origin, null, null);
+            else
+               relLocalPlacement = ExporterUtil.CreateAxis2Placement3D(file, inverseTrf.Origin, inverseTrf.BasisZ, inverseTrf.BasisX);
 
             // NOTE: caution that old IFCAXIS2PLACEMENT3D may be unused as the new one replace it. 
             // But we cannot delete it safely yet because we don't know if any handle is referencing it.

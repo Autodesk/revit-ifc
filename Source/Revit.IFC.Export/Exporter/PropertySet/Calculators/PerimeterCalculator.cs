@@ -61,26 +61,26 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>True if the operation succeed, false otherwise.</returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, 
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, 
          Element element, ElementType elementType, EntryMap entryMap)
       {
-         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_Perimeter,
+         (_, m_Perimeter) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, 
             entryMap.CompatibleRevitParameterName, "IfcQtyPerimeter");
-         if (m_Perimeter > MathUtil.Eps())
+         if (m_Perimeter > MathUtil.Eps)
          {
             m_Perimeter = UnitUtil.ScaleLength(m_Perimeter);
             return true;
          }
 
-         ParameterUtil.GetDoubleValueFromElement(element, BuiltInParameter.HOST_PERIMETER_COMPUTED, out m_Perimeter);
-         if (m_Perimeter > MathUtil.Eps())
+         (_, m_Perimeter) = ParameterUtil.GetDoubleValueFromElement(element.Id, BuiltInParameter.HOST_PERIMETER_COMPUTED);
+         if (m_Perimeter > MathUtil.Eps)
          {
             m_Perimeter = UnitUtil.ScaleLength(m_Perimeter);
             return true;
          }
 
          m_Perimeter = extrusionCreationData?.ScaledOuterPerimeter ?? 0.0;
-         return m_Perimeter > MathUtil.Eps();
+         return m_Perimeter > MathUtil.Eps;
       }
 
       /// <summary>
@@ -126,19 +126,19 @@ namespace Revit.IFC.Export.Exporter.PropertySet.Calculators
       /// <param name="element">The element to calculate the value.</param>
       /// <param name="elementType">The element type.</param>
       /// <returns>True if the operation succeed, false otherwise.</returns>
-      public override bool Calculate(ExporterIFC exporterIFC, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
+      public override bool Calculate(ExporterIFC exporterIFC, IFCAnyHandle handle, IFCExportBodyParams extrusionCreationData, Element element, ElementType elementType, EntryMap entryMap)
       {
-         ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName, out m_GrossPerimeter,
+         (_, m_GrossPerimeter) = ParameterUtil.GetDoubleValueFromElementOrSymbol(element, entryMap.RevitParameterName,
             entryMap.CompatibleRevitParameterName, "IfcQtyGrossPerimeter");
 
-         if (m_GrossPerimeter > MathUtil.Eps())
+         if (m_GrossPerimeter > MathUtil.Eps)
          {
             m_GrossPerimeter = UnitUtil.ScaleLength(m_GrossPerimeter);
             return true;
          }
 
          m_GrossPerimeter = extrusionCreationData?.ScaledOuterPerimeter ?? 0.0;
-         return m_GrossPerimeter > MathUtil.Eps();
+         return m_GrossPerimeter > MathUtil.Eps;
       }
 
       /// <summary>

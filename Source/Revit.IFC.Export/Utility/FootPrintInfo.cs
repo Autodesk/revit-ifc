@@ -106,32 +106,27 @@ namespace Revit.IFC.Export.Utility
       /// <summary>
       /// Create Footprint shapre representation from already initialized ExtrusionBaseLoops data
       /// </summary>
-      /// <param name="exporterIFC">the ExporterIFC</param>
+      /// <param name="exporterIFC">The ExporterIFC</param>
+      /// <param name="element">The element be exported.</param>
+      /// <param name="categoryId">The category id of the element.</param>
       /// <returns>the footprint shape representation</returns>
-      public IFCAnyHandle CreateFootprintShapeRepresentation(ExporterIFC exporterIFC)
+      public IFCAnyHandle CreateFootprintShapeRepresentation(ExporterIFC exporterIFC, Element element, 
+         ElementId categoryId)
       {
-         if (ExtrusionBaseLoops == null || ExtrusionBaseLoops.Count == 0 || ExtrusionBaseLoops[0] == null)
+         if (((ExtrusionBaseLoops?.Count ?? 0) == 0) || ExtrusionBaseLoops[0] == null)
             return null;
 
-         if (ExtrusionBaseLCS == null)
-            ExtrusionBaseLCS = Transform.Identity;
+         ExtrusionBaseLCS ??= Transform.Identity;
 
-         ISet<IFCAnyHandle> repItems = new HashSet<IFCAnyHandle>();
+         List<Curve> curves = [];
          foreach (CurveLoop extrusionBoundaryLoop in ExtrusionBaseLoops)
          {
-            repItems.AddIfNotNull(GeometryUtil.CreateIFCCurveFromCurveLoop(exporterIFC,
-               extrusionBoundaryLoop, ExtrusionBaseLCS, XYZ.BasisZ));
+            List<Curve> curveLoopCurves = [.. extrusionBoundaryLoop.ToList()];
+            curves.AddRange(curveLoopCurves);
          }
 
-         IFCAnyHandle footprintShapeRep = null;
-         if (repItems.Count > 0)
-         {
-            IFCAnyHandle contextOfItemsFootprint = exporterIFC.Get3DContextHandle("FootPrint");
-            footprintShapeRep = RepresentationUtil.CreateBaseShapeRepresentation(exporterIFC, contextOfItemsFootprint, 
-               "FootPrint", "Curve2D", repItems);
-         }
-
-         return footprintShapeRep;
+         return RepresentationUtil.CreateFootPrintShapeRepresentation(exporterIFC, element, categoryId,
+           curves, ExtrusionBaseLCS, XYZ.BasisZ);
       }
    }
 }

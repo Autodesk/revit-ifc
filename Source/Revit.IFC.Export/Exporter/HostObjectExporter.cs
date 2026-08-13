@@ -78,8 +78,7 @@ namespace Revit.IFC.Export.Exporter
             // for CeilingAndFloor host object type (see JIRA item REVIT-164913)
             if (containsBRepGeometry && (hostObject is CeilingAndFloor)
                && materialIds.Count > 0
-               && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView
-               && !ExporterCacheManager.ExportOptionsCache.ExportAs4x3ReferenceView)
+               && !ExporterCacheManager.ExportOptionsCache.ExportAsReferenceView)
             {
                foreach (IFCAnyHandle elemHnd in elemHnds)
                {
@@ -114,10 +113,9 @@ namespace Revit.IFC.Export.Exporter
 
                      SpaceBoundingElementUtil.RegisterSpaceBoundingElementHandle(exporterIFC, elemHnd, hostObject.Id, levelId);
 
-                     // Even if it is Tessellated geometry in IFC4RV, the material layer will still be assigned
+                     // Even if it is Tessellated geometry in Reference View, the material layer will still be assigned
                      if (containsBRepGeometry 
-                        && !ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView 
-                        && !ExporterCacheManager.ExportOptionsCache.ExportAs4x3ReferenceView)
+                        && !ExporterCacheManager.ExportOptionsCache.ExportAsReferenceView)
                         continue;
 
                      HashSet<IFCAnyHandle> relDecomposesSet = IFCAnyHandleUtil.GetRelDecomposes(elemHnd);
@@ -143,7 +141,7 @@ namespace Revit.IFC.Export.Exporter
                            CategoryUtil.CreateMaterialAssociation(typeHnd, materialLayerSet);
                         }
 
-                        if (ExporterCacheManager.ExportOptionsCache.ExportAs4ReferenceView)
+                        if (ExporterCacheManager.ExportOptionsCache.ExportAsReferenceView)
                         {
                            if (!materialAlreadyAssoc)
                            {
@@ -283,7 +281,7 @@ namespace Revit.IFC.Export.Exporter
          if (cs != null)
          {
             ElementId matId = cs.LayerCount > 0 ? cs.GetMaterialId(0) : ElementId.InvalidElementId;
-            if (matId != ElementId.InvalidElementId)
+            if (!MathUtil.IsInvalidElementId(matId))
                return matId;
             else
                return CategoryUtil.GetBaseMaterialIdForElement(hostObject); ;
@@ -316,11 +314,11 @@ namespace Revit.IFC.Export.Exporter
                if (function == MaterialFunctionAssignment.Finish1 || function == MaterialFunctionAssignment.Finish2)
                {
                   ElementId matId = cs.GetMaterialId(ii);
-                  if (matId != ElementId.InvalidElementId)
+                  if (!MathUtil.IsInvalidElementId(matId))
                   {
                      matIds.Add(matId);
                   }
-                  else if (baseMatId != ElementId.InvalidElementId)
+                  else if (!MathUtil.IsInvalidElementId(baseMatId))
                   {
                      matIds.Add(baseMatId);
                   }

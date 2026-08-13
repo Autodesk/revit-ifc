@@ -348,7 +348,7 @@ namespace Revit.IFC.Export.Utility
             {
                solidIndex++;
 
-               if (extrusionData.ScaledExtrusionLength < MathUtil.Eps())
+               if (extrusionData.ScaledExtrusionLength < MathUtil.Eps)
                   extrusionData.ScaledExtrusionLength = scaledWidth;
 
                string openingGUID = CreateOpeningGUID(element, openingElem, range, 
@@ -440,7 +440,7 @@ namespace Revit.IFC.Export.Utility
          double scaledOpeningLength = extrusionCreationData.ScaledLength;
          string openingObjectType;
          if (!MathUtil.IsAlmostZero(scaledHostWidth) && !MathUtil.IsAlmostZero(scaledOpeningLength))
-            openingObjectType = scaledOpeningLength < (scaledHostWidth - MathUtil.Eps()) ? "Recess" : "Opening";
+            openingObjectType = scaledOpeningLength < (scaledHostWidth - MathUtil.Eps) ? "Recess" : "Opening";
          else
             openingObjectType = isRecess ? "Recess" : "Opening";
 
@@ -512,13 +512,13 @@ namespace Revit.IFC.Export.Utility
          }
 
          Transform transformToUse = lcs;
-         if (extrusionData.ScaledExtrusionLength < MathUtil.Eps())
+         if (extrusionData.ScaledExtrusionLength < MathUtil.Eps)
          {
             double extrusionLength = 0.0;
             if (hostElement is Floor || hostElement is RoofBase || hostElement is Ceiling)
                extrusionLength = CalculateOpeningExtrusionInFloorRoofOrCeiling(hostElement, extrusionData, transformToUse);
 
-            if (extrusionLength < MathUtil.Eps())
+            if (extrusionLength < MathUtil.Eps)
                return null;
 
             extrusionData.ScaledExtrusionLength = UnitUtil.ScaleLength(extrusionLength);
@@ -629,20 +629,21 @@ namespace Revit.IFC.Export.Utility
       /// <returns>The extrusion length</returns>
       private static double CalculateOpeningExtrusionInFloorRoofOrCeiling(Element hostElement, IFCExtrusionData extrusionData, Transform lcs)
       {
+         ElementId hostElementId = hostElement.Id;
+
          double extrusionLength = 0.0;
          //Use the element thickness for not sloped elements, if the host element is sloped, the extrusions of the resulting opening will not intersect the host element.  
          //To handle such cases using bounding box height instead of thickness.
          //
-         double slopeValue = 0.0;
-         Parameter slopeParam = ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.ROOF_SLOPE, out slopeValue);
+         (EvaluatedParameter slopeParam, double slopeValue) = ParameterUtil.GetDoubleValueFromElement(hostElementId, BuiltInParameter.ROOF_SLOPE);
          if (slopeParam != null && MathUtil.IsAlmostZero(slopeValue))
          {
             if (hostElement is Floor)
-               ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.FLOOR_ATTR_THICKNESS_PARAM, out extrusionLength);
+               (_, extrusionLength) = ParameterUtil.GetDoubleValueFromElement(hostElementId, BuiltInParameter.FLOOR_ATTR_THICKNESS_PARAM);
             else if (hostElement is RoofBase)
-               ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.ROOF_ATTR_THICKNESS_PARAM, out extrusionLength);
+               (_, extrusionLength) = ParameterUtil.GetDoubleValueFromElement(hostElementId, BuiltInParameter.ROOF_ATTR_THICKNESS_PARAM);
             else if (hostElement is Ceiling)
-               ParameterUtil.GetDoubleValueFromElement(hostElement, BuiltInParameter.CEILING_THICKNESS, out extrusionLength);
+               (_, extrusionLength) = ParameterUtil.GetDoubleValueFromElement(hostElementId, BuiltInParameter.CEILING_THICKNESS);
          }
          else
          {

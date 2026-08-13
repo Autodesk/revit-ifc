@@ -35,16 +35,6 @@ namespace Revit.IFC.Export.Utility
       public HashSet<ElementId> CableElementsCache { get; set; } = new();
 
       /// <summary>
-      /// The dictionary mapping from an exported connector to an Ifc handle. 
-      /// </summary>
-      public Dictionary<Connector, IFCAnyHandle> ConnectorCache { get; set; } = new();
-
-      /// <summary>
-      /// The dictionary mapping from an exported connector to its description string. 
-      /// </summary>
-      public Dictionary<Connector, string> ConnectorDescriptionCache = new();
-
-      /// <summary>
       /// A cache of elements (Ducts and Pipes) that may have coverings (Linings and/or Insulations) and their categories.
       /// </summary>
       public Dictionary<ElementId, ElementId> CoveredElementsCache { get; set; } = new();
@@ -142,19 +132,9 @@ namespace Revit.IFC.Export.Utility
          return null;
       }
 
-      public void CacheConnectorHandle(Connector connector, IFCAnyHandle handle)
-      {
-         if (handle != null && !ConnectorCache.ContainsKey(connector))
-         {
-            ConnectorCache.Add(connector, handle);
-         }
-      }
-
       public void Clear()
       {
          CableElementsCache.Clear();
-         ConnectorCache.Clear();
-         ConnectorDescriptionCache.Clear();
          CoveredElementsCache.Clear();
          MEPConnectors.Clear();
          MEPElementHandleDictionary.Clear();

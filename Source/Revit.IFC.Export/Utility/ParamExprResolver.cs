@@ -17,15 +17,10 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.IFC;
+using System;
 
 namespace Revit.IFC.Export.Utility
 {
@@ -43,7 +38,7 @@ namespace Revit.IFC.Export.Utility
       }
 
       string paramExprContent;
-      static Element _element;
+      static Element _element; 
       string _paramName;
 
       /// <summary>
@@ -54,8 +49,8 @@ namespace Revit.IFC.Export.Utility
       /// <param name="paramVal">parameter string value</param>
       public ParamExprResolver(Element elem, string paramName, string paramVal)
       {
-         paramExprContent = paramVal;
          _element = elem;
+         paramExprContent = paramVal;
          _paramName = paramName;
       }
 
@@ -210,13 +205,13 @@ namespace Revit.IFC.Export.Utility
             // For ElementId to be in this oper, the Name of the Element will be used and the rest will be converted to strings
             string expr1Str = null;
             if (expr1.nodePropertyValue is ElementId)
-               expr1Str = _element.Document.GetElement((ElementId)expr1.nodePropertyValue).Name;
+               expr1Str = ExporterCacheManager.Document.GetElement((ElementId)expr1.nodePropertyValue).Name;
             else
                expr1Str = expr1.nodePropertyValue.ToString();
 
             string expr2Str = null;
             if (expr2.nodePropertyValue is ElementId)
-               expr2Str = _element.Document.GetElement((ElementId)expr2.nodePropertyValue).Name;
+               expr2Str = ExporterCacheManager.Document.GetElement((ElementId)expr2.nodePropertyValue).Name;
             else
                expr2Str = expr2.nodePropertyValue.ToString();
 
@@ -294,6 +289,35 @@ namespace Revit.IFC.Export.Utility
          return ret;
       }
 
+      public static double? EvaluateDoubleParameterExpr(Element element, string paramValue, string paramName)
+      {
+         object strValue = CheckForParameterExpr(element, paramValue, paramName, ExpectedValueEnum.DOUBLEVALUE);
+         if (strValue is double result)
+            return result;
+
+         if (!double.TryParse(paramValue, out result))
+            return null;
+
+         return result;
+      }
+
+      public static int? EvaluateIntegerParameterExpr(Element element, string paramValue, string paramName)
+      {
+         object strValue = CheckForParameterExpr(element, paramValue, paramName, ExpectedValueEnum.INTVALUE);
+         if (strValue is int result)
+            return result;
+
+         if (!int.TryParse(paramValue, out result))
+            return null;
+         
+         return result;
+      }
+
+      public static string EvaluateStringParameterExpr(Element element, string paramValue, string paramName)
+      {
+         object strValue = CheckForParameterExpr(element, paramValue, paramName, ExpectedValueEnum.STRINGVALUE);
+         return (strValue as string) ?? paramValue;
+      }
 
       /// <summary>
       /// Check for a special parameter value containing the Paramater expression
@@ -302,28 +326,23 @@ namespace Revit.IFC.Export.Utility
       /// <param name="element">the Element</param>
       /// <param name="paramName">the Parameter Name</param>
       /// <returns>the resolved Parameter Expression value or null if not resolved</returns>
-      public static ParamExprResolver CheckForParameterExpr(string paramValue, Element element, string paramName, ExpectedValueEnum expectedDataType, out object propertyValue)
+      private static object CheckForParameterExpr(Element element, string paramValue, string paramName, ExpectedValueEnum expectedDataType)
       {
-         propertyValue = null;
-         string paramValuetrim = paramValue.Trim();
-         if (IsParameterExpr(paramValue))
+         string paramValuetrim = IsParameterExpr(paramValue);
+         if (paramValuetrim == null)
+            return null;
+
+         ParamExprResolver pResv = new(element, paramName, paramValuetrim);
+         switch (expectedDataType)
          {
-            ParamExprResolver pResv = new ParamExprResolver(element, paramName, paramValuetrim);
-            switch (expectedDataType)
-            {
-               case ExpectedValueEnum.STRINGVALUE:
-                  propertyValue = pResv.GetStringValue();
-                  break;
-               case ExpectedValueEnum.DOUBLEVALUE:
-                  propertyValue = pResv.GetDoubleValue();
-                  break;
-               case ExpectedValueEnum.INTVALUE:
-                  propertyValue = pResv.GetIntValue();
-                  break;
-               default:
-                  break;
-            }
-            return pResv;
+            case ExpectedValueEnum.STRINGVALUE:
+               return pResv.GetStringValue();
+            case ExpectedValueEnum.DOUBLEVALUE:
+               return pResv.GetDoubleValue();
+            case ExpectedValueEnum.INTVALUE:
+               return pResv.GetIntValue();
+            default:
+               break;
          }
 
          return null;
@@ -334,12 +353,51 @@ namespace Revit.IFC.Export.Utility
       /// </summary>
       /// <param name="paramValue">parameter value</param>
       /// <returns>true or false</returns>
-      public static bool IsParameterExpr(string paramValue)
+      public static string IsParameterExpr(string paramValue)
       {
-         // This is kind of hack to quickly check whether we need to parse the parameter or not by checking that the value is enclosed by "{ }" or "u{ }" for unique value
-         string paramValuetrim = paramValue.Trim();
-         return ((paramValuetrim.Length > 1 && paramValuetrim[0] == '{')
-            || (paramValuetrim.Length > 2 && paramValuetrim[1] == '{')) && (paramValuetrim[paramValuetrim.Length - 1] == '}');
+         // Check if string represents a parameter expression of "{ }" or "u{ }" for unique value, after trimming.
+         int length = paramValue?.Length ?? 0;
+         if (length < 2)
+            return null;
+
+         int startIndex = 0;
+         for (; startIndex < length-1; startIndex++)
+         {
+            char currChar = paramValue[startIndex];
+            if (currChar == '{')
+            {
+               break;
+            }
+            else if (currChar is 'u' or 'U')
+            {
+               if (paramValue[startIndex+1] == '{')
+                  break;
+               return null;
+            }
+
+            if (!char.IsWhiteSpace(currChar))
+               return null;
+         }
+
+         if (startIndex == length-1)
+            return null;
+
+         int endIndex = length-1;
+         for (; endIndex > startIndex; endIndex--)
+         {
+            char currChar = paramValue[endIndex];
+            if (currChar == '}')
+            {
+               break;
+            }
+            if (!char.IsWhiteSpace(currChar))
+               return null;
+         }
+
+         if (endIndex == startIndex)
+            return null;
+
+         return paramValue.Substring(startIndex, endIndex-startIndex+1);
       }
    }
 }
