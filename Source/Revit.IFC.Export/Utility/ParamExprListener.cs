@@ -470,6 +470,11 @@ namespace Revit.IFC.Export.Utility
          {
             case StorageType.Double:
                parValue = par.AsDouble();
+               ForgeTypeId dataTypeId = par.Definition.GetDataType();
+               // There is a need to scale the value that has unit type here because in parameter expression the parameter will always have a string type,
+               // which will evade the unit conversion when processing the property. 
+               if (dataTypeId != SpecTypeId.Number)
+                  parValue = UnitUtil.ScaleDouble(dataTypeId, par.AsDouble());  
                break;
             case StorageType.Integer:
                parValue = par.AsInteger();
