@@ -66,6 +66,7 @@ namespace RevitIFCTools
             pset.ApplicableClasses = applicableData.Classes;
             pset.ApplicableType = applicableData.ApplicableType;
             pset.PredefinedTypes = applicableData.PredefinedTypes;
+            pset.TemplateType = ExtractTemplateType(htmlContent);
             
             // Extract properties
             pset.properties = ExtractProperties(htmlContent, htmlFile.DirectoryName, psetOrQtoSet);
@@ -135,6 +136,21 @@ namespace RevitIFCTools
          {
             throw new Exception($"Unrecognized IFC version: {ifcVersion}");
          }
+      }
+
+      /// <summary>
+      /// Extract the IfcPropertySetTemplate.TemplateType, which the lexical pages carry as a
+      /// highlighted token at the top of the applicable entities section, e.g.
+      /// &lt;aside&gt;&lt;mark&gt;PSET_OCCURRENCEDRIVEN&lt;/mark&gt;
+      /// </summary>
+      private string ExtractTemplateType(string htmlContent)
+      {
+         var section = ExtractSection(htmlContent, "Applicable entities");
+         if (string.IsNullOrEmpty(section))
+            return null;
+
+         var match = Regex.Match(section, @"<mark>((?:PSET|QTO)_\w+)</mark>", RegexOptions.Singleline);
+         return match.Success ? match.Groups[1].Value : null;
       }
 
       /// <summary>
