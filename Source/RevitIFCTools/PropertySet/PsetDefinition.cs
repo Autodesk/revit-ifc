@@ -56,6 +56,13 @@ namespace RevitIFCTools.PropertySet
          } 
       }
       public string IfdGuid { get; set; }
+
+      /// <summary>
+      /// The IfcPropertySetTemplate.TemplateType as spelled by the schema, e.g. PSET_OCCURRENCEDRIVEN.
+      /// Null for IFC2x2 and IFC2X3, which have no IfcPropertySetTemplate.
+      /// </summary>
+      public string TemplateType { get; set; }
+
       public IList<string> ApplicableClasses { get; set; }
       public string ApplicableType { get; set; }
       public IList<string> PredefinedTypes { get; set; } = new List<string>();
