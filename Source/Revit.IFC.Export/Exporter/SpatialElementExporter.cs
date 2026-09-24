@@ -997,6 +997,20 @@ namespace Revit.IFC.Export.Exporter
                   repHnd = CreateExtrudedShape(exporterIFC, file, spatialElement, geomElem, curveLoops, scaledRoomHeight, lcs, catId);
                }
 
+               // Attempt 2 can move the space's IfcLocalPlacement as a side effect: on its BRep path
+               // BodyExporter localizes the geometry and writes the body's bbox.Min into the placement
+               // (TransformSetter.InitializeFromBoundingBox -> CreateLocalPlacementFromOffset, which
+               // mutates the relative placement in place). That offset is only correct while Attempt 2's
+               // localized geometry is the one being used, so snapshot the original origin here and let
+               // Attempt 3 undo it below.
+               IFCAnyHandle spaceRelPlacement = GeometryUtil.GetRelativePlacementFromLocalPlacement(localPlacement);
+               XYZ originalPlacementOrigin = null;
+               if (!IFCAnyHandleUtil.IsNullOrHasNoValue(spaceRelPlacement))
+               {
+                  IFCAnyHandle originalOriginHnd = IFCAnyHandleUtil.GetInstanceAttribute(spaceRelPlacement, "Location");
+                  originalPlacementOrigin = GeometryUtil.GetCoordinates(originalOriginHnd);
+               }
+
                // Attempt 2:  'BRep' IfcShapeRepresentation and 'Footprint' IfcShapeRepresentation.
                // This will not run for Use2DRoomBoundaryForRoomVolumeCreation advanced option.
                if ((repHnd == null) && (geomElem != null))
@@ -1038,6 +1052,29 @@ namespace Revit.IFC.Export.Exporter
                // Also the CurveLoops were used to build the FootPrint, so this should be equivalent to using any 'FootPrint' alternate representation.
                if ((repHnd == null) && !tryCreateExtrudedShapeFirst)
                {
+                  // Attempt 2 was discarded, but it may already have offset the space's placement by
+                  // the body's bbox.Min. CreateExtrudedShape builds its profile from curveLoops, which
+                  // are in project coordinates, and gives the solid an lcs with zero X/Y - so a
+                  // leftover offset would apply the room's position a second time and land the space
+                  // roughly twice as far from the origin. Put the placement back the way we found it.
+                  //
+                  // BodyExporter offsets the placement in one of two ways depending on
+                  // IFCExportBodyParams.ReuseLocalPlacement, so both have to be undone: it either
+                  // mutates the relative placement's Location in place, or swaps in a whole new
+                  // IfcLocalPlacement. The space is created from extraParams.GetLocalPlacement()
+                  // further down, so restoring that handle is what actually matters.
+                  extraParams.SetLocalPlacement(localPlacement);
+                  if (originalPlacementOrigin != null && !IFCAnyHandleUtil.IsNullOrHasNoValue(spaceRelPlacement))
+                  {
+                     XYZ currentOrigin = GeometryUtil.GetCoordinates(
+                        IFCAnyHandleUtil.GetInstanceAttribute(spaceRelPlacement, "Location"));
+                     if (currentOrigin == null || !currentOrigin.IsAlmostEqualTo(originalPlacementOrigin))
+                     {
+                        IFCAnyHandleUtil.SetAttribute(spaceRelPlacement, "Location",
+                           ExporterUtil.CreateCartesianPoint(file, originalPlacementOrigin));
+                     }
+                  }
+
                   repHnd = CreateExtrudedShape(exporterIFC, file, spatialElement, geomElem,
                      curveLoops, scaledRoomHeight, lcs, catId);
                }
