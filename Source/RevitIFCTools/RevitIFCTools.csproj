@@ -1,4 +1,4 @@
-﻿<Project Sdk="">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>RevitIFCTools</RootNamespace>
     <AssemblyName>RevitIFCTools</AssemblyName>
@@ -6,6 +6,16 @@
 	<UseWPF>true</UseWPF>
    <EnableDefaultPageItems>false</EnableDefaultPageItems>
    <UseWindowsForms>False</UseWindowsForms>
+   <TargetFramework>net10.0-windows7.0</TargetFramework>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <DefineConstants>$(DefineConstants);FORNAX_EXTENSION</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <DefineConstants>$(DefineConstants);FORNAX_EXTENSION</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Slow_Debug|x64'">
+    <DefineConstants>$(DefineConstants);FORNAX_EXTENSION</DefineConstants>
   </PropertyGroup>
   <Import Project="$(SolutionDir)VSProps\Revit.CSharp.Sdk.props" />
   <ItemGroup>
@@ -15,12 +25,7 @@
     <None Remove="MainWindow.xaml" />
     <None Remove="PropertySet\ExprTester.xaml" />
   </ItemGroup>
-   <ItemGroup>
-      <FrameworkReference Include="Microsoft.WindowsDesktop.App" />
-   </ItemGroup>
-   <ItemGroup>
-    <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
-  </ItemGroup>
+
    <ItemGroup>
      <ProjectReference Include="..\Revit.IFC.Common\Revit.IFC.Common.csproj" />
      <ProjectReference Include="..\Revit.IFC.Export\Revit.IFC.Export.csproj" />
@@ -30,6 +35,10 @@
          <PackageReference Include="Antlr4.Runtime">
       <Version>4.6.6</Version>
     </PackageReference>
+         <PackageReference Include="DotNetDepends" Version="1.144.0">
+           <PrivateAssets>all</PrivateAssets>
+           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+         </PackageReference>
   </ItemGroup>
    <ItemGroup>
      <Page Include="App.xaml" />
@@ -40,8 +49,23 @@
    </ItemGroup>
    <ItemGroup>
      <Reference Include="RevitAPI">
-       <HintPath>..\..\..\API\2026\RevitAPI.dll</HintPath>
+       <HintPath>C:\Program Files\Autodesk\Revit 2026\RevitAPI.dll</HintPath>
+       <Private>True</Private>
+       <SpecificVersion>false</SpecificVersion>
      </Reference>
+   </ItemGroup>
+   <ItemGroup>
+     <Compile Update="Properties\Settings.Designer.cs">
+       <DesignTimeSharedInput>True</DesignTimeSharedInput>
+       <AutoGen>True</AutoGen>
+       <DependentUpon>Settings.settings</DependentUpon>
+     </Compile>
+   </ItemGroup>
+   <ItemGroup>
+     <None Update="Properties\Settings.settings">
+       <Generator>SettingsSingleFileGenerator</Generator>
+       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+     </None>
    </ItemGroup>
   <Import Project="$(SolutionDir)VSProps\Revit.CSharp.Sdk.targets" />
 

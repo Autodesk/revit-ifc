@@ -4,6 +4,7 @@
     <AssemblyName>Revit.IFC.Import</AssemblyName>
     <UseWindowsForms>true</UseWindowsForms>
     <BaseOutputPath></BaseOutputPath>
+    <TargetFramework>net10.0-windows7.0</TargetFramework>
   </PropertyGroup>
   <Import Project="$(SolutionDir)VSProps\Revit.CSharp.Sdk.props" />
    <ItemGroup>
@@ -40,10 +41,10 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="RevitAPI">
-      <HintPath>..\..\..\API\2026\RevitAPI.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\Revit 2026\RevitAPI.dll</HintPath>
     </Reference>
     <Reference Include="RevitAPIIFC">
-      <HintPath>..\..\..\API\2026\RevitAPIIFC.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\Revit 2026\RevitAPIIFC.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>

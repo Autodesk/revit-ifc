@@ -11,6 +11,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <IncludePackageReferencesDuringMarkupCompilation>false</IncludePackageReferencesDuringMarkupCompilation>
     <EmbedUntrackedSources>false</EmbedUntrackedSources>
+     <TargetFramework>net10.0-windows7.0</TargetFramework>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DefineConstants>IFC_OPENSOURCE</DefineConstants>
@@ -99,10 +100,10 @@
   </ItemGroup>
   <Import Project=".\IFCExporterUI.props" />
   <PropertyGroup>
-    <PostBuildEvent>
-$(ProjectDir)CreateAddinFile.bat $(OutDir)$(TargetName).addin $(AssemblyName).dll $(AddinGUID)
-</PostBuildEvent>
+    <PostBuildEvent>$(ProjectDir)CreateAddinFile.bat $(OutDir)$(TargetName).addin $(AssemblyName).dll $(AddinGUID)
+xcopy "$(TargetPath)" "C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2026.bundle\Contents\2026\" /F /R /Y /I</PostBuildEvent>
     <BaseOutputPath>C:\ProgramData\Autodesk\ApplicationPlugins\IFC 2026.bundle\Contents\2026</BaseOutputPath>
+    <TargetFramework>net10.0-windows7.0</TargetFramework>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
@@ -142,13 +143,22 @@ $(ProjectDir)CreateAddinFile.bat $(OutDir)$(TargetName).addin $(AssemblyName).dl
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Autodesk.UI.Windows">
-      <HintPath>..\..\..\API\2026\Autodesk.UI.Windows.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\Revit 2026\Autodesk.UI.Windows.dll</HintPath>
     </Reference>
     <Reference Include="Autodesk.Weave.Wpf">
-      <HintPath>..\..\..\API\2026\Autodesk.Weave.Wpf.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\Revit 2026\Autodesk.Weave.Wpf.dll</HintPath>
+    </Reference>
+    <Reference Include="RevitAPI">
+      <HintPath>C:\Program Files\Autodesk\Revit 2026\RevitAPI.dll</HintPath>
+    </Reference>
+    <Reference Include="RevitAPIIFC">
+      <HintPath>C:\Program Files\Autodesk\Revit 2026\RevitAPIIFC.dll</HintPath>
+    </Reference>
+    <Reference Include="RevitAPIUI">
+      <HintPath>C:\Program Files\Autodesk\Revit 2026\RevitAPIUI.dll</HintPath>
     </Reference>
     <Reference Include="UserInterfaceUtility">
-      <HintPath>..\..\..\API\2026\UserInterfaceUtility.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\Revit 2026\UserInterfaceUtility.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>

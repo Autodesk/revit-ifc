@@ -5,18 +5,18 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RevitIFCTools"
         mc:Ignorable="d"
-        Title="Tool to Generate IFCEntity List/Tree" Height="505.536" Width="494.397" ResizeMode="NoResize">
+        Title="Tool to Generate IFCEntity List/Tree" Height="573" Width="494.397" ResizeMode="NoResize">
    <Grid ShowGridLines="True">
       <Grid.RowDefinitions>
-         <RowDefinition Height="98*"/>
-         <RowDefinition Height="47*"/>
-         <RowDefinition Height="14*"/>
+         <RowDefinition Height="365*"/>
+         <RowDefinition Height="143*"/>
+         <RowDefinition Height="49*"/>
       </Grid.RowDefinitions>
       <Label x:Name="label" Content="Select IFC schema (XML)" HorizontalAlignment="Left" Margin="10,10,0,0" Width="139" Height="27" VerticalAlignment="Top"/>
       <ListBox x:Name="listBox_schemaList" Margin="17,41,0,0" SelectionChanged="listBox_SelectionChanged" SelectionMode="Multiple" HorizontalAlignment="Left" Width="362" Height="105" VerticalAlignment="Top"/>
-      <Button x:Name="button_browse" Content="Browse ..." Margin="0,169,10,0" HorizontalAlignment="Right" Width="75" Click="button_browse_Click" Height="24" VerticalAlignment="Top"/>
-      <TextBox x:Name="textBox_folderLocation" TextWrapping="Wrap" Margin="17,169,0,0" HorizontalAlignment="Left" Width="362" Height="24" VerticalAlignment="Top"/>
-      <Label x:Name="label1" Content="Folder location:" HorizontalAlignment="Left" Margin="10,145,0,0" Width="92" Height="27" VerticalAlignment="Top"/>
+      <Button x:Name="button_browse" Content="Browse ..." Margin="409,0,0,0" HorizontalAlignment="Left" Width="75" Click="button_browse_Click" Height="24" VerticalAlignment="Center"/>
+      <TextBox x:Name="textBox_folderLocation" TextWrapping="Wrap" Margin="17,0,0,0" HorizontalAlignment="Left" Width="362" Height="24" VerticalAlignment="Center"/>
+      <Label x:Name="label1" Content="IFC Schema Documentation Folder location:" HorizontalAlignment="Left" Margin="17,145,0,0" Width="360" Height="27" VerticalAlignment="Top"/>
       <Button x:Name="button_Cancel" Content="Cancel" Margin="0,0,10,12" Grid.Row="2" Height="20" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="75" Click="button_Cancel_Click"/>
       <Button x:Name="button_Go" Content="Go" Margin="0,0,90,12" RenderTransformOrigin="0.186,0.596" Grid.Row="2" HorizontalAlignment="Right" Width="75" Height="20" VerticalAlignment="Bottom" Click="button_Go_Click"/>
       <Button x:Name="button_browseOutputFolder" Content="Browse ..." Margin="0,223,10,0" HorizontalAlignment="Right" Width="75" Click="button_browseOutputFolder_Click" Height="24" VerticalAlignment="Top"/>
@@ -31,6 +31,8 @@
       <CheckBox x:Name="checkBox_outputSchemaEnum" Content="Output indiv. schema enum" HorizontalAlignment="Left" Margin="17,0,0,19" Width="178" UseLayoutRounding="False" Height="16" VerticalAlignment="Bottom"/>
       <CheckBox x:Name="checkBox_outputSchemaTree" Content="Output indiv. schema tree" HorizontalAlignment="Left" Margin="212,0,0,19" Width="165" Height="15" VerticalAlignment="Bottom"/>
       <Button x:Name="button_ExportInfoPair" Content="ExportInfoPair" Margin="180,90,0,0" Grid.Row="1" Click="Button_ExportInfoPair_Click" Height="21" VerticalAlignment="Top" HorizontalAlignment="Left" Width="89"/>
-
+      <Label x:Name="label_UserDefPsetLoc" Content="User-defined Pset definition location:" HorizontalAlignment="Left" Margin="17,250,0,0" VerticalAlignment="Top"/>
+      <TextBox x:Name="textBox_UserDefPsetLoc" TextWrapping="Wrap" Margin="17,281,0,0" TextChanged="textBox_UserDefPsetLoc_TextChanged"  HorizontalAlignment="Left" Width="362" Height="24" VerticalAlignment="Top"/>
+      <Button x:Name="button_browseUserDefPsetLoc" Content="Browse ..." Margin="0,281,10,0" HorizontalAlignment="Right" Width="75" Click="button_browseUserDefPsetLoc_Click" Height="24" VerticalAlignment="Top"/>
    </Grid>
 </Window>
