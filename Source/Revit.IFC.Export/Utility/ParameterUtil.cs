@@ -123,11 +123,22 @@ namespace Revit.IFC.Export.Utility
                {
                   if (storageType == StorageType.String)
                   {
-                     ParamExprResolver.CheckForParameterExpr(propertyValue, element,
+                     ParamExprResolver resolver = ParamExprResolver.CheckForParameterExpr(propertyValue, element,
                         propertyName, ParamExprResolver.ExpectedValueEnum.STRINGVALUE,
                         out object strValue);
-                     if (strValue is string)
-                        propertyValue = strValue as string;
+                     if (resolver != null)
+                     {
+                        // Enter here if it is actually Parameter Expression
+                        if (strValue != null)
+                        {
+                           if (strValue is string)
+                              propertyValue = strValue as string;
+                        }
+                        else
+                        {
+                           propertyValue = null;
+                        }
+                     }
                   }
                   return parameter;
                }

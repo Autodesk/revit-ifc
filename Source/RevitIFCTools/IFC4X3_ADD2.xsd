@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='ASCII'?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ifc="https://standards.buildingsmart.org/IFC/RELEASE/IFC4/3/DEV/d423201" targetNamespace="https://standards.buildingsmart.org/IFC/RELEASE/IFC4/3/DEV/d423201" elementFormDefault="qualified" attributeFormDefault="unqualified">
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ifc="https://standards.buildingsmart.org/IFC/RELEASE/IFC4/3/ADD2" targetNamespace="https://standards.buildingsmart.org/IFC/RELEASE/IFC4/3/ADD2" elementFormDefault="qualified" attributeFormDefault="unqualified">
 	<xs:element name="uos" type="ifc:uos" abstract="true"/>
 	<xs:simpleType name="Seq-anyURI">
 		<xs:list itemType="xs:anyURI"/>
@@ -2011,7 +2011,6 @@
 				<xs:attribute name="Name" type="ifc:IfcLabel" use="optional"/>
 				<xs:attribute name="Description" type="ifc:IfcText" use="optional"/>
 				<xs:attribute name="GeodeticDatum" type="ifc:IfcIdentifier" use="optional"/>
-				<xs:attribute name="VerticalDatum" type="ifc:IfcIdentifier" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -3667,6 +3666,18 @@
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
+	<xs:element name="IfcGeographicCRS" type="ifc:IfcGeographicCRS" substitutionGroup="ifc:IfcCoordinateReferenceSystem" nillable="true"/>
+	<xs:complexType name="IfcGeographicCRS">
+		<xs:complexContent>
+			<xs:extension base="ifc:IfcCoordinateReferenceSystem">
+				<xs:sequence>
+					<xs:element name="AngleUnit" type="ifc:IfcNamedUnit" minOccurs="0" nillable="true"/>
+					<xs:element name="HeightUnit" type="ifc:IfcNamedUnit" minOccurs="0" nillable="true"/>
+				</xs:sequence>
+				<xs:attribute name="PrimeMeridian" type="ifc:IfcIdentifier" use="optional"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
 	<xs:element name="IfcGeographicElement" type="ifc:IfcGeographicElement" substitutionGroup="ifc:IfcElement" nillable="true"/>
 	<xs:complexType name="IfcGeographicElement">
 		<xs:complexContent>
@@ -4003,7 +4014,7 @@
 						</xs:complexType>
 					</xs:element>
 				</xs:sequence>
-				<xs:attribute name="SelfIntersect" type="ifc:IfcLogical" use="optional"/>
+				<xs:attribute name="SelfIntersect" type="ifc:IfcBoolean" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -4193,7 +4204,7 @@
 	<xs:complexType name="IfcKerb">
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcBuiltElement">
-				<xs:attribute name="Mountable" type="ifc:IfcBoolean" use="optional"/>
+				<xs:attribute name="PredefinedType" type="ifc:IfcKerbTypeEnum" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -4201,7 +4212,7 @@
 	<xs:complexType name="IfcKerbType">
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcBuiltElementType">
-				<xs:attribute name="Mountable" type="ifc:IfcBoolean" use="optional"/>
+				<xs:attribute name="PredefinedType" type="ifc:IfcKerbTypeEnum" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -4523,8 +4534,16 @@
 				<xs:attribute name="XAxisAbscissa" type="ifc:IfcReal" use="optional"/>
 				<xs:attribute name="XAxisOrdinate" type="ifc:IfcReal" use="optional"/>
 				<xs:attribute name="Scale" type="ifc:IfcReal" use="optional"/>
-				<xs:attribute name="ScaleY" type="ifc:IfcReal" use="optional"/>
-				<xs:attribute name="ScaleZ" type="ifc:IfcReal" use="optional"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:element name="IfcMapConversionScaled" type="ifc:IfcMapConversionScaled" substitutionGroup="ifc:IfcMapConversion" nillable="true"/>
+	<xs:complexType name="IfcMapConversionScaled">
+		<xs:complexContent>
+			<xs:extension base="ifc:IfcMapConversion">
+				<xs:attribute name="FactorX" type="ifc:IfcReal" use="optional"/>
+				<xs:attribute name="FactorY" type="ifc:IfcReal" use="optional"/>
+				<xs:attribute name="FactorZ" type="ifc:IfcReal" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -5778,7 +5797,7 @@
 								<xs:element ref="ifc:IfcIndexedPolygonalFace" maxOccurs="unbounded"/>
 							</xs:sequence>
 							<xs:attribute ref="ifc:itemType" fixed="ifc:IfcIndexedPolygonalFace"/>
-							<xs:attribute ref="ifc:cType" fixed="list"/>
+							<xs:attribute ref="ifc:cType" fixed="list-unique"/>
 							<xs:attribute ref="ifc:arraySize" use="optional"/>
 						</xs:complexType>
 					</xs:element>
@@ -6118,6 +6137,7 @@
 				<xs:sequence>
 					<xs:element name="MapUnit" type="ifc:IfcNamedUnit" minOccurs="0" nillable="true"/>
 				</xs:sequence>
+				<xs:attribute name="VerticalDatum" type="ifc:IfcIdentifier" use="optional"/>
 				<xs:attribute name="MapProjection" type="ifc:IfcIdentifier" use="optional"/>
 				<xs:attribute name="MapZone" type="ifc:IfcIdentifier" use="optional"/>
 			</xs:extension>
@@ -6951,7 +6971,7 @@
 						</xs:complexType>
 					</xs:element>
 				</xs:sequence>
-				<xs:attribute name="RelatedObjectsType" type="ifc:IfcObjectTypeEnum" use="optional"/>
+				<xs:attribute name="RelatedObjectsType" type="ifc:IfcStrippedOptional" use="optional"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
@@ -7808,6 +7828,26 @@
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
+	<xs:element name="IfcRigidOperation" type="ifc:IfcRigidOperation" substitutionGroup="ifc:IfcCoordinateOperation" nillable="true"/>
+	<xs:complexType name="IfcRigidOperation">
+		<xs:complexContent>
+			<xs:extension base="ifc:IfcCoordinateOperation">
+				<xs:sequence>
+					<xs:element name="FirstCoordinate">
+						<xs:complexType>
+							<xs:group ref="ifc:IfcMeasureValue"/>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="SecondCoordinate">
+						<xs:complexType>
+							<xs:group ref="ifc:IfcMeasureValue"/>
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
+				<xs:attribute name="Height" type="ifc:IfcLengthMeasure" use="optional"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
 	<xs:element name="IfcRoad" type="ifc:IfcRoad" substitutionGroup="ifc:IfcFacility" nillable="true"/>
 	<xs:complexType name="IfcRoad">
 		<xs:complexContent>
@@ -8430,7 +8470,7 @@
 		<xs:complexContent>
 			<xs:extension base="ifc:IfcCurve">
 				<xs:sequence>
-					<xs:element name="Position" minOccurs="0" nillable="true">
+					<xs:element name="Position">
 						<xs:complexType>
 							<xs:group ref="ifc:IfcAxis2Placement"/>
 						</xs:complexType>
@@ -10319,6 +10359,17 @@
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
+	<xs:element name="IfcWellKnownText" type="ifc:IfcWellKnownText" substitutionGroup="ifc:Entity" nillable="true"/>
+	<xs:complexType name="IfcWellKnownText">
+		<xs:complexContent>
+			<xs:extension base="ifc:Entity">
+				<xs:sequence>
+					<xs:element name="CoordinateReferenceSystem" type="ifc:IfcCoordinateReferenceSystem" nillable="true"/>
+				</xs:sequence>
+				<xs:attribute name="WellKnownText" type="ifc:IfcWellKnownTextLiteral" use="optional"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
 	<xs:element name="IfcWindow" type="ifc:IfcWindow" substitutionGroup="ifc:IfcBuiltElement" nillable="true"/>
 	<xs:complexType name="IfcWindow">
 		<xs:complexContent>
@@ -10595,6 +10646,7 @@
 			<xs:element ref="ifc:IfcTimeMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcTimeStamp-wrapper"/>
 			<xs:element ref="ifc:IfcTorqueMeasure-wrapper"/>
+			<xs:element ref="ifc:IfcURIReference-wrapper"/>
 			<xs:element ref="ifc:IfcVaporPermeabilityMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcVolumeMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcVolumetricFlowRateMeasure-wrapper"/>
@@ -10668,7 +10720,7 @@
 	</xs:group>
 	<xs:group name="IfcCurveMeasureSelect">
 		<xs:choice>
-			<xs:element ref="ifc:IfcNonNegativeLengthMeasure-wrapper"/>
+			<xs:element ref="ifc:IfcLengthMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcParameterValue-wrapper"/>
 		</xs:choice>
 	</xs:group>
@@ -10974,6 +11026,7 @@
 			<xs:element ref="ifc:IfcTimeSeries"/>
 			<xs:element ref="ifc:IfcTimeStamp-wrapper"/>
 			<xs:element ref="ifc:IfcTorqueMeasure-wrapper"/>
+			<xs:element ref="ifc:IfcURIReference-wrapper"/>
 			<xs:element ref="ifc:IfcVaporPermeabilityMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcVolumeMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcVolumetricFlowRateMeasure-wrapper"/>
@@ -11103,6 +11156,7 @@
 			<xs:element ref="ifc:IfcText-wrapper"/>
 			<xs:element ref="ifc:IfcTime-wrapper"/>
 			<xs:element ref="ifc:IfcTimeStamp-wrapper"/>
+			<xs:element ref="ifc:IfcURIReference-wrapper"/>
 		</xs:choice>
 	</xs:group>
 	<xs:group name="IfcSizeSelect">
@@ -11297,6 +11351,7 @@
 			<xs:element ref="ifc:IfcTimeMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcTimeStamp-wrapper"/>
 			<xs:element ref="ifc:IfcTorqueMeasure-wrapper"/>
+			<xs:element ref="ifc:IfcURIReference-wrapper"/>
 			<xs:element ref="ifc:IfcVaporPermeabilityMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcVolumeMeasure-wrapper"/>
 			<xs:element ref="ifc:IfcVolumetricFlowRateMeasure-wrapper"/>
@@ -11494,15 +11549,15 @@
 	</xs:simpleType>
 	<xs:simpleType name="IfcAnnotationTypeEnum">
 		<xs:restriction base="xs:string">
-			<xs:enumeration value="asbuiltarea"/>
-			<xs:enumeration value="asbuiltline"/>
-			<xs:enumeration value="asbuiltpoint"/>
-			<xs:enumeration value="assumedarea"/>
-			<xs:enumeration value="assumedline"/>
-			<xs:enumeration value="assumedpoint"/>
-			<xs:enumeration value="non_physical_signal"/>
-			<xs:enumeration value="superelevationevent"/>
-			<xs:enumeration value="widthevent"/>
+			<xs:enumeration value="contourline"/>
+			<xs:enumeration value="dimension"/>
+			<xs:enumeration value="isobar"/>
+			<xs:enumeration value="isolux"/>
+			<xs:enumeration value="isotherm"/>
+			<xs:enumeration value="leader"/>
+			<xs:enumeration value="survey"/>
+			<xs:enumeration value="symbol"/>
+			<xs:enumeration value="text"/>
 			<xs:enumeration value="userdefined"/>
 			<xs:enumeration value="notdefined"/>
 		</xs:restriction>
@@ -11511,6 +11566,7 @@
 		<xs:restriction base="xs:string">
 			<xs:enumeration value="add"/>
 			<xs:enumeration value="divide"/>
+			<xs:enumeration value="modulo"/>
 			<xs:enumeration value="multiply"/>
 			<xs:enumeration value="subtract"/>
 		</xs:restriction>
@@ -11581,15 +11637,6 @@
 			<xs:enumeration value="spandrel"/>
 			<xs:enumeration value="t_beam"/>
 			<xs:enumeration value="userdefined"/>
-			<xs:enumeration value="notdefined"/>
-		</xs:restriction>
-	</xs:simpleType>
-	<xs:simpleType name="IfcBearingTypeDisplacementEnum">
-		<xs:restriction base="xs:string">
-			<xs:enumeration value="fixed_movement"/>
-			<xs:enumeration value="free_movement"/>
-			<xs:enumeration value="guided_longitudinal"/>
-			<xs:enumeration value="guided_transversal"/>
 			<xs:enumeration value="notdefined"/>
 		</xs:restriction>
 	</xs:simpleType>
@@ -11682,6 +11729,8 @@
 			<xs:enumeration value="complex"/>
 			<xs:enumeration value="element"/>
 			<xs:enumeration value="partial"/>
+			<xs:enumeration value="provisionforspace"/>
+			<xs:enumeration value="provisionforvoid"/>
 			<xs:enumeration value="userdefined"/>
 			<xs:enumeration value="notdefined"/>
 		</xs:restriction>
@@ -12851,6 +12900,12 @@
 			<xs:enumeration value="notdefined"/>
 		</xs:restriction>
 	</xs:simpleType>
+	<xs:simpleType name="IfcKerbTypeEnum">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="userdefined"/>
+			<xs:enumeration value="notdefined"/>
+		</xs:restriction>
+	</xs:simpleType>
 	<xs:simpleType name="IfcKnotType">
 		<xs:restriction base="xs:string">
 			<xs:enumeration value="piecewise_bezier_knots"/>
@@ -13120,18 +13175,6 @@
 			<xs:enumeration value="beacon"/>
 			<xs:enumeration value="buoy"/>
 			<xs:enumeration value="userdefined"/>
-			<xs:enumeration value="notdefined"/>
-		</xs:restriction>
-	</xs:simpleType>
-	<xs:simpleType name="IfcObjectTypeEnum">
-		<xs:restriction base="xs:string">
-			<xs:enumeration value="actor"/>
-			<xs:enumeration value="control"/>
-			<xs:enumeration value="group"/>
-			<xs:enumeration value="process"/>
-			<xs:enumeration value="product"/>
-			<xs:enumeration value="project"/>
-			<xs:enumeration value="resource"/>
 			<xs:enumeration value="notdefined"/>
 		</xs:restriction>
 	</xs:simpleType>
@@ -13412,14 +13455,15 @@
 	</xs:simpleType>
 	<xs:simpleType name="IfcRailwayPartTypeEnum">
 		<xs:restriction base="xs:string">
-			<xs:enumeration value="dilatationsuperstructure"/>
-			<xs:enumeration value="linesidestructure"/>
-			<xs:enumeration value="linesidestructurepart"/>
-			<xs:enumeration value="plaintracksuperstructure"/>
-			<xs:enumeration value="superstructure"/>
-			<xs:enumeration value="trackstructure"/>
-			<xs:enumeration value="trackstructurepart"/>
-			<xs:enumeration value="turnoutsuperstructure"/>
+			<xs:enumeration value="abovetrack"/>
+			<xs:enumeration value="dilationtrack"/>
+			<xs:enumeration value="lineside"/>
+			<xs:enumeration value="linesidepart"/>
+			<xs:enumeration value="plaintrack"/>
+			<xs:enumeration value="substructure"/>
+			<xs:enumeration value="track"/>
+			<xs:enumeration value="trackpart"/>
+			<xs:enumeration value="turnouttrack"/>
 			<xs:enumeration value="userdefined"/>
 			<xs:enumeration value="notdefined"/>
 		</xs:restriction>
@@ -13472,6 +13516,8 @@
 			<xs:enumeration value="position"/>
 			<xs:enumeration value="referencemarker"/>
 			<xs:enumeration value="station"/>
+			<xs:enumeration value="superelevationevent"/>
+			<xs:enumeration value="widthevent"/>
 			<xs:enumeration value="userdefined"/>
 			<xs:enumeration value="notdefined"/>
 		</xs:restriction>
@@ -14808,6 +14854,9 @@
 	<xs:simpleType name="IfcSpecularRoughness">
 		<xs:restriction base="xs:double"/>
 	</xs:simpleType>
+	<xs:simpleType name="IfcStrippedOptional">
+		<xs:restriction base="xs:boolean"/>
+	</xs:simpleType>
 	<xs:simpleType name="IfcTemperatureGradientMeasure">
 		<xs:restriction base="xs:double"/>
 	</xs:simpleType>
@@ -14876,6 +14925,9 @@
 	</xs:simpleType>
 	<xs:simpleType name="IfcWarpingMomentMeasure">
 		<xs:restriction base="xs:double"/>
+	</xs:simpleType>
+	<xs:simpleType name="IfcWellKnownTextLiteral">
+		<xs:restriction base="xs:normalizedString"/>
 	</xs:simpleType>
 	<xs:element name="Entity" type="ifc:Entity" abstract="true" nillable="true"/>
 	<xs:complexType name="Entity" abstract="true">
@@ -15927,6 +15979,15 @@
 		<xs:complexType>
 			<xs:simpleContent>
 				<xs:extension base="ifc:IfcTorqueMeasure">
+					<xs:attributeGroup ref="ifc:instanceAttributes"/>
+				</xs:extension>
+			</xs:simpleContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="IfcURIReference-wrapper" nillable="true">
+		<xs:complexType>
+			<xs:simpleContent>
+				<xs:extension base="ifc:IfcURIReference">
 					<xs:attributeGroup ref="ifc:instanceAttributes"/>
 				</xs:extension>
 			</xs:simpleContent>

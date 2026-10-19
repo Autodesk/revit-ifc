@@ -28,7 +28,7 @@ namespace Revit.IFC.Export.Utility
    /// <summary>
    /// Represents the Revit parameter to get from element.
    /// </summary>
-   class UserDefinedPropertyRevitParameter
+   public class UserDefinedPropertyRevitParameter
    {
       /// <summary>
       /// Gets Revit <see cref="BuiltInParameter"/>.
@@ -78,7 +78,7 @@ namespace Revit.IFC.Export.Utility
    /// <summary>
    /// Represents a single property definiton from the config.
    /// </summary>
-   class UserDefinedProperty
+   public class UserDefinedProperty
    {
       /// <summary>
       /// Gets or sets a property name.
@@ -238,7 +238,7 @@ namespace Revit.IFC.Export.Utility
    /// <summary>
    /// Represents a property set from the config.
    /// </summary>
-   class UserDefinedPropertySet
+   public class UserDefinedPropertySet
    {
       /// <summary>
       /// Gets a property set name.
@@ -261,7 +261,7 @@ namespace Revit.IFC.Export.Utility
       public IList<UserDefinedProperty> Properties { get; set; } = new List<UserDefinedProperty>();
    }
 
-   class PropertyMap
+   public static class PropertyMap
    {
       /// <summary>
       /// Load parameter mapping. It parses lines until it finds UserdefinedPset
@@ -324,13 +324,15 @@ namespace Revit.IFC.Export.Utility
       ///     #! UserDefinedPset
       /// </summary>
       /// <returns>List of property set definitions</returns>
-      public static IEnumerable<UserDefinedPropertySet> LoadUserDefinedPset()
+      public static IEnumerable<UserDefinedPropertySet> LoadUserDefinedPset(string filename = null)
       {
          List<UserDefinedPropertySet> userDefinedPropertySets = new List<UserDefinedPropertySet>();
 
          try
          {
-            string filename = ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportUserDefinedPsetsFileName;
+            if (string.IsNullOrEmpty(filename))
+               filename = ExporterCacheManager.ExportOptionsCache.PropertySetOptions.ExportUserDefinedPsetsFileName;
+
             if (!File.Exists(filename))
             {
                // This allows for the original behavior of looking in the directory of the export DLL to look for the default file name.

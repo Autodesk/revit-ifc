@@ -28,16 +28,18 @@ using System.IO;
 using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
 using Revit.IFC.Export.Utility;
+using RevitIFCTools.PropertySet;
 
 namespace RevitIFCTools
 {
    /// <summary>
    /// Interaction logic for MainWindow.xaml
    /// </summary>
-   public partial class IFCEntityListWin: Window
+   public partial class IFCEntityListWin : Window
    {
       SortedSet<string> aggregateEntities;
       string outputFolder = @"c:\temp";
+      string userDefPsetLoc = "";
       StreamWriter logF;
 
       public IFCEntityListWin()
@@ -90,7 +92,7 @@ namespace RevitIFCTools
          }
 
          // Add aggregate of the entity list into a set
-         foreach (KeyValuePair<string,IfcSchemaEntityNode> entry in entityTree.IfcEntityDict)
+         foreach (KeyValuePair<string, IfcSchemaEntityNode> entry in entityTree.IfcEntityDict)
          {
             aggregateEntities.Add(entry.Key);
          }
@@ -124,6 +126,10 @@ namespace RevitIFCTools
          }
 
          logF = new StreamWriter(Path.Combine(outputFolder, "entityList.log"));
+
+#if FORNAX_EXTENSION
+         StreamWriter objHStream = new StreamWriter(Path.Combine(outputFolder, "ObjectHierarchy.txt"));
+#endif
 
          IList<IFCEntityAndPsetList> fxEntityNPsetList = new List<IFCEntityAndPsetList>();
 
@@ -191,9 +197,9 @@ namespace RevitIFCTools
 
             //Collect information on applicable Psets for Entity
             IDictionary<string, HashSet<string>> entPsetDict = new Dictionary<string, HashSet<string>>();
-            foreach(KeyValuePair<string, IList<VersionSpecificPropertyDef>> pdefEntry in procPdef.allPDefDict)
+            foreach (KeyValuePair<string, IList<VersionSpecificPropertyDef>> pdefEntry in procPdef.allPDefDict)
             {
-               foreach(VersionSpecificPropertyDef vPdef in pdefEntry.Value)
+               foreach (VersionSpecificPropertyDef vPdef in pdefEntry.Value)
                {
                   //if (vPdef.IfcVersion.Equals(schemaName, StringComparison.InvariantCultureIgnoreCase))
                   {
@@ -217,7 +223,7 @@ namespace RevitIFCTools
                         }
                         else
                         {
-                           entPsetDict.Add(applEntity, new HashSet<string>(){vPdef.PropertySetDef.Name});
+                           entPsetDict.Add(applEntity, new HashSet<string>() { vPdef.PropertySetDef.Name });
                         }
 
                         // The Pset will be valid for both the Instance and the Type. Check for that here and add if found
@@ -243,6 +249,17 @@ namespace RevitIFCTools
                }
             }
 
+#if FORNAX_EXTENSION
+            LoadUserDefPsetFromLoc(schemaEntities, entPsetDict);
+
+            // Generate the object hierarchy for the schema and write it into a file
+            List<ObjectHierarchy> objHierarchies = ObjectHierarchyTool.GenerateObjectHierarchy(f.FullName);
+            foreach (ObjectHierarchy objH in objHierarchies)
+            {
+               objHStream.WriteLine(objH.ToString());
+            }
+#endif
+
             // For every entity of the schema, collect the list of PredefinedType (obtained from the xsd), and collect all applicable
             //  Pset Definitions collected above
             foreach (KeyValuePair<string, IfcSchemaEntityNode> ent in entDict)
@@ -254,7 +271,7 @@ namespace RevitIFCTools
                   continue;
 
                // Collect only the IfcProducts or IfcGroup
-               if (!ent.Value.IsSubTypeOf("IfcProduct") && !ent.Value.IsSubTypeOf("IfcGroup", strict:false) && !ent.Value.IsSubTypeOf("IfcTypeProduct"))
+               if (!ent.Value.IsSubTypeOf("IfcProduct") && !ent.Value.IsSubTypeOf("IfcGroup", strict: false) && !ent.Value.IsSubTypeOf("IfcTypeProduct"))
                   continue;
 
                entInfo.Entity = ent.Key;
@@ -265,24 +282,36 @@ namespace RevitIFCTools
                      entInfo.PredefinedType = entityTree.PredefinedTypeEnumDict[ent.Value.PredefinedType];
                   }
                }
-               
+
                // Get Pset list that is applicable to this entity type
                if (entPsetDict.ContainsKey(entInfo.Entity))
                {
                   entInfo.PropertySets = entPsetDict[entInfo.Entity].ToList();
                }
 
+#if FORNAX_EXTENSION
+               // Add FORNAX special property sets IFCATTRIBUTES
+               if (entInfo.PropertySets == null)
+                  entInfo.PropertySets = new List<string>() { "IFCATTRIBUTES" };
+               else
+                  entInfo.PropertySets.Add("IFCATTRIBUTES");
+#endif
+               
                // Collect Pset that is applicable to the supertype of this entity
-               IList<IfcSchemaEntityNode> supertypeList = IfcSchemaEntityTree.FindAllSuperTypes(schemaName, entInfo.Entity, 
+               IList<IfcSchemaEntityNode> supertypeList = IfcSchemaEntityTree.FindAllSuperTypes(schemaName, entInfo.Entity,
                   "IfcProduct", "IfcTypeProduct", "IfcGroup");
                if (supertypeList != null && supertypeList.Count > 0)
                {
-                  foreach(IfcSchemaEntityNode superType in supertypeList)
+                  foreach (IfcSchemaEntityNode superType in supertypeList)
                   {
                      if (entPsetDict.ContainsKey(superType.Name))
                      {
                         if (entInfo.PropertySets == null)
+#if FORNAX_EXTENSION
+                           entInfo.PropertySets = new List<string>() { "IFCATTRIBUTES" };
+#else
                            entInfo.PropertySets = new List<string>();
+#endif
 
                         foreach (string pset in entPsetDict[superType.Name])
                            entInfo.PropertySets.Add(pset);
@@ -375,6 +404,11 @@ namespace RevitIFCTools
 
          if (logF != null)
             logF.Close();
+
+#if FORNAX_EXTENSION
+         if (objHStream != null)
+            objHStream.Close();
+#endif
       }
 
       private void button_Cancel_Click(object sender, RoutedEventArgs e)
@@ -457,15 +491,184 @@ namespace RevitIFCTools
          if (info.Count() > 1)
             predefType = info[1];
 
-
          IFCExportInfoPair exportInfo = new IFCExportInfoPair();
          IFCEntityType entType = IFCEntityType.UnKnown;
          if (!Enum.TryParse<IFCEntityType>(entity, out entType))
             return;
 
          exportInfo.SetByTypeAndPredefinedType(entType, predefType);
-         textBox_type2.Text = "Instance: " + exportInfo.ExportInstance + "\nType: " + exportInfo.ExportType 
+         textBox_type2.Text = "Instance: " + exportInfo.ExportInstance + "\nType: " + exportInfo.ExportType
                + "\r\nPredefinedTpe: " + exportInfo.PredefinedType;
       }
+
+      private void button_browseUserDefPsetLoc_Click(object sender, RoutedEventArgs e)
+      {
+         var dialog = new FolderBrowserDialog();
+         dialog.RootFolder = Environment.SpecialFolder.MyComputer;
+         dialog.ShowDialog();
+         textBox_UserDefPsetLoc.Text = dialog.SelectedPath;
+         userDefPsetLoc = dialog.SelectedPath;
+      }
+
+      private void textBox_UserDefPsetLoc_TextChanged(object sender, TextChangedEventArgs e)
+      {
+         userDefPsetLoc = textBox_UserDefPsetLoc.Text;
+      }
+
+#if FORNAX_EXTENSION
+      void LoadUserDefPsetFromLoc(IFCEntityAndPsetList schemaEntities, IDictionary<string, HashSet<string>> entPsetDict)
+      {
+         if (!Directory.Exists(userDefPsetLoc))
+            return;
+
+         // Add IFCATTRIBUTES Pset for Fornax extension
+         schemaEntities.PsetDefList.Add(DefineFXProperties());
+
+         DirectoryInfo dInfo = new DirectoryInfo(userDefPsetLoc);
+         foreach (FileInfo psetDefFile in dInfo.GetFiles("*.txt"))
+         {
+            foreach (PsetDefinition pset in LoadUserDefinedPset(psetDefFile.FullName))
+            {
+               IFCPropertySetDef psetDef = new IFCPropertySetDef();
+               psetDef.PsetName = pset.Name;
+               foreach (PsetProperty property in pset.properties)
+               {
+                  if (psetDef.Properties == null)
+                     psetDef.Properties = new List<string>();
+                  psetDef.Properties.Add(property.Name);
+               }
+               schemaEntities.PsetDefList.Add(psetDef);
+
+               foreach (string applEntity in pset.ApplicableClasses)
+               {
+                  // The Pset will be valid for both the Instance and the Type. Check for that here and add if found
+                  string entOrTypePair;
+                  if (applEntity.Length > 4 && applEntity.EndsWith("Type"))
+                     entOrTypePair = applEntity.Substring(0, applEntity.Length - 4);
+                  else
+                     entOrTypePair = applEntity + "Type";
+
+                  if (entPsetDict.ContainsKey(applEntity))
+                  {
+                     entPsetDict[applEntity].Add(pset.Name);
+                  }
+                  else
+                  {
+                     entPsetDict.Add(applEntity, new HashSet<string>() { pset.Name });
+                  }
+
+                  // For the other pair (Type or Instance)
+                  if (entPsetDict.ContainsKey(entOrTypePair))
+                  {
+                     entPsetDict[entOrTypePair].Add(pset.Name);
+                  }
+                  else
+                  {
+                     entPsetDict.Add(entOrTypePair, new HashSet<string>() { pset.Name });
+                  }
+               }
+            }
+         }
+      }
+      
+      IFCPropertySetDef DefineFXProperties ()
+      {  
+         // For IFCATTRIBUTES
+         IFCPropertySetDef pset = new IFCPropertySetDef();
+         pset.PsetName = "IFCATTRIBUTES";
+         IList<string> props = new List<string>();
+         props.Add("AreaClassification");
+         props.Add("Building Name");
+         props.Add("Description");
+         props.Add("DrainageBoundary");
+         props.Add("Checkbox");
+         props.Add("Level");
+         props.Add("LongName");
+         props.Add("Material");
+         props.Add("Name");
+         props.Add("ObjectType");
+         props.Add("OccupancyType");
+         props.Add("PredefinedType");
+         props.Add("ProjectDevelopmentType");
+         props.Add("Project Location");
+         props.Add("System");
+         pset.Properties = props;                       
+
+         return pset;
+      }
+
+      /// <summary>
+      /// Load user-defined Property set (duplicate of the one from Revit.IFC.Exporter PropertyMap.cs
+      /// Format:
+      ///    PropertySet: <Pset_name> I[nstance]/T[ype] <IFC entity list separated by ','> 
+      ///              Property_name   Data_type   Revit_Parameter
+      ///              ...
+      /// Datatype supported: Text, Integer, Real, Boolean
+      /// Line divider between Property Mapping and User defined property sets:
+      ///     #! UserDefinedPset
+      /// </summary>
+      /// <returns>List of property set definitions</returns>
+      public static IEnumerable<PsetDefinition> LoadUserDefinedPset(string filename)
+      {
+         List<PsetDefinition> userDefinedPropertySets = new List<PsetDefinition>();
+
+         try
+         {
+            if (!File.Exists(filename))
+               return userDefinedPropertySets;
+
+            // Format: PropertSet: <Pset_name> I[nstance]/T[ype] <IFC entity list separated by ','> 
+            //              Property_name   Data_type   Revit_Parameter
+            // ** For now it only works for simple property with single value (datatype supported: Text, Integer, Real and Boolean)
+            using (StreamReader sr = new StreamReader(filename))
+            {
+               string line;
+
+               // current property set
+               PsetDefinition userDefinedPropertySet = null;
+               while ((line = sr.ReadLine()) != null)
+               {
+                  line = line.TrimStart(' ', '\t');
+
+                  if (string.IsNullOrEmpty(line) || line[0] == '#')
+                     continue;
+
+                  string[] split = line.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                  if (split.Length >= 4 && string.Compare(split[0], "PropertySet:", true) == 0) // Any entry with less than 3 parameters is malformed.
+                  {
+                     userDefinedPropertySet = new PsetDefinition()
+                     {
+                        Name = split[1],
+                        //Type = split[2],
+                        ApplicableClasses = split[3].Split(new char[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                     };
+
+                     userDefinedPropertySets.Add(userDefinedPropertySet);
+                  }
+                  else if (split.Length >= 2 && userDefinedPropertySet != null) // Skip property definitions outside of property set block.
+                  {
+                     PsetProperty userDefinedProperty = new PsetProperty
+                     {
+                        Name = split[0],
+                        //userDefinedProperty.ParsePropertyType(split[1]);
+                     };
+ 
+                     if (userDefinedPropertySet.properties == null)
+                        userDefinedPropertySet.properties = new HashSet<PsetProperty>();
+                     userDefinedPropertySet.properties.Add(userDefinedProperty);
+                  }
+               }
+            }
+         }
+         catch (Exception e)
+         {
+            Console.WriteLine("The file could not be read:");
+            Console.WriteLine(e.Message);
+         }
+
+         return userDefinedPropertySets;
+      }
+#endif
+
    }
 }

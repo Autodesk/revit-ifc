@@ -1,21 +1,5 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ItemGroup>
-    <Reference Include="RevitAPI">
-      <SpecificVersion>False</SpecificVersion>
-	  <HintPath>..\..\..\API\2026\RevitAPI.dll</HintPath>
-	  <Private>False</Private>
-    </Reference>
-    <Reference Include="RevitAPIUI">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\API\2026\RevitAPIUI.dll</HintPath>
-	  <Private>False</Private>
-    </Reference>
-    <Reference Include="RevitAPIIFC">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\API\2026\RevitAPIIFC.dll</HintPath>
-	  <Private>False</Private>
-    </Reference>
-  </ItemGroup>
+
   <ItemGroup />
     <!--
     Always Import the appropriate *.OutputPath.targets file BEFORE the

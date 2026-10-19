@@ -2,11 +2,9 @@
   <PropertyGroup>
     <RootNamespace>Revit.IFC.Common</RootNamespace>
     <AssemblyName>Revit.IFC.Common</AssemblyName>
+    <TargetFramework>net10.0-windows7.0</TargetFramework>
   </PropertyGroup>
   <Import Project="$(SolutionDir)VSProps\Revit.CSharp.Sdk.props" />
-   <ItemGroup>
-      <FrameworkReference Include="Microsoft.WindowsDesktop.App" />
-   </ItemGroup>
   <Import Project="$(SolutionDir)VSProps\Revit.CSharp.Sdk.targets" />
   <ItemGroup>
     <Compile Remove="Enums\IFC4x1EntityType.cs" />
@@ -17,10 +15,10 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="RevitAPI">
-      <HintPath>..\..\..\API\2026\RevitAPI.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\Revit 2026\RevitAPI.dll</HintPath>
     </Reference>
     <Reference Include="RevitAPIIFC">
-      <HintPath>..\..\..\API\2026\RevitAPIIFC.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\Revit 2026\RevitAPIIFC.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>

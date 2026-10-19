@@ -1,6 +1,6 @@
 (*
 Copyright by:
-International Alliance for Interoperability, 1996-2003
+International Alliance for Interoperability, 1996-2007
 
 All rights reserved. No part of this documentation may be
 reproduced, stored in a retrieval system, or transmitted
@@ -8,22 +8,21 @@ in any form or by any means, without the prior written
 permission of the owner.
 
 Contents:
-full IFC object model EXPRESS definitions for the IFC2x Edition 2 Addendum 1
+full IFC object model EXPRESS definitions for the IFC2x Edition 3 Technical Corrigendum 1 release
+
 - express longform distribution
+- compiled for EXPRESS version 1 technical corrigendum 2
 
 Issue date:
-July 16, 2004
+July 10, 2007
 
 Development Team:
 Modeling Support Group of the 
 International Alliance for Interoperability
+compiled by Thomas Liebich tl@aec3.com
 *)
 
-
-
-
-
-SCHEMA IFC2X2_FINAL;
+SCHEMA IFC2X3;
 
 TYPE IfcAbsorbedDoseMeasure = REAL;
 END_TYPE;
@@ -43,10 +42,15 @@ END_TYPE;
 TYPE IfcBoolean = BOOLEAN;
 END_TYPE;
 
+TYPE IfcBoxAlignment = IfcLabel;
+ WHERE
+	WR1 : SELF IN ['top-left', 'top-middle', 'top-right', 'middle-left', 'center', 'middle-right', 'bottom-left', 'bottom-middle', 'bottom-right'];
+END_TYPE;
+
 TYPE IfcComplexNumber = ARRAY [1:2] OF REAL;
 END_TYPE;
 
-TYPE IfcCompoundPlaneAngleMeasure = LIST [3:3] OF INTEGER;
+TYPE IfcCompoundPlaneAngleMeasure = LIST [3:4] OF INTEGER;
  WHERE
 	WR1 : { -360 <= SELF[1] < 360 };
 	WR2 : { -60 <= SELF[2] < 60 };
@@ -106,6 +110,21 @@ END_TYPE;
 TYPE IfcEnergyMeasure = REAL;
 END_TYPE;
 
+TYPE IfcFontStyle = STRING;
+ WHERE
+	WR1 : SELF IN ['normal','italic','oblique'];
+END_TYPE;
+
+TYPE IfcFontVariant = STRING;
+ WHERE
+	WR1 : SELF IN ['normal','small-caps'];
+END_TYPE;
+
+TYPE IfcFontWeight = STRING;
+ WHERE
+	WR1 : SELF IN ['normal','small-caps','100','200','300','400','500','600','700','800','900'];
+END_TYPE;
+
 TYPE IfcForceMeasure = REAL;
 END_TYPE;
 
@@ -120,7 +139,7 @@ END_TYPE;
 
 TYPE IfcHeatingValueMeasure = REAL;
  WHERE
-	WR1 : SELF > 0;
+	WR1 : SELF > 0.;
 END_TYPE;
 
 TYPE IfcHourInDay = INTEGER;
@@ -258,17 +277,17 @@ END_TYPE;
 
 TYPE IfcPositiveLengthMeasure = IfcLengthMeasure;
  WHERE
-	WR1 : SELF > 0;
+	WR1 : SELF > 0.;
 END_TYPE;
 
 TYPE IfcPositivePlaneAngleMeasure = IfcPlaneAngleMeasure;
  WHERE
-	WR1 : SELF > 0;
+	WR1 : SELF > 0.;
 END_TYPE;
 
 TYPE IfcPositiveRatioMeasure = IfcRatioMeasure;
  WHERE
-	WR1 : SELF > 0;
+	WR1 : SELF > 0.;
 END_TYPE;
 
 TYPE IfcPowerMeasure = REAL;
@@ -300,7 +319,7 @@ END_TYPE;
 
 TYPE IfcSecondInMinute = REAL;
  WHERE
-	WR1 : { 0 <= SELF < 60 };
+	WR1 : { 0. <= SELF < 60. };
 END_TYPE;
 
 TYPE IfcSectionModulusMeasure = REAL;
@@ -338,7 +357,22 @@ END_TYPE;
 TYPE IfcText = STRING;
 END_TYPE;
 
-TYPE IfcTextAlignment = IfcLabel;
+TYPE IfcTextAlignment = STRING;
+ WHERE
+	WR1 : SELF IN ['left', 'right', 'center', 'justify'];
+END_TYPE;
+
+TYPE IfcTextDecoration = STRING;
+ WHERE
+	WR1 : SELF IN ['none', 'underline', 'overline', 'line-through', 'blink'];
+END_TYPE;
+
+TYPE IfcTextFontName = STRING;
+END_TYPE;
+
+TYPE IfcTextTransformation = STRING;
+ WHERE
+	WR1 : SELF IN ['capitalize', 'uppercase', 'lowercase', 'none'];
 END_TYPE;
 
 TYPE IfcThermalAdmittanceMeasure = REAL;
@@ -560,6 +594,11 @@ TYPE IfcBooleanOperator = ENUMERATION OF
 	(UNION
 	,INTERSECTION
 	,DIFFERENCE);
+END_TYPE;
+
+TYPE IfcBuildingElementProxyTypeEnum = ENUMERATION OF
+	(USERDEFINED
+	,NOTDEFINED);
 END_TYPE;
 
 TYPE IfcCableCarrierFittingTypeEnum = ENUMERATION OF
@@ -802,6 +841,11 @@ TYPE IfcCurrencyEnum = ENUMERATION OF
 	,ZAR
 	,ZWD
 	,NOK);
+END_TYPE;
+
+TYPE IfcCurtainWallTypeEnum = ENUMERATION OF
+	(USERDEFINED
+	,NOTDEFINED);
 END_TYPE;
 
 TYPE IfcDamperTypeEnum = ENUMERATION OF
@@ -1357,6 +1401,7 @@ TYPE IfcMemberTypeEnum = ENUMERATION OF
 	,CHORD
 	,COLLAR
 	,MEMBER
+	,MULLION
 	,PLATE
 	,POST
 	,PURLIN
@@ -1475,7 +1520,9 @@ TYPE IfcPipeSegmentTypeEnum = ENUMERATION OF
 END_TYPE;
 
 TYPE IfcPlateTypeEnum = ENUMERATION OF
-	(USERDEFINED
+	(CURTAIN_PANEL
+	,SHEET
+	,USERDEFINED
 	,NOTDEFINED);
 END_TYPE;
 
@@ -1791,6 +1838,7 @@ TYPE IfcSlabTypeEnum = ENUMERATION OF
 	(FLOOR
 	,ROOF
 	,LANDING
+	,BASESLAB
 	,USERDEFINED
 	,NOTDEFINED);
 END_TYPE;
@@ -1814,6 +1862,11 @@ TYPE IfcSpaceHeaterTypeEnum = ENUMERATION OF
 	,FINNEDTUBEUNIT
 	,UNITHEATER
 	,USERDEFINED
+	,NOTDEFINED);
+END_TYPE;
+
+TYPE IfcSpaceTypeEnum = ENUMERATION OF
+	(USERDEFINED
 	,NOTDEFINED);
 END_TYPE;
 
@@ -2089,6 +2142,8 @@ TYPE IfcWallTypeEnum = ENUMERATION OF
 	(STANDARD
 	,POLYGONAL
 	,SHEAR
+	,ELEMENTEDWALL
+	,PLUMBINGWALL
 	,USERDEFINED
 	,NOTDEFINED);
 END_TYPE;
@@ -2187,17 +2242,12 @@ END_TYPE;
 TYPE IfcBooleanOperand = SELECT
 	(IfcSolidModel
 	,IfcHalfSpaceSolid
-	,IfcBooleanResult);
-END_TYPE;
-
-TYPE IfcCharacterSpacingSelect = SELECT
-	(IfcRatioMeasure
-	,IfcLengthMeasure
-	,IfcMeasureWithUnit);
+	,IfcBooleanResult
+	,IfcCsgPrimitive3D);
 END_TYPE;
 
 TYPE IfcCharacterStyleSelect = SELECT
-	(IfcColour);
+	(IfcTextStyleForDefinedFont);
 END_TYPE;
 
 TYPE IfcClassificationNotationSelect = SELECT
@@ -2221,12 +2271,18 @@ TYPE IfcConditionCriterionSelect = SELECT
 END_TYPE;
 
 TYPE IfcCsgSelect = SELECT
-	(IfcBooleanResult);
+	(IfcBooleanResult
+	,IfcCsgPrimitive3D);
 END_TYPE;
 
 TYPE IfcCurveFontOrScaledCurveFontSelect = SELECT
 	(IfcCurveStyleFontSelect
 	,IfcCurveStyleFontAndScaling);
+END_TYPE;
+
+TYPE IfcCurveOrEdgeCurve = SELECT
+	(IfcBoundedCurve
+	,IfcEdgeCurve);
 END_TYPE;
 
 TYPE IfcCurveStyleFontSelect = SELECT
@@ -2338,15 +2394,15 @@ TYPE IfcFillStyleSelect = SELECT
 	,IfcExternallyDefinedHatchStyle);
 END_TYPE;
 
-TYPE IfcFontSelect = SELECT
-	(IfcPreDefinedTextFont
-	,IfcExternallyDefinedTextFont);
-END_TYPE;
-
 TYPE IfcGeometricSetSelect = SELECT
 	(IfcPoint
 	,IfcCurve
 	,IfcSurface);
+END_TYPE;
+
+TYPE IfcHatchLineDistanceSelect = SELECT
+	(IfcOneDirectionRepeatFactor
+	,IfcPositiveLengthMeasure);
 END_TYPE;
 
 TYPE IfcLayeredItem = SELECT
@@ -2422,6 +2478,16 @@ TYPE IfcObjectReferenceSelect = SELECT
 	,IfcAppliedValue);
 END_TYPE;
 
+TYPE IfcOrientationSelect = SELECT
+	(IfcPlaneAngleMeasure
+	,IfcDirection);
+END_TYPE;
+
+TYPE IfcPointOrVertexPoint = SELECT
+	(IfcPoint
+	,IfcVertexPoint);
+END_TYPE;
+
 TYPE IfcPresentationStyleSelect = SELECT
 	(IfcNullStyle
 	,IfcCurveStyle
@@ -2447,8 +2513,12 @@ TYPE IfcSimpleValue = SELECT
 END_TYPE;
 
 TYPE IfcSizeSelect = SELECT
-	(IfcPositiveLengthMeasure
-	,IfcMeasureWithUnit);
+	(IfcRatioMeasure
+	,IfcLengthMeasure
+	,IfcDescriptiveMeasure
+	,IfcPositiveLengthMeasure
+	,IfcNormalisedRatioMeasure
+	,IfcPositiveRatioMeasure);
 END_TYPE;
 
 TYPE IfcSpecularHighlightSelect = SELECT
@@ -2458,14 +2528,20 @@ END_TYPE;
 
 TYPE IfcStructuralActivityAssignmentSelect = SELECT
 	(IfcStructuralItem
-	,IfcBuildingElement);
+	,IfcElement);
+END_TYPE;
+
+TYPE IfcSurfaceOrFaceSurface = SELECT
+	(IfcSurface
+	,IfcFaceSurface
+	,IfcFaceBasedSurfaceModel);
 END_TYPE;
 
 TYPE IfcSurfaceStyleElementSelect = SELECT
 	(IfcSurfaceStyleShading
 	,IfcSurfaceStyleLighting
 	,IfcSurfaceStyleWithTextures
-	,IfcExternallyDefinedSufaceStyle
+	,IfcExternallyDefinedSurfaceStyle
 	,IfcSurfaceStyleRefraction);
 END_TYPE;
 
@@ -2473,10 +2549,14 @@ TYPE IfcSymbolStyleSelect = SELECT
 	(IfcColour);
 END_TYPE;
 
+TYPE IfcTextFontSelect = SELECT
+	(IfcPreDefinedTextFont
+	,IfcExternallyDefinedTextFont);
+END_TYPE;
+
 TYPE IfcTextStyleSelect = SELECT
-	(IfcTextStyleWithMirror
-	,IfcTextStyleWithSpacing
-	,IfcTextStyleWithBoxCharacteristics);
+	(IfcTextStyleWithBoxCharacteristics
+	,IfcTextStyleTextModel);
 END_TYPE;
 
 TYPE IfcTrimmingSelect = SELECT
@@ -2559,16 +2639,25 @@ END_ENTITY;
 ENTITY IfcAirTerminalBoxType
  SUBTYPE OF (IfcFlowControllerType);
 	PredefinedType : IfcAirTerminalBoxTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcAirTerminalBoxTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcAirTerminalBoxTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcAirTerminalType
  SUBTYPE OF (IfcFlowTerminalType);
 	PredefinedType : IfcAirTerminalTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcAirTerminalTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcAirTerminalTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcAirToAirHeatRecoveryType
  SUBTYPE OF (IfcEnergyConversionDeviceType);
 	PredefinedType : IfcAirToAirHeatRecoveryTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcAirToAirHeatRecoveryTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcAirToAirHeatRecoveryTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcAlarmType
@@ -2591,16 +2680,24 @@ ENTITY IfcAnnotationCurveOccurrence
 	(IfcDimensionCurve
 	,IfcProjectionCurve))
  SUBTYPE OF (IfcAnnotationOccurrence);
+ WHERE
+	WR31 : NOT(EXISTS(SELF\IfcStyledItem.Item)) OR
+             ('IFC2X3.IFCCURVE' IN TYPEOF (SELF\IfcStyledItem.Item));
 END_ENTITY;
 
 ENTITY IfcAnnotationFillArea
  SUBTYPE OF (IfcGeometricRepresentationItem);
-	Boundaries : SET [1:?] OF IfcCurve;
+	OuterBoundary : IfcCurve;
+	InnerBoundaries : OPTIONAL SET [1:?] OF IfcCurve;
 END_ENTITY;
 
 ENTITY IfcAnnotationFillAreaOccurrence
  SUBTYPE OF (IfcAnnotationOccurrence);
-	FillStyleTarget : IfcPoint;
+	FillStyleTarget : OPTIONAL IfcPoint;
+	GlobalOrLocal : OPTIONAL IfcGlobalOrLocalEnum;
+ WHERE
+	WR31 : NOT(EXISTS(SELF\IfcStyledItem.Item)) OR
+             ('IFC2X3.IFCANNOTATIONFILLAREA' IN TYPEOF (SELF\IfcStyledItem.Item));
 END_ENTITY;
 
 ENTITY IfcAnnotationOccurrence
@@ -2613,18 +2710,48 @@ ENTITY IfcAnnotationOccurrence
  SUBTYPE OF (IfcStyledItem);
 END_ENTITY;
 
+ENTITY IfcAnnotationSurface
+ SUBTYPE OF (IfcGeometricRepresentationItem);
+	Item : IfcGeometricRepresentationItem;
+	TextureCoordinates : OPTIONAL IfcTextureCoordinate;
+ WHERE
+	WR01 : SIZEOF([
+               'IFC2X3.IFCSURFACE',
+               'IFC2X3.IFCSHELLBASEDSURFACEMODEL',
+               'IFC2X3.IFCFACEBASEDSURFACEMODEL',
+               'IFC2X3.IFCSOLIDMODEL',
+               'IFC2X3.IFCBOOLEANRESULT',
+               'IFC2X3.IFCCSGPRIMITIVE3D'] 
+              * TYPEOF(Item)
+               ) >= 1;
+END_ENTITY;
+
 ENTITY IfcAnnotationSurfaceOccurrence
  SUBTYPE OF (IfcAnnotationOccurrence);
+ WHERE
+	WR31 : NOT(EXISTS(SELF\IfcStyledItem.Item)) OR 
+             (SIZEOF(
+              ['IFC2X3.IFCSURFACE',
+               'IFC2X3.IFCFACEBASEDSURFACEMODEL',
+               'IFC2X3.IFCSHELLBASEDSURFACEMODEL',
+               'IFC2X3.IFCSOLIDMODEL'] *
+              TYPEOF(SELF\IfcStyledItem.Item)) > 0);
 END_ENTITY;
 
 ENTITY IfcAnnotationSymbolOccurrence
  SUPERTYPE OF (ONEOF
 	(IfcTerminatorSymbol))
  SUBTYPE OF (IfcAnnotationOccurrence);
+ WHERE
+	WR31 : NOT(EXISTS(SELF\IfcStyledItem.Item)) OR
+             ('IFC2X3.IFCDEFINEDSYMBOL' IN TYPEOF (SELF\IfcStyledItem.Item));
 END_ENTITY;
 
 ENTITY IfcAnnotationTextOccurrence
  SUBTYPE OF (IfcAnnotationOccurrence);
+ WHERE
+	WR31 : NOT(EXISTS(SELF\IfcStyledItem.Item)) OR
+             ('IFC2X3.IFCTEXTLITERAL' IN TYPEOF (SELF\IfcStyledItem.Item));
 END_ENTITY;
 
 ENTITY IfcApplication;
@@ -2703,16 +2830,19 @@ ENTITY IfcArbitraryClosedProfileDef
 	OuterCurve : IfcCurve;
  WHERE
 	WR1 : OuterCurve.Dim = 2;
-	WR2 : NOT('IFC2X2_FINAL.IFCLINE' IN TYPEOF(OuterCurve));
-	WR3 : NOT('IFC2X2_FINAL.IFCOFFSETCURVE2D' IN TYPEOF(OuterCurve));
+	WR2 : NOT('IFC2X3.IFCLINE' IN TYPEOF(OuterCurve));
+	WR3 : NOT('IFC2X3.IFCOFFSETCURVE2D' IN TYPEOF(OuterCurve));
 END_ENTITY;
 
 ENTITY IfcArbitraryOpenProfileDef
+ SUPERTYPE OF (ONEOF
+	(IfcCenterLineProfileDef))
  SUBTYPE OF (IfcProfileDef);
 	Curve : IfcBoundedCurve;
  WHERE
-	WR1 : SELF\IfcProfileDef.ProfileType = IfcProfileTypeEnum.CURVE;
-	WR2 : Curve.Dim = 2;
+	WR11 : ('IFC2X3.IFCCENTERLINEPROFILEDEF' IN TYPEOF(SELF)) OR 
+              (SELF\IfcProfileDef.ProfileType = IfcProfileTypeEnum.CURVE);
+	WR12 : Curve.Dim = 2;
 END_ENTITY;
 
 ENTITY IfcArbitraryProfileDefWithVoids
@@ -2721,7 +2851,7 @@ ENTITY IfcArbitraryProfileDefWithVoids
  WHERE
 	WR1 : SELF\IfcProfileDef.ProfileType = AREA;
 	WR2 : SIZEOF(QUERY(temp <* InnerCurves | temp.Dim <> 2)) = 0;
-	WR3 : SIZEOF(QUERY(temp <* InnerCurves | 'IFC2X2_FINAL.IFCLINE' IN TYPEOF(temp))) = 0;
+	WR3 : SIZEOF(QUERY(temp <* InnerCurves | 'IFC2X3.IFCLINE' IN TYPEOF(temp))) = 0;
 END_ENTITY;
 
 ENTITY IfcAsset
@@ -2736,7 +2866,7 @@ ENTITY IfcAsset
 	IncorporationDate : IfcCalendarDate;
 	DepreciatedValue : IfcCostValue;
  WHERE
-	WR1 : SIZEOF(QUERY(Temp <* SELF\IfcGroup.IsGroupedBy.RelatedObjects | NOT('IFC2X2_FINAL.IFCELEMENT' IN TYPEOF(Temp)))) = 0;
+	WR1 : SIZEOF(QUERY(Temp <* SELF\IfcGroup.IsGroupedBy.RelatedObjects | NOT('IFC2X3.IFCELEMENT' IN TYPEOF(Temp)))) = 0;
 END_ENTITY;
 
 ENTITY IfcAsymmetricIShapeProfileDef
@@ -2744,7 +2874,7 @@ ENTITY IfcAsymmetricIShapeProfileDef
 	TopFlangeWidth : IfcPositiveLengthMeasure;
 	TopFlangeThickness : OPTIONAL IfcPositiveLengthMeasure;
 	TopFlangeFilletRadius : OPTIONAL IfcPositiveLengthMeasure;
-	CentreOfGravityInY : IfcPositiveLengthMeasure;
+	CentreOfGravityInY : OPTIONAL IfcPositiveLengthMeasure;
 END_ENTITY;
 
 ENTITY IfcAxis1Placement
@@ -2814,16 +2944,34 @@ ENTITY IfcBezierCurve
  SUBTYPE OF (IfcBSplineCurve);
 END_ENTITY;
 
+ENTITY IfcBlobTexture
+ SUBTYPE OF (IfcSurfaceTexture);
+	RasterFormat : IfcIdentifier;
+	RasterCode : BOOLEAN;
+ WHERE
+	WR11 : SELF.RasterFormat IN ['BMP', 'JPG', 'GIF', 'PNG'];
+END_ENTITY;
+
+ENTITY IfcBlock
+ SUBTYPE OF (IfcCsgPrimitive3D);
+	XLength : IfcPositiveLengthMeasure;
+	YLength : IfcPositiveLengthMeasure;
+	ZLength : IfcPositiveLengthMeasure;
+END_ENTITY;
+
 ENTITY IfcBoilerType
  SUBTYPE OF (IfcEnergyConversionDeviceType);
 	PredefinedType : IfcBoilerTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcBoilerTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcBoilerTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcBooleanClippingResult
  SUBTYPE OF (IfcBooleanResult);
  WHERE
-	WR1 : ('IFC2X2_FINAL.IFCSWEPTAREASOLID' IN TYPEOF(FirstOperand)) OR ('IFC2X2_FINAL.IFCBOOLEANCLIPPINGRESULT' IN TYPEOF(FirstOperand));
-	WR2 : ('IFC2X2_FINAL.IFCHALFSPACESOLID' IN TYPEOF(SecondOperand));
+	WR1 : ('IFC2X3.IFCSWEPTAREASOLID' IN TYPEOF(FirstOperand)) OR ('IFC2X3.IFCBOOLEANCLIPPINGRESULT' IN TYPEOF(FirstOperand));
+	WR2 : ('IFC2X3.IFCHALFSPACESOLID' IN TYPEOF(SecondOperand));
 	WR3 : Operator = DIFFERENCE;
 END_ENTITY;
 
@@ -2912,7 +3060,7 @@ ENTITY IfcBoxedHalfSpace
  SUBTYPE OF (IfcHalfSpaceSolid);
 	Enclosure : IfcBoundingBox;
  WHERE
-	WR1 : NOT ('IFC2X2_FINAL.IFCCURVEBOUNDEDPLANE' IN TYPEOF(SELF\IfcHalfSpaceSolid.BaseSurface));
+	WR1 : NOT ('IFC2X3.IFCCURVEBOUNDEDPLANE' IN TYPEOF(SELF\IfcHalfSpaceSolid.BaseSurface));
 END_ENTITY;
 
 ENTITY IfcBuilding
@@ -2934,6 +3082,7 @@ ENTITY IfcBuildingElement
 	,IfcFooting
 	,IfcMember
 	,IfcPile
+	,IfcPlate
 	,IfcRailing
 	,IfcRamp
 	,IfcRampFlight
@@ -2949,15 +3098,8 @@ END_ENTITY;
 ENTITY IfcBuildingElementComponent
  ABSTRACT SUPERTYPE OF (ONEOF
 	(IfcBuildingElementPart
-	,IfcPlate
 	,IfcReinforcingElement))
  SUBTYPE OF (IfcBuildingElement);
-END_ENTITY;
-
-ENTITY IfcBuildingElementComponentType
- ABSTRACT SUPERTYPE OF (ONEOF
-	(IfcPlateType))
- SUBTYPE OF (IfcBuildingElementType);
 END_ENTITY;
 
 ENTITY IfcBuildingElementPart
@@ -2971,13 +3113,20 @@ ENTITY IfcBuildingElementProxy
 	WR1 : EXISTS(SELF\IfcRoot.Name);
 END_ENTITY;
 
+ENTITY IfcBuildingElementProxyType
+ SUBTYPE OF (IfcBuildingElementType);
+	PredefinedType : IfcBuildingElementProxyTypeEnum;
+END_ENTITY;
+
 ENTITY IfcBuildingElementType
  ABSTRACT SUPERTYPE OF (ONEOF
 	(IfcBeamType
-	,IfcBuildingElementComponentType
+	,IfcBuildingElementProxyType
 	,IfcColumnType
 	,IfcCoveringType
+	,IfcCurtainWallType
 	,IfcMemberType
+	,IfcPlateType
 	,IfcRailingType
 	,IfcRampFlightType
 	,IfcSlabType
@@ -2998,12 +3147,12 @@ ENTITY IfcCShapeProfileDef
 	WallThickness : IfcPositiveLengthMeasure;
 	Girth : IfcPositiveLengthMeasure;
 	InternalFilletRadius : OPTIONAL IfcPositiveLengthMeasure;
-	CentreOfGravityInX : IfcPositiveLengthMeasure;
+	CentreOfGravityInX : OPTIONAL IfcPositiveLengthMeasure;
  WHERE
-	WR1 : Girth < (Depth / 2);
+	WR1 : Girth < (Depth / 2.);
 	WR2 : NOT(EXISTS(InternalFilletRadius)) OR
-            ((InternalFilletRadius <= Width/2) AND (InternalFilletRadius <= Depth/2));
-	WR3 : (WallThickness < Width/2) AND (WallThickness < Depth/2);
+            ((InternalFilletRadius <= Width/2.) AND (InternalFilletRadius <= Depth/2.));
+	WR3 : (WallThickness < Width/2.) AND (WallThickness < Depth/2.);
 END_ENTITY;
 
 ENTITY IfcCableCarrierFittingType
@@ -3110,6 +3259,11 @@ ENTITY IfcCartesianTransformationOperator3DnonUniform
 	WR2 : Scl3 > 0.0;
 END_ENTITY;
 
+ENTITY IfcCenterLineProfileDef
+ SUBTYPE OF (IfcArbitraryOpenProfileDef);
+	Thickness : IfcPositiveLengthMeasure;
+END_ENTITY;
+
 ENTITY IfcChamferEdgeFeature
  SUBTYPE OF (IfcEdgeFeature);
 	Width : OPTIONAL IfcPositiveLengthMeasure;
@@ -3119,6 +3273,9 @@ END_ENTITY;
 ENTITY IfcChillerType
  SUBTYPE OF (IfcEnergyConversionDeviceType);
 	PredefinedType : IfcChillerTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcChillerTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcChillerTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcCircle
@@ -3183,6 +3340,9 @@ END_ENTITY;
 ENTITY IfcCoilType
  SUBTYPE OF (IfcEnergyConversionDeviceType);
 	PredefinedType : IfcCoilTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcCoilTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcCoilTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcColourRgb
@@ -3195,6 +3355,7 @@ END_ENTITY;
 ENTITY IfcColourSpecification
  ABSTRACT SUPERTYPE OF (ONEOF
 	(IfcColourRgb));
+	Name : OPTIONAL IfcLabel;
 END_ENTITY;
 
 ENTITY IfcColumn
@@ -3239,7 +3400,7 @@ ENTITY IfcCompositeCurveSegment
  INVERSE
 	UsingCurves : SET [1:?] OF IfcCompositeCurve FOR Segments;
  WHERE
-	WR1 : ('IFC2X2_FINAL.IFCBOUNDEDCURVE' IN TYPEOF(ParentCurve));
+	WR1 : ('IFC2X3.IFCBOUNDEDCURVE' IN TYPEOF(ParentCurve));
 END_ENTITY;
 
 ENTITY IfcCompositeProfileDef
@@ -3248,17 +3409,23 @@ ENTITY IfcCompositeProfileDef
 	Label : OPTIONAL IfcLabel;
  WHERE
 	WR1 : SIZEOF(QUERY(temp <* Profiles | temp.ProfileType <> Profiles[1].ProfileType)) = 0;
-	WR2 : SIZEOF(QUERY(temp <* Profiles | 'IFC2X2_FINAL.IFCCOMPOSITEPROFILEDEF' IN TYPEOF(temp))) = 0;
+	WR2 : SIZEOF(QUERY(temp <* Profiles | 'IFC2X3.IFCCOMPOSITEPROFILEDEF' IN TYPEOF(temp))) = 0;
 END_ENTITY;
 
 ENTITY IfcCompressorType
  SUBTYPE OF (IfcFlowMovingDeviceType);
 	PredefinedType : IfcCompressorTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcCompressorTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcCompressorTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcCondenserType
  SUBTYPE OF (IfcEnergyConversionDeviceType);
 	PredefinedType : IfcCondenserTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcCondenserTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcCondenserTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcCondition
@@ -3291,8 +3458,8 @@ END_ENTITY;
 
 ENTITY IfcConnectionCurveGeometry
  SUBTYPE OF (IfcConnectionGeometry);
-	CurveOnRelatingElement : IfcBoundedCurve;
-	CurveOnRelatedElement : OPTIONAL IfcBoundedCurve;
+	CurveOnRelatingElement : IfcCurveOrEdgeCurve;
+	CurveOnRelatedElement : OPTIONAL IfcCurveOrEdgeCurve;
 END_ENTITY;
 
 ENTITY IfcConnectionGeometry
@@ -3303,10 +3470,19 @@ ENTITY IfcConnectionGeometry
 	,IfcConnectionSurfaceGeometry));
 END_ENTITY;
 
+ENTITY IfcConnectionPointEccentricity
+ SUBTYPE OF (IfcConnectionPointGeometry);
+	EccentricityInX : OPTIONAL IfcLengthMeasure;
+	EccentricityInY : OPTIONAL IfcLengthMeasure;
+	EccentricityInZ : OPTIONAL IfcLengthMeasure;
+END_ENTITY;
+
 ENTITY IfcConnectionPointGeometry
+ SUPERTYPE OF (ONEOF
+	(IfcConnectionPointEccentricity))
  SUBTYPE OF (IfcConnectionGeometry);
-	PointOnRelatingElement : IfcPoint;
-	PointOnRelatedElement : OPTIONAL IfcPoint;
+	PointOnRelatingElement : IfcPointOrVertexPoint;
+	PointOnRelatedElement : OPTIONAL IfcPointOrVertexPoint;
 END_ENTITY;
 
 ENTITY IfcConnectionPortGeometry
@@ -3318,8 +3494,8 @@ END_ENTITY;
 
 ENTITY IfcConnectionSurfaceGeometry
  SUBTYPE OF (IfcConnectionGeometry);
-	SurfaceOnRelatingElement : IfcSurface;
-	SurfaceOnRelatedElement : OPTIONAL IfcSurface;
+	SurfaceOnRelatingElement : IfcSurfaceOrFaceSurface;
+	SurfaceOnRelatedElement : OPTIONAL IfcSurfaceOrFaceSurface;
 END_ENTITY;
 
 ENTITY IfcConstraint
@@ -3449,11 +3625,17 @@ END_ENTITY;
 ENTITY IfcCooledBeamType
  SUBTYPE OF (IfcEnergyConversionDeviceType);
 	PredefinedType : IfcCooledBeamTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcCooledBeamTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcCooledBeamTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcCoolingTowerType
  SUBTYPE OF (IfcEnergyConversionDeviceType);
 	PredefinedType : IfcCoolingTowerTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcCoolingTowerTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcCoolingTowerTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcCoordinatedUniversalTimeOffset;
@@ -3490,7 +3672,12 @@ ENTITY IfcCovering
  SUBTYPE OF (IfcBuildingElement);
 	PredefinedType : OPTIONAL IfcCoveringTypeEnum;
  INVERSE
+	CoversSpaces : SET [0:1] OF IfcRelCoversSpaces FOR RelatedCoverings;
 	Covers : SET [0:1] OF IfcRelCoversBldgElements FOR RelatedCoverings;
+ WHERE
+	WR61 : NOT(EXISTS(PredefinedType)) OR 
+              (PredefinedType <> IfcCoveringTypeEnum.USERDEFINED) OR 
+              ((PredefinedType = IfcCoveringTypeEnum.USERDEFINED) AND EXISTS (SELF\IfcObject.ObjectType));
 END_ENTITY;
 
 ENTITY IfcCoveringType
@@ -3511,7 +3698,7 @@ ENTITY IfcCraneRailAShapeProfileDef
 	BaseDepth1 : IfcPositiveLengthMeasure;
 	BaseDepth2 : IfcPositiveLengthMeasure;
 	BaseDepth3 : IfcPositiveLengthMeasure;
-	CentreOfGravityInY : IfcPositiveLengthMeasure;
+	CentreOfGravityInY : OPTIONAL IfcPositiveLengthMeasure;
 END_ENTITY;
 
 ENTITY IfcCraneRailFShapeProfileDef
@@ -3524,11 +3711,24 @@ ENTITY IfcCraneRailFShapeProfileDef
 	WebThickness : IfcPositiveLengthMeasure;
 	BaseDepth1 : IfcPositiveLengthMeasure;
 	BaseDepth2 : IfcPositiveLengthMeasure;
-	CentreOfGravityInY : IfcPositiveLengthMeasure;
+	CentreOfGravityInY : OPTIONAL IfcPositiveLengthMeasure;
 END_ENTITY;
 
 ENTITY IfcCrewResource
  SUBTYPE OF (IfcConstructionResource);
+END_ENTITY;
+
+ENTITY IfcCsgPrimitive3D
+ ABSTRACT SUPERTYPE OF (ONEOF
+	(IfcBlock
+	,IfcRectangularPyramid
+	,IfcRightCircularCone
+	,IfcRightCircularCylinder
+	,IfcSphere))
+ SUBTYPE OF (IfcGeometricRepresentationItem);
+	Position : IfcAxis2Placement3D;
+ DERIVE
+	Dim : IfcDimensionCount := 3;
 END_ENTITY;
 
 ENTITY IfcCsgSolid
@@ -3546,6 +3746,11 @@ END_ENTITY;
 
 ENTITY IfcCurtainWall
  SUBTYPE OF (IfcBuildingElement);
+END_ENTITY;
+
+ENTITY IfcCurtainWallType
+ SUBTYPE OF (IfcBuildingElementType);
+	PredefinedType : IfcCurtainWallTypeEnum;
 END_ENTITY;
 
 ENTITY IfcCurve
@@ -3569,11 +3774,16 @@ ENTITY IfcCurveBoundedPlane
 	Dim : IfcDimensionCount := BasisSurface.Dim;
 END_ENTITY;
 
-ENTITY IfcCurveStyle;
-	Name : IfcLabel;
+ENTITY IfcCurveStyle
+ SUBTYPE OF (IfcPresentationStyle);
 	CurveFont : OPTIONAL IfcCurveFontOrScaledCurveFontSelect;
 	CurveWidth : OPTIONAL IfcSizeSelect;
 	CurveColour : OPTIONAL IfcColour;
+ WHERE
+	WR11 : (NOT(EXISTS(CurveWidth))) OR
+             ('IFC2X3.IFCPOSITIVELENGTHMEASURE' IN TYPEOF(CurveWidth)) OR 
+              (('IFC2X3.IFCDESCRIPTIVEMEASURE' IN TYPEOF(CurveWidth)) AND
+              (CurveWidth = 'by layer'));
 END_ENTITY;
 
 ENTITY IfcCurveStyleFont;
@@ -3588,13 +3798,18 @@ ENTITY IfcCurveStyleFontAndScaling;
 END_ENTITY;
 
 ENTITY IfcCurveStyleFontPattern;
-	VisibleSegmentLength : IfcPositiveLengthMeasure;
+	VisibleSegmentLength : IfcLengthMeasure;
 	InvisibleSegmentLength : IfcPositiveLengthMeasure;
+ WHERE
+	WR01 : VisibleSegmentLength >= 0.;
 END_ENTITY;
 
 ENTITY IfcDamperType
  SUBTYPE OF (IfcFlowControllerType);
 	PredefinedType : IfcDamperTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcDamperTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcDamperTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcDateAndTime;
@@ -3622,7 +3837,7 @@ ENTITY IfcDerivedUnit;
 	UnitType : IfcDerivedUnitEnum;
 	UserDefinedType : OPTIONAL IfcLabel;
  DERIVE
-	Dimensions : IfcDimensionalExponents := IfcDeriveDimensionalExponents(SELF);
+	Dimensions : IfcDimensionalExponents := IfcDeriveDimensionalExponents(Elements);
  WHERE
 	WR1 : (SIZEOF (Elements) > 1) OR ((SIZEOF (Elements) = 1) AND (Elements[1].Exponent <> 1 ));
 	WR2 : (UnitType <> IfcDerivedUnitEnum.USERDEFINED) OR
@@ -3642,13 +3857,13 @@ END_ENTITY;
 ENTITY IfcDimensionCalloutRelationship
  SUBTYPE OF (IfcDraughtingCalloutRelationship);
  WHERE
-	WR21 : SELF\IfcDraughtingCalloutRelationship.Name IN ['primary','secondary'];
-	WR22 : SIZEOF(TYPEOF(SELF\IfcDraughtingCalloutRelationship.RelatingDraughtingCallout) * [
-                  'IFC2X2_FINAL.IFCANGULARDIMENSION',
-                  'IFC2X2_FINAL.IFCDIAMETERDIMENSION',
-                  'IFC2X2_FINAL.IFCLINEARDIMENSION',
-                  'IFC2X2_FINAL.IFCRADIUSDIMENSION']) = 1;
-	WR23 : NOT ('IFC2X2_FINAL.IFCDIMENSIONCURVEDIRECTEDCALLOUT'
+	WR11 : SELF\IfcDraughtingCalloutRelationship.Name IN ['primary','secondary'];
+	WR12 : SIZEOF(TYPEOF(SELF\IfcDraughtingCalloutRelationship.RelatingDraughtingCallout) * [
+                  'IFC2X3.IFCANGULARDIMENSION',
+                  'IFC2X3.IFCDIAMETERDIMENSION',
+                  'IFC2X3.IFCLINEARDIMENSION',
+                  'IFC2X3.IFCRADIUSDIMENSION']) = 1;
+	WR13 : NOT ('IFC2X3.IFCDIMENSIONCURVEDIRECTEDCALLOUT'
                IN TYPEOF (SELF\IfcDraughtingCalloutRelationship.RelatedDraughtingCallout));
 END_ENTITY;
 
@@ -3657,14 +3872,15 @@ ENTITY IfcDimensionCurve
  INVERSE
 	AnnotatedBySymbols : SET [0:2] OF IfcTerminatorSymbol FOR AnnotatedCurve;
  WHERE
-	WR51 : SIZEOF(USEDIN(SELF,'IFC2X2_FINAL.' + 
-                   'IFCDRAUGHTINGCALLOUT.CONTENTS')) 
+	WR51 : SIZEOF(USEDIN(SELF,'IFC2X3.IFCDRAUGHTINGCALLOUT.CONTENTS')) 
                    >= 1;
-	WR52 : (SIZEOF(QUERY (Dct1 <* AnnotatedBySymbols | (Dct1.Role = ORIGIN))) <= 1) 
+	WR52 : (SIZEOF(QUERY (Dct1 <* USEDIN(SELF,'IFC2X3.' + 
+                            'IFCTERMINATORSYMBOL.ANNOTATEDCURVE') | (Dct1.Role = IfcDimensionExtentUsage.ORIGIN))) <= 1) 
              AND 
-             (SIZEOF(QUERY (Dct2 <* AnnotatedBySymbols | (Dct2.Role = TARGET))) <= 1);
+             (SIZEOF(QUERY (Dct2 <* USEDIN(SELF,'IFC2X3.' + 
+                            'IFCTERMINATORSYMBOL.ANNOTATEDCURVE') | (Dct2.Role = IfcDimensionExtentUsage.TARGET))) <= 1);
 	WR53 : SIZEOF(QUERY (Dct <* AnnotatedBySymbols | 
-               NOT('IFC2X2_FINAL.IFCDIMENSIONCURVETERMINATOR' IN TYPEOF(Dct)))) 
+               NOT('IFC2X3.IFCDIMENSIONCURVETERMINATOR' IN TYPEOF(Dct)))) 
                = 0;
 END_ENTITY;
 
@@ -3677,10 +3893,10 @@ ENTITY IfcDimensionCurveDirectedCallout
  SUBTYPE OF (IfcDraughtingCallout);
  WHERE
 	WR41 : SIZEOF(QUERY (Dc <* SELF\IfcDraughtingCallout.Contents | (
-                   'IFC2X2_FINAL.IFCDIMENSIONCURVE' IN TYPEOF(Dc)))) 
+                   'IFC2X3.IFCDIMENSIONCURVE' IN TYPEOF(Dc)))) 
                   = 1;
 	WR42 : SIZEOF (QUERY (Dc <* SELF.contents |
-                    ('IFC2X2_FINAL.IFCPROJECTIONCURVE' IN
+                    ('IFC2X3.IFCPROJECTIONCURVE' IN
                       TYPEOF (Dc)))) <= 2;
 END_ENTITY;
 
@@ -3688,8 +3904,24 @@ ENTITY IfcDimensionCurveTerminator
  SUBTYPE OF (IfcTerminatorSymbol);
 	Role : IfcDimensionExtentUsage;
  WHERE
-	WR61 : 'IFC2X2_FINAL.IFCDIMENSIONCURVE' IN TYPEOF
+	WR61 : 'IFC2X3.IFCDIMENSIONCURVE' IN TYPEOF
              (SELF\IfcTerminatorSymbol.AnnotatedCurve);
+END_ENTITY;
+
+ENTITY IfcDimensionPair
+ SUBTYPE OF (IfcDraughtingCalloutRelationship);
+ WHERE
+	WR11 : SELF.Name IN ['chained','parallel'];
+	WR12 : SIZEOF(TYPEOF(SELF.RelatingDraughtingCallout) * [
+                            'IFC2X3.IFCANGULARDIMENSION',
+                            'IFC2X3.IFCDIAMETERDIMENSION',
+                            'IFC2X3.IFCLINEARDIMENSION',
+                            'IFC2X3.IFCRADIUSDIMENSION']) = 1;
+	WR13 : SIZEOF(TYPEOF(SELF.RelatedDraughtingCallout) * [
+                            'IFC2X3.IFCANGULARDIMENSION',
+                            'IFC2X3.IFCDIAMETERDIMENSION',
+                            'IFC2X3.IFCLINEARDIMENSION',
+                            'IFC2X3.IFCRADIUSDIMENSION']) = 1;
 END_ENTITY;
 
 ENTITY IfcDimensionalExponents;
@@ -3753,7 +3985,7 @@ ENTITY IfcDistributionElement
 END_ENTITY;
 
 ENTITY IfcDistributionElementType
- ABSTRACT SUPERTYPE OF (ONEOF
+ SUPERTYPE OF (ONEOF
 	(IfcDistributionControlElementType
 	,IfcDistributionFlowElementType))
  SUBTYPE OF (IfcElementType);
@@ -3859,16 +4091,14 @@ ENTITY IfcDoorLiningProperties
 	CasingDepth : OPTIONAL IfcPositiveLengthMeasure;
 	ShapeAspectStyle : OPTIONAL IfcShapeAspect;
  WHERE
-	WR1 : (EXISTS(LiningDepth) AND EXISTS(LiningThickness)) XOR
-            (NOT(EXISTS(LiningDepth)) AND NOT(EXISTS(LiningThickness)));
-	WR2 : (EXISTS(ThresholdDepth) AND EXISTS(ThresholdThickness)) XOR
-            (NOT(EXISTS(ThresholdDepth)) AND NOT(EXISTS(ThresholdThickness)));
-	WR3 : (EXISTS(TransomOffset) AND EXISTS(TransomThickness)) XOR
-            (NOT(EXISTS(TransomOffset)) AND NOT(EXISTS(TransomThickness)));
-	WR4 : (EXISTS(CasingDepth) AND EXISTS(CasingThickness)) XOR
-            (NOT(EXISTS(CasingDepth)) AND NOT(EXISTS(CasingThickness)));
-	WR5 : EXISTS(SELF\IfcPropertySetDefinition.DefinesType[1]) AND 
-            ('IFC2X2_FINAL.IFCDOORSTYLE' IN TYPEOF(SELF\IfcPropertySetDefinition.DefinesType[1]));
+	WR31 : NOT(NOT(EXISTS(LiningDepth)) AND EXISTS(LiningThickness));
+	WR32 : NOT(NOT(EXISTS(ThresholdDepth)) AND EXISTS(ThresholdThickness));
+	WR33 : (EXISTS(TransomOffset) AND EXISTS(TransomThickness)) XOR
+             (NOT(EXISTS(TransomOffset)) AND NOT(EXISTS(TransomThickness)));
+	WR34 : (EXISTS(CasingDepth) AND EXISTS(CasingThickness)) XOR
+             (NOT(EXISTS(CasingDepth)) AND NOT(EXISTS(CasingThickness)));
+	WR35 : EXISTS(SELF\IfcPropertySetDefinition.DefinesType[1]) AND 
+             ('IFC2X3.IFCDOORSTYLE' IN TYPEOF(SELF\IfcPropertySetDefinition.DefinesType[1]));
 END_ENTITY;
 
 ENTITY IfcDoorPanelProperties
@@ -3879,8 +4109,8 @@ ENTITY IfcDoorPanelProperties
 	PanelPosition : IfcDoorPanelPositionEnum;
 	ShapeAspectStyle : OPTIONAL IfcShapeAspect;
  WHERE
-	WR1 : EXISTS(SELF\IfcPropertySetDefinition.DefinesType[1]) AND 
-            ('IFC2X2_FINAL.IFCDOORSTYLE' IN TYPEOF(SELF\IfcPropertySetDefinition.DefinesType[1]));
+	WR31 : EXISTS(SELF\IfcPropertySetDefinition.DefinesType[1]) AND 
+             ('IFC2X3.IFCDOORSTYLE' IN TYPEOF(SELF\IfcPropertySetDefinition.DefinesType[1]));
 END_ENTITY;
 
 ENTITY IfcDoorStyle
@@ -3904,7 +4134,8 @@ END_ENTITY;
 
 ENTITY IfcDraughtingCalloutRelationship
  SUPERTYPE OF (ONEOF
-	(IfcDimensionCalloutRelationship));
+	(IfcDimensionCalloutRelationship
+	,IfcDimensionPair));
 	Name : OPTIONAL IfcLabel;
 	Description : OPTIONAL IfcText;
 	RelatingDraughtingCallout : IfcDraughtingCallout;
@@ -3941,17 +4172,23 @@ ENTITY IfcDuctFittingType
 	PredefinedType : IfcDuctFittingTypeEnum;
  WHERE
 	WR2 : (PredefinedType <> IfcDuctFittingTypeEnum.USERDEFINED) OR
-            ((PredefinedType = IfcDuctFittingTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcObject.ObjectType));
+            ((PredefinedType = IfcDuctFittingTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcDuctSegmentType
  SUBTYPE OF (IfcFlowSegmentType);
 	PredefinedType : IfcDuctSegmentTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcDuctSegmentTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcDuctSegmentTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcDuctSilencerType
  SUBTYPE OF (IfcFlowTreatmentDeviceType);
 	PredefinedType : IfcDuctSilencerTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcDuctSilencerTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcDuctSilencerTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcEdge
@@ -4062,10 +4299,12 @@ ENTITY IfcElement
  SUBTYPE OF (IfcProduct);
 	Tag : OPTIONAL IfcIdentifier;
  INVERSE
+	HasStructuralMember : SET [0:?] OF IfcRelConnectsStructuralElement FOR RelatingElement;
 	FillsVoids : SET [0:1] OF IfcRelFillsElement FOR RelatedBuildingElement;
 	ConnectedTo : SET [0:?] OF IfcRelConnectsElements FOR RelatingElement;
 	HasCoverings : SET [0:?] OF IfcRelCoversBldgElements FOR RelatingBuildingElement;
 	HasProjections : SET [0:?] OF IfcRelProjectsElement FOR RelatingElement;
+	ReferencedInStructures : SET [0:?] OF IfcRelReferencedInSpatialStructure FOR RelatedElements;
 	HasPorts : SET [0:?] OF IfcRelConnectsPortToElement FOR RelatedElement;
 	HasOpenings : SET [0:?] OF IfcRelVoidsElement FOR RelatingBuildingElement;
 	IsConnectionRealization : SET [0:?] OF IfcRelConnectsWithRealizingElements FOR RealizingElements;
@@ -4108,6 +4347,7 @@ ENTITY IfcElementType
 	,IfcDistributionElementType
 	,IfcElementComponentType
 	,IfcFurnishingElementType
+	,IfcSpatialStructureElementType
 	,IfcTransportElementType))
  SUBTYPE OF (IfcTypeProduct);
 	ElementType : OPTIONAL IfcLabel;
@@ -4190,11 +4430,17 @@ END_ENTITY;
 ENTITY IfcEvaporativeCoolerType
  SUBTYPE OF (IfcEnergyConversionDeviceType);
 	PredefinedType : IfcEvaporativeCoolerTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcEvaporativeCoolerTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcEvaporativeCoolerTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcEvaporatorType
  SUBTYPE OF (IfcEnergyConversionDeviceType);
 	PredefinedType : IfcEvaporatorTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcEvaporatorTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcEvaporatorTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcExtendedMaterialProperties
@@ -4209,7 +4455,7 @@ ENTITY IfcExternalReference
 	(IfcClassificationReference
 	,IfcDocumentReference
 	,IfcExternallyDefinedHatchStyle
-	,IfcExternallyDefinedSufaceStyle
+	,IfcExternallyDefinedSurfaceStyle
 	,IfcExternallyDefinedSymbol
 	,IfcExternallyDefinedTextFont
 	,IfcLibraryReference));
@@ -4224,7 +4470,7 @@ ENTITY IfcExternallyDefinedHatchStyle
  SUBTYPE OF (IfcExternalReference);
 END_ENTITY;
 
-ENTITY IfcExternallyDefinedSufaceStyle
+ENTITY IfcExternallyDefinedSurfaceStyle
  SUBTYPE OF (IfcExternalReference);
 END_ENTITY;
 
@@ -4241,7 +4487,7 @@ ENTITY IfcExtrudedAreaSolid
 	ExtrudedDirection : IfcDirection;
 	Depth : IfcPositiveLengthMeasure;
  WHERE
-	WR1 : IfcDotProduct(IfcRepresentationItem() || IfcGeometricRepresentationItem() || IfcDirection([0.0,0.0,1.0]), SELF.ExtrudedDirection) <> 0.0;
+	WR31 : IfcDotProduct(IfcRepresentationItem() || IfcGeometricRepresentationItem() || IfcDirection([0.0,0.0,1.0]), SELF.ExtrudedDirection) <> 0.0;
 END_ENTITY;
 
 ENTITY IfcFace
@@ -4250,7 +4496,7 @@ ENTITY IfcFace
  SUBTYPE OF (IfcTopologicalRepresentationItem);
 	Bounds : SET [1:?] OF IfcFaceBound;
  WHERE
-	WR1 : SIZEOF(QUERY(temp <* Bounds | 'IFC2X2_FINAL.IFCFACEOUTERBOUND' IN TYPEOF(temp))) <= 1;
+	WR1 : SIZEOF(QUERY(temp <* Bounds | 'IFC2X3.IFCFACEOUTERBOUND' IN TYPEOF(temp))) <= 1;
 END_ENTITY;
 
 ENTITY IfcFaceBasedSurfaceModel
@@ -4266,8 +4512,6 @@ ENTITY IfcFaceBound
  SUBTYPE OF (IfcTopologicalRepresentationItem);
 	Bound : IfcLoop;
 	Orientation : BOOLEAN;
- WHERE
-	WR1 : 'IFC2X2_FINAL.IFCPOLYLOOP' IN TYPEOF(Bound);
 END_ENTITY;
 
 ENTITY IfcFaceOuterBound
@@ -4302,6 +4546,9 @@ END_ENTITY;
 ENTITY IfcFanType
  SUBTYPE OF (IfcFlowMovingDeviceType);
 	PredefinedType : IfcFanTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcFanTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcFanTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcFastener
@@ -4340,23 +4587,37 @@ ENTITY IfcFeatureElementSubtraction
 	VoidsElements : IfcRelVoidsElement FOR RelatedOpeningElement;
 END_ENTITY;
 
-ENTITY IfcFillAreaStyle;
+ENTITY IfcFillAreaStyle
+ SUBTYPE OF (IfcPresentationStyle);
 	FillStyles : SET [1:?] OF IfcFillStyleSelect;
-	Name : IfcLabel;
  WHERE
 	WR11 : SIZEOF(QUERY(Style <* SELF.FillStyles |
-               'IFC2X2_FINAL.IFCCOLOUR' IN
+               'IFC2X3.IFCCOLOUR' IN
                 TYPEOF(Style)
                )) <= 1;
+	WR12 : SIZEOF(QUERY(Style <* SELF.FillStyles |
+               'IFC2X3.IFCEXTERNALLYDEFINEDHATCHSTYLE' IN
+                TYPEOF(Style)
+               )) <= 1;
+	WR13 : IfcCorrectFillAreaStyle(SELF.FillStyles);
 END_ENTITY;
 
 ENTITY IfcFillAreaStyleHatching
  SUBTYPE OF (IfcGeometricRepresentationItem);
 	HatchLineAppearance : IfcCurveStyle;
-	StartOfNextHatchLine : IfcOneDirectionRepeatFactor;
-	PointOfReferenceHatchLine : IfcCartesianPoint;
-	PatternStart : IfcCartesianPoint;
+	StartOfNextHatchLine : IfcHatchLineDistanceSelect;
+	PointOfReferenceHatchLine : OPTIONAL IfcCartesianPoint;
+	PatternStart : OPTIONAL IfcCartesianPoint;
 	HatchLineAngle : IfcPlaneAngleMeasure;
+ WHERE
+	WR21 : NOT(
+              'IFC2X3.IFCTWODIRECTIONREPEATFACTOR' 
+              IN TYPEOF(StartOfNextHatchLine)
+             );
+	WR22 : NOT(EXISTS(PatternStart)) 
+             OR (PatternStart.Dim = 2);
+	WR23 : NOT(EXISTS(PointOfReferenceHatchLine)) 
+             OR (PointOfReferenceHatchLine.Dim = 2);
 END_ENTITY;
 
 ENTITY IfcFillAreaStyleTileSymbolWithStyle
@@ -4374,6 +4635,9 @@ END_ENTITY;
 ENTITY IfcFilterType
  SUBTYPE OF (IfcFlowTreatmentDeviceType);
 	PredefinedType : IfcFilterTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcFilterTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcFilterTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcFireSuppressionTerminalType
@@ -4420,6 +4684,9 @@ END_ENTITY;
 ENTITY IfcFlowMeterType
  SUBTYPE OF (IfcFlowControllerType);
 	PredefinedType : IfcFlowMeterTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcFlowMeterTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcFlowMeterTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcFlowMovingDevice
@@ -4530,7 +4797,7 @@ ENTITY IfcFurnishingElement
 END_ENTITY;
 
 ENTITY IfcFurnishingElementType
- ABSTRACT SUPERTYPE OF (ONEOF
+ SUPERTYPE OF (ONEOF
 	(IfcFurnitureType
 	,IfcSystemFurnitureElementType))
  SUBTYPE OF (IfcElementType);
@@ -4548,6 +4815,9 @@ END_ENTITY;
 ENTITY IfcGasTerminalType
  SUBTYPE OF (IfcFlowTerminalType);
 	PredefinedType : IfcGasTerminalTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcGasTerminalTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcGasTerminalTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcGeneralMaterialProperties
@@ -4569,14 +4839,14 @@ ENTITY IfcGeneralProfileProperties
 	MaximumPlateThickness : OPTIONAL IfcPositiveLengthMeasure;
 	CrossSectionArea : OPTIONAL IfcAreaMeasure;
  WHERE
-	WR1 : NOT(EXISTS(CrossSectionArea)) OR (CrossSectionArea > 0);
+	WR1 : NOT(EXISTS(CrossSectionArea)) OR (CrossSectionArea > 0.);
 END_ENTITY;
 
 ENTITY IfcGeometricCurveSet
  SUBTYPE OF (IfcGeometricSet);
  WHERE
 	WR1 : SIZEOF(QUERY(Temp <* SELF\IfcGeometricSet.Elements |
-            'IFC2X2_FINAL.IFCSURFACE' IN TYPEOF(Temp))) = 0;
+            'IFC2X3.IFCSURFACE' IN TYPEOF(Temp))) = 0;
 END_ENTITY;
 
 ENTITY IfcGeometricRepresentationContext
@@ -4587,15 +4857,19 @@ ENTITY IfcGeometricRepresentationContext
 	Precision : OPTIONAL REAL;
 	WorldCoordinateSystem : IfcAxis2Placement;
 	TrueNorth : OPTIONAL IfcDirection;
+ INVERSE
+	HasSubContexts : SET [0:?] OF IfcGeometricRepresentationSubContext FOR ParentContext;
 END_ENTITY;
 
 ENTITY IfcGeometricRepresentationItem
  ABSTRACT SUPERTYPE OF (ONEOF
 	(IfcAnnotationFillArea
+	,IfcAnnotationSurface
 	,IfcBooleanResult
 	,IfcBoundingBox
 	,IfcCartesianTransformationOperator
 	,IfcCompositeCurveSegment
+	,IfcCsgPrimitive3D
 	,IfcCurve
 	,IfcDefinedSymbol
 	,IfcDirection
@@ -4629,10 +4903,10 @@ ENTITY IfcGeometricRepresentationSubContext
  DERIVE
 	SELF\IfcGeometricRepresentationContext.WorldCoordinateSystem : IfcAxis2Placement := ParentContext.WorldCoordinateSystem;
 	SELF\IfcGeometricRepresentationContext.CoordinateSpaceDimension : IfcDimensionCount := ParentContext.CoordinateSpaceDimension;
-	SELF\IfcGeometricRepresentationContext.TrueNorth : IfcDirection := ParentContext.TrueNorth;
-	SELF\IfcGeometricRepresentationContext.Precision : REAL := ParentContext.Precision;
+	SELF\IfcGeometricRepresentationContext.TrueNorth : IfcDirection := NVL(ParentContext.TrueNorth,SELF.WorldCoordinateSystem.P[2]);
+	SELF\IfcGeometricRepresentationContext.Precision : REAL := NVL(ParentContext.Precision,1.E-5);
  WHERE
-	WR31 : NOT('IFC2X2_FINAL.IFCGEOMETRICREPRESENTATIONSUBCONTEXT' IN TYPEOF(ParentContext));
+	WR31 : NOT('IFC2X3.IFCGEOMETRICREPRESENTATIONSUBCONTEXT' IN TYPEOF(ParentContext));
 	WR32 : (TargetView <> IfcGeometricProjectionEnum.USERDEFINED) OR 
              ((TargetView =  IfcGeometricProjectionEnum.USERDEFINED) AND 
               EXISTS(UserDefinedTargetView));
@@ -4659,16 +4933,21 @@ ENTITY IfcGrid
  INVERSE
 	ContainedInStructure : SET [0:1] OF IfcRelContainedInSpatialStructure FOR RelatedElements;
  WHERE
-	WR1 : EXISTS(SELF\IfcProduct.ObjectPlacement);
-	WR2 : NOT(EXISTS(SELF\IfcProduct.Representation));
+	WR41 : EXISTS(SELF\IfcProduct.ObjectPlacement);
 END_ENTITY;
 
 ENTITY IfcGridAxis;
 	AxisTag : OPTIONAL IfcLabel;
 	AxisCurve : IfcCurve;
 	SameSense : IfcBoolean;
+ INVERSE
+	PartOfW : SET [0:1] OF IfcGrid FOR WAxes;
+	PartOfV : SET [0:1] OF IfcGrid FOR VAxes;
+	PartOfU : SET [0:1] OF IfcGrid FOR UAxes;
+	HasIntersections : SET [0:?] OF IfcVirtualGridIntersection FOR IntersectingAxes;
  WHERE
 	WR1 : AxisCurve.Dim = 2;
+	WR2 : (SIZEOF(PartOfU) = 1) XOR (SIZEOF(PartOfV) = 1) XOR (SIZEOF(PartOfW) = 1);
 END_ENTITY;
 
 ENTITY IfcGridPlacement
@@ -4705,11 +4984,17 @@ END_ENTITY;
 ENTITY IfcHeatExchangerType
  SUBTYPE OF (IfcEnergyConversionDeviceType);
 	PredefinedType : IfcHeatExchangerTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcHeatExchangerTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcHeatExchangerTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcHumidifierType
  SUBTYPE OF (IfcEnergyConversionDeviceType);
 	PredefinedType : IfcHumidifierTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcHumidifierTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcHumidifierTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcHygroscopicMaterialProperties
@@ -4733,11 +5018,11 @@ ENTITY IfcIShapeProfileDef
 	FlangeThickness : IfcPositiveLengthMeasure;
 	FilletRadius : OPTIONAL IfcPositiveLengthMeasure;
  WHERE
-	WR1 : FlangeThickness < (OverallDepth / 2);
+	WR1 : FlangeThickness < (OverallDepth / 2.);
 	WR2 : WebThickness < OverallWidth;
 	WR3 : NOT(EXISTS(FilletRadius)) OR
-            ((FilletRadius <= (OverallWidth - WebThickness)/2) AND 
-             (FilletRadius <= (OverallDepth - (2 * FlangeThickness))/2));
+            ((FilletRadius <= (OverallWidth - WebThickness)/2.) AND 
+             (FilletRadius <= (OverallDepth - (2. * FlangeThickness))/2.));
 END_ENTITY;
 
 ENTITY IfcImageTexture
@@ -4755,9 +5040,9 @@ ENTITY IfcInventory
 	OriginalValue : OPTIONAL IfcCostValue;
  WHERE
 	WR41 : SIZEOF(QUERY(temp <* SELF\IfcGroup.IsGroupedBy.RelatedObjects |
-                 NOT( ('IFC2X2_FINAL.IFCSPACE' IN TYPEOF (temp)) OR 
-                      ('IFC2X2_FINAL.IFCASSET' IN TYPEOF (temp)) OR
-                      ('IFC2X2_FINAL.IFCFURNISHINGELEMENT' IN TYPEOF (temp))
+                 NOT( ('IFC2X3.IFCSPACE' IN TYPEOF (temp)) OR 
+                      ('IFC2X3.IFCASSET' IN TYPEOF (temp)) OR
+                      ('IFC2X3.IFCFURNISHINGELEMENT' IN TYPEOF (temp))
                  ))) = 0;
 END_ENTITY;
 
@@ -4784,12 +5069,11 @@ ENTITY IfcLShapeProfileDef
 	FilletRadius : OPTIONAL IfcPositiveLengthMeasure;
 	EdgeRadius : OPTIONAL IfcPositiveLengthMeasure;
 	LegSlope : OPTIONAL IfcPlaneAngleMeasure;
-	CentreOfGravityInX : IfcPositiveLengthMeasure;
+	CentreOfGravityInX : OPTIONAL IfcPositiveLengthMeasure;
 	CentreOfGravityInY : OPTIONAL IfcPositiveLengthMeasure;
  WHERE
-	WR1 : Thickness < Depth;
-	WR2 : NOT(EXISTS(Width)) OR (Thickness < Width);
-	WR3 : NOT(EXISTS(Width) XOR EXISTS(CentreOfGravityInY));
+	WR21 : Thickness < Depth;
+	WR22 : NOT(EXISTS(Width)) OR (Thickness < Width);
 END_ENTITY;
 
 ENTITY IfcLaborResource
@@ -4938,6 +5222,7 @@ END_ENTITY;
 ENTITY IfcMaterial;
 	Name : IfcLabel;
  INVERSE
+	HasRepresentation : SET [0:1] OF IfcMaterialDefinitionRepresentation FOR RepresentedMaterial;
 	ClassifiedAs : SET [0:1] OF IfcMaterialClassificationRelationship FOR ClassifiedMaterial;
 END_ENTITY;
 
@@ -4946,10 +5231,19 @@ ENTITY IfcMaterialClassificationRelationship;
 	ClassifiedMaterial : IfcMaterial;
 END_ENTITY;
 
+ENTITY IfcMaterialDefinitionRepresentation
+ SUBTYPE OF (IfcProductRepresentation);
+	RepresentedMaterial : IfcMaterial;
+ WHERE
+	WR11 : SIZEOF(QUERY(temp <* Representations | 
+               (NOT('IFC2X3.IFCSTYLEDREPRESENTATION' IN TYPEOF(temp)))
+             )) = 0;
+END_ENTITY;
+
 ENTITY IfcMaterialLayer;
 	Material : OPTIONAL IfcMaterial;
 	LayerThickness : IfcPositiveLengthMeasure;
-	IsVentilated : OPTIONAL IfcBoolean;
+	IsVentilated : OPTIONAL IfcLogical;
  INVERSE
 	ToMaterialLayerSet : IfcMaterialLayerSet FOR MaterialLayers;
 END_ENTITY;
@@ -5038,10 +5332,10 @@ ENTITY IfcMechanicalSteelMaterialProperties
 	PlasticStrain : OPTIONAL IfcPositiveRatioMeasure;
 	Relaxations : OPTIONAL SET [1:?] OF IfcRelaxation;
  WHERE
-	WR31 : NOT(EXISTS(YieldStress)) OR (YieldStress >= 0);
-	WR32 : NOT(EXISTS(UltimateStress)) OR (UltimateStress >= 0);
-	WR33 : NOT(EXISTS(HardeningModule)) OR (HardeningModule >= 0);
-	WR34 : NOT(EXISTS(ProportionalStress)) OR (ProportionalStress >= 0);
+	WR31 : NOT(EXISTS(YieldStress)) OR (YieldStress >= 0.);
+	WR32 : NOT(EXISTS(UltimateStress)) OR (UltimateStress >= 0.);
+	WR33 : NOT(EXISTS(HardeningModule)) OR (HardeningModule >= 0.);
+	WR34 : NOT(EXISTS(ProportionalStress)) OR (ProportionalStress >= 0.);
 END_ENTITY;
 
 ENTITY IfcMember
@@ -5078,9 +5372,9 @@ ENTITY IfcMove
 	WR1 : SIZEOF(SELF\IfcProcess.OperatesOn) >= 1;
 	WR2 : SIZEOF(QUERY(temp <* OperatesOn |
               SIZEOF(QUERY(temp2 <* temp.RelatedObjects |
-                ('IFC2X2_FINAL.IFCACTOR' IN TYPEOF (temp2)) OR
-                ('IFC2X2_FINAL.IFCEQUIPMENTELEMENT' IN TYPEOF (temp2)) OR
-                ('IFC2X2_FINAL.IFCFURNISHINGELEMENT' IN TYPEOF (temp2)) )) >=1
+                ('IFC2X3.IFCACTOR' IN TYPEOF (temp2)) OR
+                ('IFC2X3.IFCEQUIPMENTELEMENT' IN TYPEOF (temp2)) OR
+                ('IFC2X3.IFCFURNISHINGELEMENT' IN TYPEOF (temp2)) )) >=1
               )) >= 1;
 	WR3 : EXISTS(SELF\IfcRoot.Name);
 END_ENTITY;
@@ -5105,16 +5399,24 @@ ENTITY IfcObject
 	,IfcProduct
 	,IfcProject
 	,IfcResource))
- SUBTYPE OF (IfcRoot);
+ SUBTYPE OF (IfcObjectDefinition);
 	ObjectType : OPTIONAL IfcLabel;
  INVERSE
 	IsDefinedBy : SET [0:?] OF IfcRelDefines FOR RelatedObjects;
-	HasAssociations : SET [0:?] OF IfcRelAssociates FOR RelatedObjects;
-	HasAssignments : SET [0:?] OF IfcRelAssigns FOR RelatedObjects;
-	Decomposes : SET [0:1] OF IfcRelDecomposes FOR RelatedObjects;
-	IsDecomposedBy : SET [0:?] OF IfcRelDecomposes FOR RelatingObject;
  WHERE
-	WR1 : SIZEOF(QUERY(temp <* IsDefinedBy | 'IFC2X2_FINAL.IFCRELDEFINESBYTYPE' IN TYPEOF(temp))) <= 1;
+	WR1 : SIZEOF(QUERY(temp <* IsDefinedBy | 'IFC2X3.IFCRELDEFINESBYTYPE' IN TYPEOF(temp))) <= 1;
+END_ENTITY;
+
+ENTITY IfcObjectDefinition
+ ABSTRACT SUPERTYPE OF (ONEOF
+	(IfcObject
+	,IfcTypeObject))
+ SUBTYPE OF (IfcRoot);
+ INVERSE
+	HasAssignments : SET [0:?] OF IfcRelAssigns FOR RelatedObjects;
+	IsDecomposedBy : SET [0:?] OF IfcRelDecomposes FOR RelatingObject;
+	Decomposes : SET [0:1] OF IfcRelDecomposes FOR RelatedObjects;
+	HasAssociations : SET [0:?] OF IfcRelAssociates FOR RelatedObjects;
 END_ENTITY;
 
 ENTITY IfcObjectPlacement
@@ -5122,6 +5424,7 @@ ENTITY IfcObjectPlacement
 	(IfcGridPlacement
 	,IfcLocalPlacement));
  INVERSE
+	PlacesObject : SET [1:1] OF IfcProduct FOR ObjectPlacement;
 	ReferencedByPlacements : SET [0:?] OF IfcLocalPlacement FOR PlacementRelTo;
 END_ENTITY;
 
@@ -5141,7 +5444,7 @@ ENTITY IfcOccupant
 	PredefinedType : IfcOccupantTypeEnum;
  WHERE
 	WR31 : NOT(PredefinedType = IfcOccupantTypeEnum.USERDEFINED) 
-           OR EXISTS(SELF\IfcObject.ObjectType);
+             OR EXISTS(SELF\IfcObject.ObjectType);
 END_ENTITY;
 
 ENTITY IfcOffsetCurve2D
@@ -5231,7 +5534,7 @@ ENTITY IfcOrientedEdge
 	SELF\IfcEdge.EdgeEnd : IfcVertex := IfcBooleanChoose 
                                (Orientation, EdgeElement.EdgeEnd, EdgeElement.EdgeStart);
  WHERE
-	WR1 : NOT('IFC2X2_FINAL.IFCORIENTEDEDGE' IN TYPEOF(EdgeElement));
+	WR1 : NOT('IFC2X3.IFCORIENTEDEDGE' IN TYPEOF(EdgeElement));
 END_ENTITY;
 
 ENTITY IfcOutletType
@@ -5363,12 +5666,15 @@ ENTITY IfcPipeFittingType
 	PredefinedType : IfcPipeFittingTypeEnum;
  WHERE
 	WR1 : (PredefinedType <> IfcPipeFittingTypeEnum.USERDEFINED) OR
-            ((PredefinedType = IfcPipeFittingTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcObject.ObjectType));
+            ((PredefinedType = IfcPipeFittingTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcPipeSegmentType
  SUBTYPE OF (IfcFlowSegmentType);
 	PredefinedType : IfcPipeSegmentTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcPipeSegmentTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcPipeSegmentTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcPixelTexture
@@ -5376,7 +5682,7 @@ ENTITY IfcPixelTexture
 	Width : IfcInteger;
 	Height : IfcInteger;
 	ColourComponents : IfcInteger;
-	Pixel : LIST [1:?] OF STRING(10);
+	Pixel : LIST [1:?] OF BINARY(32);
  WHERE
 	WR21 : Width >= 1;
 	WR22 : Height >= 1;
@@ -5413,14 +5719,12 @@ ENTITY IfcPlane
 END_ENTITY;
 
 ENTITY IfcPlate
- SUBTYPE OF (IfcBuildingElementComponent);
+ SUBTYPE OF (IfcBuildingElement);
 END_ENTITY;
 
 ENTITY IfcPlateType
- SUBTYPE OF (IfcBuildingElementComponentType);
+ SUBTYPE OF (IfcBuildingElementType);
 	PredefinedType : IfcPlateTypeEnum;
- WHERE
-	WR1 : SIZEOF (QUERY(temp <* SELF\IfcObject.HasAssociations | 'IFC2X2_FINAL.IFCRELASSOCIATESMATERIAL' IN TYPEOF(temp) )) = 1;
 END_ENTITY;
 
 ENTITY IfcPoint
@@ -5458,9 +5762,13 @@ END_ENTITY;
 ENTITY IfcPolygonalBoundedHalfSpace
  SUBTYPE OF (IfcHalfSpaceSolid);
 	Position : IfcAxis2Placement3D;
-	PolygonalBoundary : IfcPolyline;
+	PolygonalBoundary : IfcBoundedCurve;
  WHERE
 	WR41 : PolygonalBoundary.Dim = 2;
+	WR42 : SIZEOF(TYPEOF(PolygonalBoundary) * [
+               'IFC2X3.IFCPOLYLINE', 
+               'IFC2X3.IFCCOMPOSITECURVE']
+             ) = 1;
 END_ENTITY;
 
 ENTITY IfcPolyline
@@ -5552,29 +5860,36 @@ END_ENTITY;
 
 ENTITY IfcPreDefinedTextFont
  ABSTRACT SUPERTYPE OF (ONEOF
-	(IfcDraughtingPreDefinedTextFont))
+	(IfcDraughtingPreDefinedTextFont
+	,IfcTextStyleFontModel))
  SUBTYPE OF (IfcPreDefinedItem);
 END_ENTITY;
 
 ENTITY IfcPresentationLayerAssignment
  SUPERTYPE OF (ONEOF
-	(IfcPresentationLayerAssignmentWithStyle));
+	(IfcPresentationLayerWithStyle));
 	Name : IfcLabel;
 	Description : OPTIONAL IfcText;
 	AssignedItems : SET [1:?] OF IfcLayeredItem;
+	Identifier : OPTIONAL IfcIdentifier;
 END_ENTITY;
 
-ENTITY IfcPresentationLayerAssignmentWithStyle
+ENTITY IfcPresentationLayerWithStyle
  SUBTYPE OF (IfcPresentationLayerAssignment);
-	LayerNumber : OPTIONAL INTEGER;
 	LayerOn : LOGICAL;
-	LayerOnInAllViews : LOGICAL;
 	LayerFrozen : LOGICAL;
-	LayerFrozenInAllViews : LOGICAL;
 	LayerBlocked : LOGICAL;
-	LayerColour : OPTIONAL IfcColour;
-	LayerCurveWidth : OPTIONAL IfcSizeSelect;
-	LayerCurveFont : OPTIONAL IfcCurveFontOrScaledCurveFontSelect;
+	LayerStyles : SET [0:?] OF IfcPresentationStyleSelect;
+END_ENTITY;
+
+ENTITY IfcPresentationStyle
+ ABSTRACT SUPERTYPE OF (ONEOF
+	(IfcCurveStyle
+	,IfcFillAreaStyle
+	,IfcSurfaceStyle
+	,IfcSymbolStyle
+	,IfcTextStyle));
+	Name : OPTIONAL IfcLabel;
 END_ENTITY;
 
 ENTITY IfcPresentationStyleAssignment;
@@ -5587,8 +5902,8 @@ ENTITY IfcProcedure
 	ProcedureType : IfcProcedureTypeEnum;
 	UserDefinedProcedureType : OPTIONAL IfcLabel;
  WHERE
-	WR1 : SIZEOF(QUERY(temp <* SELF\IfcObject.Decomposes | NOT('IFC2X2_FINAL.IFCRELNESTS' IN TYPEOF(temp)))) = 0;
-	WR2 : SIZEOF(QUERY(temp <* SELF\IfcObject.IsDecomposedBy | NOT('IFC2X2_FINAL.IFCRELNESTS' IN TYPEOF(temp)))) = 0;
+	WR1 : SIZEOF(QUERY(temp <* SELF\IfcObjectDefinition.Decomposes | NOT('IFC2X3.IFCRELNESTS' IN TYPEOF(temp)))) = 0;
+	WR2 : SIZEOF(QUERY(temp <* SELF\IfcObjectDefinition.IsDecomposedBy | NOT('IFC2X3.IFCRELNESTS' IN TYPEOF(temp)))) = 0;
 	WR3 : EXISTS(SELF\IfcRoot.Name);
 	WR4 : (ProcedureType <> IfcProcedureTypeEnum.USERDEFINED) OR
             ((ProcedureType = IfcProcedureTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcProcedure.UserDefinedProcedureType));
@@ -5622,20 +5937,26 @@ ENTITY IfcProduct
 	ReferencedBy : SET [0:?] OF IfcRelAssignsToProduct FOR RelatingProduct;
  WHERE
 	WR1 : (EXISTS(Representation) AND EXISTS(ObjectPlacement))
-            OR (EXISTS(Representation) AND 
-               (NOT('IFC2X2_FINAL.IFCPRODUCTDEFINITIONSHAPE' IN TYPEOF(Representation))))
-            OR (NOT(EXISTS(Representation)));
+                        OR (EXISTS(Representation) AND 
+                           (NOT('IFC2X3.IFCPRODUCTDEFINITIONSHAPE' IN TYPEOF(Representation))))
+                        OR (NOT(EXISTS(Representation)));
 END_ENTITY;
 
 ENTITY IfcProductDefinitionShape
  SUBTYPE OF (IfcProductRepresentation);
  INVERSE
+	ShapeOfProduct : SET [1:1] OF IfcProduct FOR Representation;
 	HasShapeAspects : SET [0:?] OF IfcShapeAspect FOR PartOfProductDefinitionShape;
+ WHERE
+	WR11 : SIZEOF(QUERY(temp <* Representations | 
+               (NOT('IFC2X3.IFCSHAPEMODEL' IN TYPEOF(temp)))
+             )) = 0;
 END_ENTITY;
 
 ENTITY IfcProductRepresentation
  SUPERTYPE OF (ONEOF
-	(IfcProductDefinitionShape));
+	(IfcMaterialDefinitionRepresentation
+	,IfcProductDefinitionShape));
 	Name : OPTIONAL IfcLabel;
 	Description : OPTIONAL IfcText;
 	Representations : LIST [1:?] OF IfcRepresentation;
@@ -5677,7 +5998,11 @@ ENTITY IfcProject
 	RepresentationContexts : SET [1:?] OF IfcRepresentationContext;
 	UnitsInContext : IfcUnitAssignment;
  WHERE
-	WR1 : EXISTS(SELF\IfcRoot.Name);
+	WR31 : EXISTS(SELF\IfcRoot.Name);
+	WR32 : SIZEOF(QUERY(Temp <* RepresentationContexts |
+              'IFC2X3.IFCGEOMETRICREPRESENTATIONSUBCONTEXT' IN TYPEOF(Temp)
+             )) = 0;
+	WR33 : SIZEOF(SELF\IfcObjectDefinition.Decomposes) = 0;
 END_ENTITY;
 
 ENTITY IfcProjectOrder
@@ -5735,8 +6060,7 @@ END_ENTITY;
 
 ENTITY IfcPropertyDefinition
  ABSTRACT SUPERTYPE OF (ONEOF
-	(IfcPropertySetDefinition
-	,IfcTypeObject))
+	(IfcPropertySetDefinition))
  SUBTYPE OF (IfcRoot);
  INVERSE
 	HasAssociations : SET [0:?] OF IfcRelAssociates FOR RelatedObjects;
@@ -5769,6 +6093,10 @@ ENTITY IfcPropertyEnumeration;
 	Unit : OPTIONAL IfcUnit;
  UNIQUE
 	UR1 : Name;
+ WHERE
+	WR01 : SIZEOF(QUERY(temp <* SELF.EnumerationValues | 
+               NOT(TYPEOF(SELF.EnumerationValues[1]) = TYPEOF(temp))
+               )) = 0;
 END_ENTITY;
 
 ENTITY IfcPropertyListValue
@@ -5819,7 +6147,7 @@ END_ENTITY;
 
 ENTITY IfcPropertySingleValue
  SUBTYPE OF (IfcSimpleProperty);
-	NominalValue : IfcValue;
+	NominalValue : OPTIONAL IfcValue;
 	Unit : OPTIONAL IfcUnit;
 END_ENTITY;
 
@@ -5852,6 +6180,9 @@ END_ENTITY;
 ENTITY IfcPumpType
  SUBTYPE OF (IfcFlowMovingDeviceType);
 	PredefinedType : IfcPumpTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcPumpTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcPumpTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcQuantityArea
@@ -5860,14 +6191,14 @@ ENTITY IfcQuantityArea
  WHERE
 	WR21 : NOT(EXISTS(SELF\IfcPhysicalSimpleQuantity.Unit)) OR
                 (SELF\IfcPhysicalSimpleQuantity.Unit.UnitType = IfcUnitEnum.AREAUNIT);
-	WR22 : AreaValue >= 0;
+	WR22 : AreaValue >= 0.;
 END_ENTITY;
 
 ENTITY IfcQuantityCount
  SUBTYPE OF (IfcPhysicalSimpleQuantity);
 	CountValue : IfcCountMeasure;
  WHERE
-	WR1 : CountValue >= 0;
+	WR21 : CountValue >= 0.;
 END_ENTITY;
 
 ENTITY IfcQuantityLength
@@ -5876,7 +6207,7 @@ ENTITY IfcQuantityLength
  WHERE
 	WR21 : NOT(EXISTS(SELF\IfcPhysicalSimpleQuantity.Unit)) OR
                 (SELF\IfcPhysicalSimpleQuantity.Unit.UnitType = IfcUnitEnum.LENGTHUNIT);
-	WR22 : LengthValue >= 0;
+	WR22 : LengthValue >= 0.;
 END_ENTITY;
 
 ENTITY IfcQuantityTime
@@ -5885,7 +6216,7 @@ ENTITY IfcQuantityTime
  WHERE
 	WR21 : NOT(EXISTS(SELF\IfcPhysicalSimpleQuantity.Unit)) OR
                 (SELF\IfcPhysicalSimpleQuantity.Unit.UnitType = IfcUnitEnum.TIMEUNIT);
-	WR22 : TimeValue >= 0;
+	WR22 : TimeValue >= 0.;
 END_ENTITY;
 
 ENTITY IfcQuantityVolume
@@ -5894,7 +6225,7 @@ ENTITY IfcQuantityVolume
  WHERE
 	WR21 : NOT(EXISTS(SELF\IfcPhysicalSimpleQuantity.Unit)) OR
                 (SELF\IfcPhysicalSimpleQuantity.Unit.UnitType = IfcUnitEnum.VOLUMEUNIT);
-	WR22 : VolumeValue >= 0;
+	WR22 : VolumeValue >= 0.;
 END_ENTITY;
 
 ENTITY IfcQuantityWeight
@@ -5903,7 +6234,7 @@ ENTITY IfcQuantityWeight
  WHERE
 	WR21 : NOT(EXISTS(SELF\IfcPhysicalSimpleQuantity.Unit)) OR
                 (SELF\IfcPhysicalSimpleQuantity.Unit.UnitType = IfcUnitEnum.MASSUNIT);
-	WR22 : WeightValue >= 0;
+	WR22 : WeightValue >= 0.;
 END_ENTITY;
 
 ENTITY IfcRadiusDimension
@@ -5913,6 +6244,10 @@ END_ENTITY;
 ENTITY IfcRailing
  SUBTYPE OF (IfcBuildingElement);
 	PredefinedType : OPTIONAL IfcRailingTypeEnum;
+ WHERE
+	WR61 : NOT(EXISTS(PredefinedType)) OR
+              (PredefinedType <> IfcRailingTypeEnum.USERDEFINED) OR
+              ((PredefinedType = IfcRailingTypeEnum.USERDEFINED) AND EXISTS (SELF\IfcObject.ObjectType));
 END_ENTITY;
 
 ENTITY IfcRailingType
@@ -5924,7 +6259,8 @@ ENTITY IfcRamp
  SUBTYPE OF (IfcBuildingElement);
 	ShapeType : IfcRampTypeEnum;
  WHERE
-	WR1 : (HIINDEX(SELF\IfcObject.IsDecomposedBy) = 0) OR ((HIINDEX(SELF\IfcObject.IsDecomposedBy) = 1) AND (NOT(EXISTS(SELF\IfcProduct.Representation))));
+	WR1 : (HIINDEX(SELF\IfcObjectDefinition.IsDecomposedBy) = 0) OR 
+            ((HIINDEX(SELF\IfcObjectDefinition.IsDecomposedBy) = 1) AND (NOT(EXISTS(SELF\IfcProduct.Representation))));
 END_ENTITY;
 
 ENTITY IfcRampFlight
@@ -5952,14 +6288,14 @@ ENTITY IfcRectangleHollowProfileDef
 	InnerFilletRadius : OPTIONAL IfcPositiveLengthMeasure;
 	OuterFilletRadius : OPTIONAL IfcPositiveLengthMeasure;
  WHERE
-	WR1 : (WallThickness < (SELF\IfcRectangleProfileDef.XDim / 2)) AND 
-            (WallThickness < (SELF\IfcRectangleProfileDef.YDim / 2));
-	WR2 : NOT(EXISTS(OuterFilletRadius)) OR 
-            ((OuterFilletRadius <= (SELF\IfcRectangleProfileDef.XDim / 2)) AND 
-             (OuterFilletRadius <= (SELF\IfcRectangleProfileDef.YDim / 2)));
-	WR3 : NOT(EXISTS(InnerFilletRadius)) OR 
-            ((InnerFilletRadius <= (SELF\IfcRectangleProfileDef.XDim / 2 - WallThickness)) AND 
-             (InnerFilletRadius <= (SELF\IfcRectangleProfileDef.YDim / 2 - WallThickness)));
+	WR31 : (WallThickness < (SELF\IfcRectangleProfileDef.XDim/2.)) AND 
+             (WallThickness < (SELF\IfcRectangleProfileDef.YDim/2.));
+	WR32 : NOT(EXISTS(OuterFilletRadius)) OR 
+             ((OuterFilletRadius <= (SELF\IfcRectangleProfileDef.XDim/2.)) AND 
+              (OuterFilletRadius <= (SELF\IfcRectangleProfileDef.YDim/2.)));
+	WR33 : NOT(EXISTS(InnerFilletRadius)) OR 
+             ((InnerFilletRadius <= (SELF\IfcRectangleProfileDef.XDim/2. - WallThickness)) AND 
+              (InnerFilletRadius <= (SELF\IfcRectangleProfileDef.YDim/2. - WallThickness)));
 END_ENTITY;
 
 ENTITY IfcRectangleProfileDef
@@ -5969,6 +6305,13 @@ ENTITY IfcRectangleProfileDef
  SUBTYPE OF (IfcParameterizedProfileDef);
 	XDim : IfcPositiveLengthMeasure;
 	YDim : IfcPositiveLengthMeasure;
+END_ENTITY;
+
+ENTITY IfcRectangularPyramid
+ SUBTYPE OF (IfcCsgPrimitive3D);
+	XLength : IfcPositiveLengthMeasure;
+	YLength : IfcPositiveLengthMeasure;
+	Height : IfcPositiveLengthMeasure;
 END_ENTITY;
 
 ENTITY IfcRectangularTrimmedSurface
@@ -5985,9 +6328,9 @@ ENTITY IfcRectangularTrimmedSurface
  WHERE
 	WR1 : U1 <> U2;
 	WR2 : V1 <> V2;
-	WR3 : (('IFC2X2_FINAL.IFCELEMENTARYSURFACE' IN TYPEOF(BasisSurface)) AND
-                     (NOT ('IFC2X2_FINAL.IFCPLANE' IN TYPEOF(BasisSurface)))) OR
-                     ('IFC2X2_FINAL.IFCSURFACEOFREVOLUTION' IN TYPEOF(BasisSurface)) OR
+	WR3 : (('IFC2X3.IFCELEMENTARYSURFACE' IN TYPEOF(BasisSurface)) AND
+                     (NOT ('IFC2X3.IFCPLANE' IN TYPEOF(BasisSurface)))) OR
+                     ('IFC2X3.IFCSURFACEOFREVOLUTION' IN TYPEOF(BasisSurface)) OR
                      (Usense = (U2 > U1));
 	WR4 : Vsense = (V2 > V1);
 END_ENTITY;
@@ -6066,7 +6409,7 @@ ENTITY IfcRelAssigns
 	,IfcRelAssignsToProduct
 	,IfcRelAssignsToResource))
  SUBTYPE OF (IfcRelationship);
-	RelatedObjects : SET [1:?] OF IfcObject;
+	RelatedObjects : SET [1:?] OF IfcObjectDefinition;
 	RelatedObjectsType : OPTIONAL IfcObjectTypeEnum;
  WHERE
 	WR1 : IfcCorrectObjectAssignment(RelatedObjectsType, RelatedObjects);
@@ -6077,8 +6420,8 @@ ENTITY IfcRelAssignsTasks
 	TimeForTask : OPTIONAL IfcScheduleTimeControl;
  WHERE
 	WR1 : HIINDEX(SELF\IfcRelAssigns.RelatedObjects) = 1;
-	WR2 : 'IFC2X2_FINAL.IFCTASK' IN TYPEOF(SELF\IfcRelAssigns.RelatedObjects[1]);
-	WR3 : 'IFC2X2_FINAL.IFCWORKCONTROL' IN TYPEOF(SELF\IfcRelAssignsToControl.RelatingControl);
+	WR2 : 'IFC2X3.IFCTASK' IN TYPEOF(SELF\IfcRelAssigns.RelatedObjects[1]);
+	WR3 : 'IFC2X3.IFCWORKCONTROL' IN TYPEOF(SELF\IfcRelAssignsToControl.RelatingControl);
 END_ENTITY;
 
 ENTITY IfcRelAssignsToActor
@@ -6148,10 +6491,10 @@ ENTITY IfcRelAssociates
  SUBTYPE OF (IfcRelationship);
 	RelatedObjects : SET [1:?] OF IfcRoot;
  WHERE
-	WR1 : SIZEOF(QUERY(temp <* RelatedObjects |
-             NOT(('IFC2X2_FINAL.IFCOBJECT' IN TYPEOF(temp)) 
-              OR ('IFC2X2_FINAL.IFCPROPERTYDEFINITION' IN TYPEOF(temp)))
-             )) = 0;
+	WR21 : SIZEOF(QUERY(temp <* RelatedObjects |
+              NOT(('IFC2X3.IFCOBJECTDEFINITION' IN TYPEOF(temp)) 
+               OR ('IFC2X3.IFCPROPERTYDEFINITION' IN TYPEOF(temp)))
+              )) = 0;
 END_ENTITY;
 
 ENTITY IfcRelAssociatesAppliedValue
@@ -6189,21 +6532,21 @@ ENTITY IfcRelAssociatesMaterial
  SUBTYPE OF (IfcRelAssociates);
 	RelatingMaterial : IfcMaterialSelect;
  WHERE
-	WR1 : SIZEOF(QUERY(temp <* SELF\IfcRelAssociates.RelatedObjects | 
-            ('IFC2X2_FINAL.IFCFEATUREELEMENTSUBTRACTION' IN TYPEOF(temp))
-              OR ('IFC2X2_FINAL.IFCVIRTUALELEMENT' IN TYPEOF(temp))
-            )) = 0;
-	WR2 : SIZEOF(QUERY(temp <* SELF\IfcRelAssociates.RelatedObjects | 
-            NOT(
-            ('IFC2X2_FINAL.IFCPRODUCT' IN TYPEOF(temp)) OR
-            ('IFC2X2_FINAL.IFCTYPEPRODUCT' IN TYPEOF(temp))
-            ))) = 0;
+	WR21 : SIZEOF(QUERY(temp <* SELF\IfcRelAssociates.RelatedObjects | 
+             ('IFC2X3.IFCFEATUREELEMENTSUBTRACTION' IN TYPEOF(temp))
+               OR ('IFC2X3.IFCVIRTUALELEMENT' IN TYPEOF(temp))
+             )) = 0;
+	WR22 : SIZEOF(QUERY(temp <* SELF\IfcRelAssociates.RelatedObjects | 
+             (NOT('IFC2X3.IFCPRODUCT' IN TYPEOF(temp)) 
+              AND NOT('IFC2X3.IFCTYPEPRODUCT' IN TYPEOF(temp)))
+             )) = 0;
 END_ENTITY;
 
 ENTITY IfcRelAssociatesProfileProperties
  SUBTYPE OF (IfcRelAssociates);
 	RelatingProfileProperties : IfcProfileProperties;
 	ProfileSectionLocation : OPTIONAL IfcShapeAspect;
+	ProfileOrientation : OPTIONAL IfcOrientationSelect;
 END_ENTITY;
 
 ENTITY IfcRelConnects
@@ -6212,13 +6555,16 @@ ENTITY IfcRelConnects
 	,IfcRelConnectsPortToElement
 	,IfcRelConnectsPorts
 	,IfcRelConnectsStructuralActivity
+	,IfcRelConnectsStructuralElement
 	,IfcRelConnectsStructuralMember
 	,IfcRelContainedInSpatialStructure
 	,IfcRelCoversBldgElements
+	,IfcRelCoversSpaces
 	,IfcRelFillsElement
 	,IfcRelFlowControlElements
 	,IfcRelInteractionRequirements
 	,IfcRelProjectsElement
+	,IfcRelReferencedInSpatialStructure
 	,IfcRelSequence
 	,IfcRelServicesBuildings
 	,IfcRelSpaceBoundary
@@ -6244,9 +6590,6 @@ ENTITY IfcRelConnectsPathElements
 	RelatedPriorities : LIST [0:?] OF INTEGER;
 	RelatedConnectionType : IfcConnectionTypeEnum;
 	RelatingConnectionType : IfcConnectionTypeEnum;
- DERIVE
-	RelatedLayerCount : INTEGER := IfcNoOfLayers(SELF\IfcRelConnectsElements.RelatedElement);
-	RelatingLayerCount : INTEGER := IfcNoOfLayers(SELF\IfcRelConnectsElements.RelatingElement);
 END_ENTITY;
 
 ENTITY IfcRelConnectsPortToElement
@@ -6268,7 +6611,15 @@ ENTITY IfcRelConnectsStructuralActivity
 	RelatedStructuralActivity : IfcStructuralActivity;
 END_ENTITY;
 
+ENTITY IfcRelConnectsStructuralElement
+ SUBTYPE OF (IfcRelConnects);
+	RelatingElement : IfcElement;
+	RelatedStructuralMember : IfcStructuralMember;
+END_ENTITY;
+
 ENTITY IfcRelConnectsStructuralMember
+ SUPERTYPE OF (ONEOF
+	(IfcRelConnectsWithEccentricity))
  SUBTYPE OF (IfcRelConnects);
 	RelatingStructuralMember : IfcStructuralMember;
 	RelatedStructuralConnection : IfcStructuralConnection;
@@ -6276,6 +6627,11 @@ ENTITY IfcRelConnectsStructuralMember
 	AdditionalConditions : OPTIONAL IfcStructuralConnectionCondition;
 	SupportedLength : OPTIONAL IfcLengthMeasure;
 	ConditionCoordinateSystem : OPTIONAL IfcAxis2Placement3D;
+END_ENTITY;
+
+ENTITY IfcRelConnectsWithEccentricity
+ SUBTYPE OF (IfcRelConnectsStructuralMember);
+	ConnectionConstraint : IfcConnectionGeometry;
 END_ENTITY;
 
 ENTITY IfcRelConnectsWithRealizingElements
@@ -6289,7 +6645,7 @@ ENTITY IfcRelContainedInSpatialStructure
 	RelatedElements : SET [1:?] OF IfcProduct;
 	RelatingStructure : IfcSpatialStructureElement;
  WHERE
-	WR31 : SIZEOF(QUERY(temp <* RelatedElements | 'IFC2X2_FINAL.IFCSPATIALSTRUCTUREELEMENT' IN TYPEOF(temp))) = 0;
+	WR31 : SIZEOF(QUERY(temp <* RelatedElements | 'IFC2X3.IFCSPATIALSTRUCTUREELEMENT' IN TYPEOF(temp))) = 0;
 END_ENTITY;
 
 ENTITY IfcRelCoversBldgElements
@@ -6298,15 +6654,21 @@ ENTITY IfcRelCoversBldgElements
 	RelatedCoverings : SET [1:?] OF IfcCovering;
 END_ENTITY;
 
+ENTITY IfcRelCoversSpaces
+ SUBTYPE OF (IfcRelConnects);
+	RelatedSpace : IfcSpace;
+	RelatedCoverings : SET [1:?] OF IfcCovering;
+END_ENTITY;
+
 ENTITY IfcRelDecomposes
  ABSTRACT SUPERTYPE OF (ONEOF
 	(IfcRelAggregates
 	,IfcRelNests))
  SUBTYPE OF (IfcRelationship);
-	RelatingObject : IfcObject;
-	RelatedObjects : SET [1:?] OF IfcObject;
+	RelatingObject : IfcObjectDefinition;
+	RelatedObjects : SET [1:?] OF IfcObjectDefinition;
  WHERE
-	WR1 : SIZEOF(QUERY(Temp <* RelatedObjects | RelatingObject :=: Temp)) = 0;
+	WR31 : SIZEOF(QUERY(Temp <* RelatedObjects | RelatingObject :=: Temp)) = 0;
 END_ENTITY;
 
 ENTITY IfcRelDefines
@@ -6374,13 +6736,21 @@ ENTITY IfcRelProjectsElement
 	RelatedFeatureElement : IfcFeatureElementAddition;
 END_ENTITY;
 
+ENTITY IfcRelReferencedInSpatialStructure
+ SUBTYPE OF (IfcRelConnects);
+	RelatedElements : SET [1:?] OF IfcProduct;
+	RelatingStructure : IfcSpatialStructureElement;
+ WHERE
+	WR31 : SIZEOF(QUERY(temp <* RelatedElements | 'IFC2X3.IFCSPATIALSTRUCTUREELEMENT' IN TYPEOF(temp))) = 0;
+END_ENTITY;
+
 ENTITY IfcRelSchedulesCostItems
  SUBTYPE OF (IfcRelAssignsToControl);
  WHERE
 	WR11 : SIZEOF(QUERY(temp <* SELF\IfcRelAssigns.RelatedObjects |
-               NOT('IFC2X2_FINAL.IFCCOSTITEM' IN TYPEOF(temp))
+               NOT('IFC2X3.IFCCOSTITEM' IN TYPEOF(temp))
                )) = 0;
-	WR12 : 'IFC2X2_FINAL.IFCCOSTSCHEDULE' IN TYPEOF (SELF\IfcRelAssignsToControl.RelatingControl);
+	WR12 : 'IFC2X3.IFCCOSTSCHEDULE' IN TYPEOF (SELF\IfcRelAssignsToControl.RelatingControl);
 END_ENTITY;
 
 ENTITY IfcRelSequence
@@ -6408,10 +6778,10 @@ ENTITY IfcRelSpaceBoundary
 	InternalOrExternalBoundary : IfcInternalOrExternalEnum;
  WHERE
 	WR1 : ((PhysicalOrVirtualBoundary = IfcPhysicalOrVirtualEnum.Physical) AND 
-              (EXISTS(RelatedBuildingElement) AND NOT('IFC2X2_FINAL.IFCVIRTUALELEMENT' IN TYPEOF(RelatedBuildingElement)))) 
+              (EXISTS(RelatedBuildingElement) AND NOT('IFC2X3.IFCVIRTUALELEMENT' IN TYPEOF(RelatedBuildingElement)))) 
             OR 
             ((PhysicalOrVirtualBoundary = IfcPhysicalOrVirtualEnum.Virtual) AND 
-              (NOT(EXISTS(RelatedBuildingElement)) OR ('IFC2X2_FINAL.IFCVIRTUALELEMENT' IN TYPEOF(RelatedBuildingElement)))) 
+              (NOT(EXISTS(RelatedBuildingElement)) OR ('IFC2X3.IFCVIRTUALELEMENT' IN TYPEOF(RelatedBuildingElement)))) 
             OR 
              (PhysicalOrVirtualBoundary = IfcPhysicalOrVirtualEnum.NotDefined);
 END_ENTITY;
@@ -6439,14 +6809,15 @@ END_ENTITY;
 
 ENTITY IfcRepresentation
  SUPERTYPE OF (ONEOF
-	(IfcShapeRepresentation
-	,IfcStyledRepresentation
-	,IfcTopologyRepresentation));
+	(IfcShapeModel
+	,IfcStyleModel));
 	ContextOfItems : IfcRepresentationContext;
 	RepresentationIdentifier : OPTIONAL IfcLabel;
 	RepresentationType : OPTIONAL IfcLabel;
 	Items : SET [1:?] OF IfcRepresentationItem;
  INVERSE
+	RepresentationMap : SET [0:1] OF IfcRepresentationMap FOR MappedRepresentation;
+	LayerAssignments : SET [0:?] OF IfcPresentationLayerAssignment FOR AssignedItems;
 	OfProductRepresentation : SET [0:1] OF IfcProductRepresentation FOR Representations;
 END_ENTITY;
 
@@ -6465,6 +6836,9 @@ ENTITY IfcRepresentationItem
 	,IfcMappedItem
 	,IfcStyledItem
 	,IfcTopologicalRepresentationItem));
+ INVERSE
+	LayerAssignments : SET [0:?] OF IfcPresentationLayerAssignment FOR AssignedItems;
+	StyledByItem : SET [0:1] OF IfcStyledItem FOR Item;
 END_ENTITY;
 
 ENTITY IfcRepresentationMap;
@@ -6490,8 +6864,8 @@ ENTITY IfcRevolvedAreaSolid
 	AxisLine : IfcLine := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcCurve() || IfcLine(Axis.Location, 
                    IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcVector(Axis.Z,1.0));
  WHERE
-	WR1 : Axis.Location.Coordinates[3] = 0.0;
-	WR2 : Axis.Z.DirectionRatios[3] = 0.0;
+	WR31 : Axis.Location.Coordinates[3] = 0.0;
+	WR32 : Axis.Z.DirectionRatios[3] = 0.0;
 END_ENTITY;
 
 ENTITY IfcRibPlateProfileProperties
@@ -6503,17 +6877,29 @@ ENTITY IfcRibPlateProfileProperties
 	Direction : IfcRibPlateDirectionEnum;
 END_ENTITY;
 
+ENTITY IfcRightCircularCone
+ SUBTYPE OF (IfcCsgPrimitive3D);
+	Height : IfcPositiveLengthMeasure;
+	BottomRadius : IfcPositiveLengthMeasure;
+END_ENTITY;
+
+ENTITY IfcRightCircularCylinder
+ SUBTYPE OF (IfcCsgPrimitive3D);
+	Height : IfcPositiveLengthMeasure;
+	Radius : IfcPositiveLengthMeasure;
+END_ENTITY;
+
 ENTITY IfcRoof
  SUBTYPE OF (IfcBuildingElement);
 	ShapeType : IfcRoofTypeEnum;
  WHERE
-	WR1 : (HIINDEX(SELF\IfcObject.IsDecomposedBy) = 0) OR 
-            ((HIINDEX(SELF\IfcObject.IsDecomposedBy) = 1) AND (NOT(EXISTS(SELF\IfcProduct.Representation))));
+	WR1 : (HIINDEX(SELF\IfcObjectDefinition.IsDecomposedBy) = 0) OR 
+            ((HIINDEX(SELF\IfcObjectDefinition.IsDecomposedBy) = 1) AND (NOT(EXISTS(SELF\IfcProduct.Representation))));
 END_ENTITY;
 
 ENTITY IfcRoot
  ABSTRACT SUPERTYPE OF (ONEOF
-	(IfcObject
+	(IfcObjectDefinition
 	,IfcPropertyDefinition
 	,IfcRelationship));
 	GlobalId : IfcGloballyUniqueId;
@@ -6533,8 +6919,8 @@ ENTITY IfcRoundedRectangleProfileDef
  SUBTYPE OF (IfcRectangleProfileDef);
 	RoundingRadius : IfcPositiveLengthMeasure;
  WHERE
-	WR21 : ((RoundingRadius <= (SELF\IfcRectangleProfileDef.XDim/2)) AND 
-              (RoundingRadius <= (SELF\IfcRectangleProfileDef.YDim/2)));
+	WR31 : ((RoundingRadius <= (SELF\IfcRectangleProfileDef.XDim/2.)) AND 
+              (RoundingRadius <= (SELF\IfcRectangleProfileDef.YDim/2.)));
 END_ENTITY;
 
 ENTITY IfcSIUnit
@@ -6620,31 +7006,42 @@ ENTITY IfcServiceLifeFactor
 	MostUsedValue : IfcMeasureValue;
 	LowerValue : OPTIONAL IfcMeasureValue;
  WHERE
-	WR31 : NOT(PredefinedType = IfcServiceLifeFactorTypeEnum.USERDEFINED) 
-           OR EXISTS(SELF\IfcObject.ObjectType);
+	WR31 : NOT(PredefinedType = IfcServiceLifeFactorTypeEnum.USERDEFINED)
+             OR EXISTS(SELF\IfcObject.ObjectType);
 END_ENTITY;
 
 ENTITY IfcShapeAspect;
-	ShapeRepresentations : LIST [1:?] OF IfcShapeRepresentation;
+	ShapeRepresentations : LIST [1:?] OF IfcShapeModel;
 	Name : OPTIONAL IfcLabel;
 	Description : OPTIONAL IfcText;
 	ProductDefinitional : LOGICAL;
 	PartOfProductDefinitionShape : IfcProductDefinitionShape;
 END_ENTITY;
 
-ENTITY IfcShapeRepresentation
+ENTITY IfcShapeModel
+ ABSTRACT SUPERTYPE OF (ONEOF
+	(IfcShapeRepresentation
+	,IfcTopologyRepresentation))
  SUBTYPE OF (IfcRepresentation);
  INVERSE
 	OfShapeAspect : SET [0:1] OF IfcShapeAspect FOR ShapeRepresentations;
  WHERE
-	WR21 : 'IFC2X2_FINAL.IFCGEOMETRICREPRESENTATIONCONTEXT' 
+	WR11 : (SIZEOF(SELF\IfcRepresentation.OfProductRepresentation) = 1) XOR 
+             (SIZEOF(SELF\IfcRepresentation.RepresentationMap) = 1) XOR
+             (SIZEOF(OfShapeAspect) = 1);
+END_ENTITY;
+
+ENTITY IfcShapeRepresentation
+ SUBTYPE OF (IfcShapeModel);
+ WHERE
+	WR21 : 'IFC2X3.IFCGEOMETRICREPRESENTATIONCONTEXT' 
              IN TYPEOF(SELF\IfcRepresentation.ContextOfItems);
 	WR22 : SIZEOF(QUERY(temp <* Items | 
-               ('IFC2X2_FINAL.IFCTOPOLOGICALREPRESENTATIONITEM' IN TYPEOF(temp))
+               ('IFC2X3.IFCTOPOLOGICALREPRESENTATIONITEM' IN TYPEOF(temp))
                  AND (NOT(SIZEOF(
-                   ['IFC2X2_FINAL.IFCVERTEXPOINT',
-                    'IFC2X2_FINAL.IFCEDGECURVE',
-                    'IFC2X2_FINAL.IFCFACESURFACE'] * TYPEOF(temp)) = 1))
+                   ['IFC2X3.IFCVERTEXPOINT',
+                    'IFC2X3.IFCEDGECURVE',
+                    'IFC2X3.IFCFACESURFACE'] * TYPEOF(temp)) = 1))
              )) = 0;
 	WR23 : EXISTS(SELF\IfcRepresentation.RepresentationType);
 	WR24 : IfcShapeRepresentationTypes(SELF\IfcRepresentation.RepresentationType, SELF\IfcRepresentation.Items);
@@ -6681,8 +7078,9 @@ ENTITY IfcSlab
  SUBTYPE OF (IfcBuildingElement);
 	PredefinedType : OPTIONAL IfcSlabTypeEnum;
  WHERE
-	WR2 : (PredefinedType <> IfcSlabTypeEnum.USERDEFINED) OR
-            ((PredefinedType = IfcSlabTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcObject.ObjectType));
+	WR61 : NOT(EXISTS(PredefinedType)) OR
+              (PredefinedType <> IfcSlabTypeEnum.USERDEFINED) OR
+              ((PredefinedType = IfcSlabTypeEnum.USERDEFINED) AND EXISTS (SELF\IfcObject.ObjectType));
 END_ENTITY;
 
 ENTITY IfcSlabType
@@ -6712,7 +7110,6 @@ ENTITY IfcSoundProperties
  SUBTYPE OF (IfcPropertySetDefinition);
 	IsAttenuating : IfcBoolean;
 	SoundScale : OPTIONAL IfcSoundScaleEnum;
-	PointOfMeasurement : OPTIONAL IfcLocalPlacement;
 	SoundValues : LIST [1:8] OF IfcSoundValue;
 END_ENTITY;
 
@@ -6728,12 +7125,16 @@ ENTITY IfcSpace
 	InteriorOrExteriorSpace : IfcInternalOrExternalEnum;
 	ElevationWithFlooring : OPTIONAL IfcLengthMeasure;
  INVERSE
+	HasCoverings : SET [0:?] OF IfcRelCoversSpaces FOR RelatedSpace;
 	BoundedBy : SET [0:?] OF IfcRelSpaceBoundary FOR RelatingSpace;
 END_ENTITY;
 
 ENTITY IfcSpaceHeaterType
  SUBTYPE OF (IfcEnergyConversionDeviceType);
 	PredefinedType : IfcSpaceHeaterTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcSpaceHeaterTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcSpaceHeaterTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcSpaceProgram
@@ -6762,6 +7163,11 @@ ENTITY IfcSpaceThermalLoadProperties
 	ThermalLoadType : IfcThermalLoadTypeEnum;
 END_ENTITY;
 
+ENTITY IfcSpaceType
+ SUBTYPE OF (IfcSpatialStructureElementType);
+	PredefinedType : IfcSpaceTypeEnum;
+END_ENTITY;
+
 ENTITY IfcSpatialStructureElement
  ABSTRACT SUPERTYPE OF (ONEOF
 	(IfcBuilding
@@ -6772,16 +7178,28 @@ ENTITY IfcSpatialStructureElement
 	LongName : OPTIONAL IfcLabel;
 	CompositionType : IfcElementCompositionEnum;
  INVERSE
+	ReferencesElements : SET [0:?] OF IfcRelReferencedInSpatialStructure FOR RelatingStructure;
 	ServicedBySystems : SET [0:?] OF IfcRelServicesBuildings FOR RelatedBuildings;
 	ContainsElements : SET [0:?] OF IfcRelContainedInSpatialStructure FOR RelatingStructure;
  WHERE
-	WR41 : (HIINDEX(SELF\IfcObject.Decomposes) = 1) 
+	WR41 : (HIINDEX(SELF\IfcObjectDefinition.Decomposes) = 1) 
              AND
-             ('IFC2X2_FINAL.IFCRELAGGREGATES' IN TYPEOF(SELF\IfcObject.Decomposes[1])) 
+             ('IFC2X3.IFCRELAGGREGATES' IN TYPEOF(SELF\IfcObjectDefinition.Decomposes[1])) 
              AND
-             (('IFC2X2_FINAL.IFCPROJECT' IN TYPEOF (SELF\IfcObject.Decomposes[1].RelatingObject)) OR
-              ('IFC2X2_FINAL.IFCSPATIALSTRUCTUREELEMENT' IN TYPEOF (SELF\IfcObject.Decomposes[1].RelatingObject))
+             (('IFC2X3.IFCPROJECT' IN TYPEOF (SELF\IfcObjectDefinition.Decomposes[1].RelatingObject)) OR
+              ('IFC2X3.IFCSPATIALSTRUCTUREELEMENT' IN TYPEOF (SELF\IfcObjectDefinition.Decomposes[1].RelatingObject))
              );
+END_ENTITY;
+
+ENTITY IfcSpatialStructureElementType
+ ABSTRACT SUPERTYPE OF (ONEOF
+	(IfcSpaceType))
+ SUBTYPE OF (IfcElementType);
+END_ENTITY;
+
+ENTITY IfcSphere
+ SUBTYPE OF (IfcCsgPrimitive3D);
+	Radius : IfcPositiveLengthMeasure;
 END_ENTITY;
 
 ENTITY IfcStackTerminalType
@@ -6793,7 +7211,8 @@ ENTITY IfcStair
  SUBTYPE OF (IfcBuildingElement);
 	ShapeType : IfcStairTypeEnum;
  WHERE
-	WR1 : (HIINDEX(SELF\IfcObject.IsDecomposedBy) = 0) OR ((HIINDEX(SELF\IfcObject.IsDecomposedBy) = 1) AND (NOT(EXISTS(SELF\IfcProduct.Representation))));
+	WR1 : (HIINDEX(SELF\IfcObjectDefinition.IsDecomposedBy) = 0) OR 
+            ((HIINDEX(SELF\IfcObjectDefinition.IsDecomposedBy) = 1) AND (NOT(EXISTS(SELF\IfcProduct.Representation))));
 END_ENTITY;
 
 ENTITY IfcStairFlight
@@ -6816,7 +7235,6 @@ ENTITY IfcStructuralAction
 	,IfcStructuralPointAction))
  SUBTYPE OF (IfcStructuralActivity);
 	DestabilizingLoad : BOOLEAN;
-	ProjectedOrTrue : IfcProjectedOrTrueLengthEnum;
 	CausedBy : OPTIONAL IfcStructuralReaction;
 END_ENTITY;
 
@@ -6885,9 +7303,10 @@ ENTITY IfcStructuralLinearAction
  SUPERTYPE OF (ONEOF
 	(IfcStructuralLinearActionVarying))
  SUBTYPE OF (IfcStructuralAction);
+	ProjectedOrTrue : IfcProjectedOrTrueLengthEnum;
  WHERE
-	WR61 : SIZEOF(['IFC2X2_FINAL.IFCSTRUCTURALLOADLINEARFORCE',
-                     'IFC2X2_FINAL.IFCSTRUCTURALLOADTEMPERATURE']
+	WR61 : SIZEOF(['IFC2X3.IFCSTRUCTURALLOADLINEARFORCE',
+                     'IFC2X3.IFCSTRUCTURALLOADTEMPERATURE']
              * TYPEOF(SELF\IfcStructuralActivity.AppliedLoad)) = 1;
 END_ENTITY;
 
@@ -6910,7 +7329,7 @@ ENTITY IfcStructuralLoadGroup
 	PredefinedType : IfcLoadGroupTypeEnum;
 	ActionType : IfcActionTypeEnum;
 	ActionSource : IfcActionSourceTypeEnum;
-	Coefficient : OPTIONAL IfcPositiveRatioMeasure;
+	Coefficient : OPTIONAL IfcRatioMeasure;
 	Purpose : OPTIONAL IfcLabel;
  INVERSE
 	SourceOfResultGroup : SET [0:1] OF IfcStructuralResultGroup FOR ResultForLoadGroup;
@@ -6991,6 +7410,7 @@ ENTITY IfcStructuralMember
 	,IfcStructuralSurfaceMember))
  SUBTYPE OF (IfcStructuralItem);
  INVERSE
+	ReferencesElement : SET [0:?] OF IfcRelConnectsStructuralElement FOR RelatedStructuralMember;
 	ConnectedBy : SET [0:?] OF IfcRelConnectsStructuralMember FOR RelatingStructuralMember;
 END_ENTITY;
 
@@ -6998,9 +7418,10 @@ ENTITY IfcStructuralPlanarAction
  SUPERTYPE OF (ONEOF
 	(IfcStructuralPlanarActionVarying))
  SUBTYPE OF (IfcStructuralAction);
+	ProjectedOrTrue : IfcProjectedOrTrueLengthEnum;
  WHERE
-	WR61 : SIZEOF(['IFC2X2_FINAL.IFCSTRUCTURALLOADPLANARFORCE',
-                     'IFC2X2_FINAL.IFCSTRUCTURALLOADTEMPERATURE']
+	WR61 : SIZEOF(['IFC2X3.IFCSTRUCTURALLOADPLANARFORCE',
+                     'IFC2X3.IFCSTRUCTURALLOADTEMPERATURE']
              * TYPEOF(SELF\IfcStructuralActivity.AppliedLoad)) = 1;
 END_ENTITY;
 
@@ -7015,8 +7436,8 @@ END_ENTITY;
 ENTITY IfcStructuralPointAction
  SUBTYPE OF (IfcStructuralAction);
  WHERE
-	WR61 : SIZEOF(['IFC2X2_FINAL.IFCSTRUCTURALLOADSINGLEFORCE',
-                     'IFC2X2_FINAL.IFCSTRUCTURALLOADSINGLEDISPLACEMENT']
+	WR61 : SIZEOF(['IFC2X3.IFCSTRUCTURALLOADSINGLEFORCE',
+                     'IFC2X3.IFCSTRUCTURALLOADSINGLEDISPLACEMENT']
              * TYPEOF(SELF\IfcStructuralActivity.AppliedLoad)) = 1;
 END_ENTITY;
 
@@ -7027,8 +7448,8 @@ END_ENTITY;
 ENTITY IfcStructuralPointReaction
  SUBTYPE OF (IfcStructuralReaction);
  WHERE
-	WR61 : SIZEOF(['IFC2X2_FINAL.IFCSTRUCTURALLOADSINGLEFORCE',
-                     'IFC2X2_FINAL.IFCSTRUCTURALLOADSINGLEDISPLACEMENT']
+	WR61 : SIZEOF(['IFC2X3.IFCSTRUCTURALLOADSINGLEFORCE',
+                     'IFC2X3.IFCSTRUCTURALLOADSINGLEDISPLACEMENT']
              * TYPEOF(SELF\IfcStructuralActivity.AppliedLoad)) = 1;
 END_ENTITY;
 
@@ -7050,9 +7471,11 @@ ENTITY IfcStructuralProfileProperties
 	MaximumSectionModulusZ : OPTIONAL IfcSectionModulusMeasure;
 	MinimumSectionModulusZ : OPTIONAL IfcSectionModulusMeasure;
 	TorsionalSectionModulus : OPTIONAL IfcSectionModulusMeasure;
+	CentreOfGravityInX : OPTIONAL IfcLengthMeasure;
+	CentreOfGravityInY : OPTIONAL IfcLengthMeasure;
  WHERE
-	WR1 : NOT(EXISTS(ShearDeformationAreaY)) OR (ShearDeformationAreaY >= 0);
-	WR2 : NOT(EXISTS(ShearDeformationAreaZ)) OR (ShearDeformationAreaZ >= 0);
+	WR21 : NOT(EXISTS(ShearDeformationAreaY)) OR (ShearDeformationAreaY >= 0.);
+	WR22 : NOT(EXISTS(ShearDeformationAreaZ)) OR (ShearDeformationAreaZ >= 0.);
 END_ENTITY;
 
 ENTITY IfcStructuralReaction
@@ -7079,8 +7502,8 @@ ENTITY IfcStructuralSteelProfileProperties
 	PlasticShapeFactorY : OPTIONAL IfcPositiveRatioMeasure;
 	PlasticShapeFactorZ : OPTIONAL IfcPositiveRatioMeasure;
  WHERE
-	WR1 : NOT(EXISTS(ShearAreaY)) OR (ShearAreaY >= 0);
-	WR2 : NOT(EXISTS(ShearAreaZ)) OR (ShearAreaZ >= 0);
+	WR31 : NOT(EXISTS(ShearAreaY)) OR (ShearAreaY >= 0.);
+	WR32 : NOT(EXISTS(ShearAreaZ)) OR (ShearAreaZ >= 0.);
 END_ENTITY;
 
 ENTITY IfcStructuralSurfaceConnection
@@ -7107,9 +7530,9 @@ ENTITY IfcStructuralSurfaceMemberVarying
                NOT(SIZEOF(temp\IfcRepresentation.Items) = 1)
                )) = 0;
 	WR63 : SIZEOF(QUERY(temp <* SELF.VaryingThicknessLocation.ShapeRepresentations |
-               NOT(('IFC2X2_FINAL.IFCCARTESIANPOINT' IN TYPEOF(temp\IfcRepresentation.Items[1]))
+               NOT(('IFC2X3.IFCCARTESIANPOINT' IN TYPEOF(temp\IfcRepresentation.Items[1]))
                      OR
-                   ('IFC2X2_FINAL.IFCPOINTONSURFACE' IN TYPEOF(temp\IfcRepresentation.Items[1])))
+                   ('IFC2X3.IFCPOINTONSURFACE' IN TYPEOF(temp\IfcRepresentation.Items[1])))
                )) = 0;
 END_ENTITY;
 
@@ -7117,25 +7540,36 @@ ENTITY IfcStructuredDimensionCallout
  SUBTYPE OF (IfcDraughtingCallout);
  WHERE
 	WR31 : SIZEOF(QUERY ( Ato <* QUERY ( Con <* SELF.contents | (
-                   'IFC2X2_FINAL.IFCANNOTATIONTEXTOCCURRENCE' IN 
+                   'IFC2X3.IFCANNOTATIONTEXTOCCURRENCE' IN 
                     TYPEOF(Con)) ) | (NOT (Ato.Name IN ['dimension value',
                    'tolerance value','unit text','prefix text','suffix text']))))
                   = 0;
+END_ENTITY;
+
+ENTITY IfcStyleModel
+ ABSTRACT SUPERTYPE OF (ONEOF
+	(IfcStyledRepresentation))
+ SUBTYPE OF (IfcRepresentation);
 END_ENTITY;
 
 ENTITY IfcStyledItem
  SUPERTYPE OF (ONEOF
 	(IfcAnnotationOccurrence))
  SUBTYPE OF (IfcRepresentationItem);
-	Item : IfcRepresentationItem;
+	Item : OPTIONAL IfcRepresentationItem;
 	Styles : SET [1:?] OF IfcPresentationStyleAssignment;
 	Name : OPTIONAL IfcLabel;
  WHERE
-	WR1 : SIZEOF(Styles) = 1;
+	WR11 : SIZEOF(Styles) = 1;
+	WR12 : NOT('IFC2X3.IFCSTYLEDITEM' IN TYPEOF(Item));
 END_ENTITY;
 
 ENTITY IfcStyledRepresentation
- SUBTYPE OF (IfcRepresentation);
+ SUBTYPE OF (IfcStyleModel);
+ WHERE
+	WR21 : SIZEOF(QUERY(temp <* SELF\IfcRepresentation.Items | 
+               (NOT('IFC2X3.IFCSTYLEDITEM' IN TYPEOF(temp)))
+             )) = 0;
 END_ENTITY;
 
 ENTITY IfcSubContractResource
@@ -7172,7 +7606,7 @@ ENTITY IfcSurfaceOfLinearExtrusion
  DERIVE
 	ExtrusionAxis : IfcVector := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcVector (ExtrudedDirection, Depth);
  WHERE
-	WR41 : Depth > 0;
+	WR41 : Depth > 0.;
 END_ENTITY;
 
 ENTITY IfcSurfaceOfRevolution
@@ -7183,10 +7617,31 @@ ENTITY IfcSurfaceOfRevolution
                        IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcVector(AxisPosition.Z,1.0));
 END_ENTITY;
 
-ENTITY IfcSurfaceStyle;
+ENTITY IfcSurfaceStyle
+ SUBTYPE OF (IfcPresentationStyle);
 	Side : IfcSurfaceSide;
-	Name : IfcLabel;
 	Styles : SET [1:5] OF IfcSurfaceStyleElementSelect;
+ WHERE
+	WR11 : SIZEOF(QUERY(Style <* SELF.Styles |
+               'IFC2X3.IFCSURFACESTYLESHADING' IN
+                TYPEOF(Style)
+               )) <= 1;
+	WR12 : SIZEOF(QUERY(Style <* SELF.Styles |
+               'IFC2X3.IFCSURFACESTYLELIGHTING' IN
+                TYPEOF(Style)
+               )) <= 1;
+	WR13 : SIZEOF(QUERY(Style <* SELF.Styles |
+               'IFC2X3.IFCSURFACESTYLEREFRACTION' IN
+                TYPEOF(Style)
+               )) <= 1;
+	WR14 : SIZEOF(QUERY(Style <* SELF.Styles |
+               'IFC2X3.IFCSURFACESTYLEWITHTEXTURES' IN
+                TYPEOF(Style)
+               )) <= 1;
+	WR15 : SIZEOF(QUERY(Style <* SELF.Styles |
+               'IFC2X3.IFCEXTERNALLYDEFINEDSURFACESTYLE' IN
+                TYPEOF(Style)
+               )) <= 1;
 END_ENTITY;
 
 ENTITY IfcSurfaceStyleLighting;
@@ -7220,14 +7675,13 @@ ENTITY IfcSurfaceStyleShading
 END_ENTITY;
 
 ENTITY IfcSurfaceStyleWithTextures;
-	Textures : SET [1:?] OF IfcSurfaceTexture;
- INVERSE
-	HasTextureCoordinates : SET [0:1] OF IfcTextureCoordinate FOR Texture;
+	Textures : LIST [1:?] OF IfcSurfaceTexture;
 END_ENTITY;
 
 ENTITY IfcSurfaceTexture
  ABSTRACT SUPERTYPE OF (ONEOF
-	(IfcImageTexture
+	(IfcBlobTexture
+	,IfcImageTexture
 	,IfcPixelTexture));
 	RepeatS : BOOLEAN;
 	RepeatT : BOOLEAN;
@@ -7244,8 +7698,7 @@ ENTITY IfcSweptAreaSolid
 	SweptArea : IfcProfileDef;
 	Position : IfcAxis2Placement3D;
  WHERE
-	WR1 : NOT('IFC2X2_FINAL.IFCDERIVEDPROFILEDEF' IN TYPEOF(SweptArea));
-	WR2 : SweptArea.ProfileType = IfcProfileTypeEnum.Area;
+	WR22 : SweptArea.ProfileType = IfcProfileTypeEnum.Area;
 END_ENTITY;
 
 ENTITY IfcSweptDiskSolid
@@ -7270,7 +7723,7 @@ ENTITY IfcSweptSurface
  DERIVE
 	Dim : IfcDimensionCount := Position.Dim;
  WHERE
-	WR1 : NOT('IFC2X2_FINAL.IFCDERIVEDPROFILEDEF' IN TYPEOF(SweptCurve));
+	WR1 : NOT('IFC2X3.IFCDERIVEDPROFILEDEF' IN TYPEOF(SweptCurve));
 	WR2 : SweptCurve.ProfileType = IfcProfileTypeEnum.Curve;
 END_ENTITY;
 
@@ -7279,8 +7732,8 @@ ENTITY IfcSwitchingDeviceType
 	PredefinedType : IfcSwitchingDeviceTypeEnum;
 END_ENTITY;
 
-ENTITY IfcSymbolStyle;
-	Name : IfcLabel;
+ENTITY IfcSymbolStyle
+ SUBTYPE OF (IfcPresentationStyle);
 	StyleOfSymbol : IfcSymbolStyleSelect;
 END_ENTITY;
 
@@ -7291,8 +7744,6 @@ ENTITY IfcSystem
  SUBTYPE OF (IfcGroup);
  INVERSE
 	ServicesBuildings : SET [0:1] OF IfcRelServicesBuildings FOR RelatingSystem;
- WHERE
-	WR1 : SIZEOF (QUERY (temp <* SELF\IfcGroup.IsGroupedBy.RelatedObjects |  NOT('IFC2X2_FINAL.IFCELEMENT' IN TYPEOF(temp)))) = 0;
 END_ENTITY;
 
 ENTITY IfcSystemFurnitureElementType
@@ -7310,7 +7761,7 @@ ENTITY IfcTShapeProfileDef
 	WebEdgeRadius : OPTIONAL IfcPositiveLengthMeasure;
 	WebSlope : OPTIONAL IfcPlaneAngleMeasure;
 	FlangeSlope : OPTIONAL IfcPlaneAngleMeasure;
-	CentreOfGravityInY : IfcPositiveLengthMeasure;
+	CentreOfGravityInY : OPTIONAL IfcPositiveLengthMeasure;
  WHERE
 	WR1 : FlangeThickness < Depth;
 	WR2 : WebThickness < FlangeWidth;
@@ -7339,6 +7790,9 @@ END_ENTITY;
 ENTITY IfcTankType
  SUBTYPE OF (IfcFlowStorageDeviceType);
 	PredefinedType : IfcTankTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcTankTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcTankTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcTask
@@ -7352,8 +7806,8 @@ ENTITY IfcTask
 	IsMilestone : BOOLEAN;
 	Priority : OPTIONAL INTEGER;
  WHERE
-	WR1 : SIZEOF(QUERY(temp <* SELF\IfcObject.Decomposes | NOT('IFC2X2_FINAL.IFCRELNESTS' IN TYPEOF(temp)))) = 0;
-	WR2 : SIZEOF(QUERY(temp <* SELF\IfcObject.IsDecomposedBy | NOT('IFC2X2_FINAL.IFCRELNESTS' IN TYPEOF(temp)))) = 0;
+	WR1 : SIZEOF(QUERY(temp <* SELF\IfcObjectDefinition.Decomposes | NOT('IFC2X3.IFCRELNESTS' IN TYPEOF(temp)))) = 0;
+	WR2 : SIZEOF(QUERY(temp <* SELF\IfcObjectDefinition.IsDecomposedBy | NOT('IFC2X3.IFCRELNESTS' IN TYPEOF(temp)))) = 0;
 	WR3 : EXISTS(SELF\IfcRoot.Name);
 END_ENTITY;
 
@@ -7403,29 +7857,49 @@ ENTITY IfcTextLiteral
  SUBTYPE OF (IfcGeometricRepresentationItem);
 	Literal : IfcPresentableText;
 	Placement : IfcAxis2Placement;
-	Alignment : IfcTextAlignment;
 	Path : IfcTextPath;
-	Font : IfcFontSelect;
 END_ENTITY;
 
 ENTITY IfcTextLiteralWithExtent
  SUBTYPE OF (IfcTextLiteral);
 	Extent : IfcPlanarExtent;
+	BoxAlignment : IfcBoxAlignment;
+ WHERE
+	WR31 : NOT('IFC2X3.IFCPLANARBOX' IN TYPEOF(Extent));
 END_ENTITY;
 
-ENTITY IfcTextStyle;
-	Name : IfcLabel;
-	CharacterGlyphAppearance : OPTIONAL IfcCharacterStyleSelect;
-	TextStyles : OPTIONAL SET [1:3] OF IfcTextStyleSelect;
+ENTITY IfcTextStyle
+ SUBTYPE OF (IfcPresentationStyle);
+	TextCharacterAppearance : OPTIONAL IfcCharacterStyleSelect;
+	TextStyle : OPTIONAL IfcTextStyleSelect;
+	TextFontStyle : IfcTextFontSelect;
+END_ENTITY;
+
+ENTITY IfcTextStyleFontModel
+ SUBTYPE OF (IfcPreDefinedTextFont);
+	FontFamily : OPTIONAL LIST [1:?] OF IfcTextFontName;
+	FontStyle : OPTIONAL IfcFontStyle;
+	FontVariant : OPTIONAL IfcFontVariant;
+	FontWeight : OPTIONAL IfcFontWeight;
+	FontSize : IfcSizeSelect;
  WHERE
-	WR11 : HIINDEX(TextStyles) <= 3;
-	WR12 : NOT(EXISTS(SELF.TextStyles)) 
-             OR
-              (SIZEOF(QUERY(Style1 <* SELF.TextStyles |
-                 SIZEOF(QUERY(Style2 <* SELF.TextStyles - Style1 |
-                   TYPEOF(Style1) = TYPEOF(Style2)
-                 )) > 0
-               )) = 0 );
+	WR31 : ('IFC2X3.IFCLENGTHMEASURE' IN TYPEOF(SELF.FontSize)) AND
+             (SELF.FontSize > 0.);
+END_ENTITY;
+
+ENTITY IfcTextStyleForDefinedFont;
+	Colour : IfcColour;
+	BackgroundColour : OPTIONAL IfcColour;
+END_ENTITY;
+
+ENTITY IfcTextStyleTextModel;
+	TextIndent : OPTIONAL IfcSizeSelect;
+	TextAlign : OPTIONAL IfcTextAlignment;
+	TextDecoration : OPTIONAL IfcTextDecoration;
+	LetterSpacing : OPTIONAL IfcSizeSelect;
+	WordSpacing : OPTIONAL IfcSizeSelect;
+	TextTransform : OPTIONAL IfcTextTransformation;
+	LineHeight : OPTIONAL IfcSizeSelect;
 END_ENTITY;
 
 ENTITY IfcTextStyleWithBoxCharacteristics;
@@ -7433,21 +7907,15 @@ ENTITY IfcTextStyleWithBoxCharacteristics;
 	BoxWidth : OPTIONAL IfcPositiveLengthMeasure;
 	BoxSlantAngle : OPTIONAL IfcPlaneAngleMeasure;
 	BoxRotateAngle : OPTIONAL IfcPlaneAngleMeasure;
-END_ENTITY;
-
-ENTITY IfcTextStyleWithMirror;
-	MirrorPlacement : IfcAxis2Placement;
-END_ENTITY;
-
-ENTITY IfcTextStyleWithSpacing;
-	CharacterSpacing : IfcCharacterSpacingSelect;
+	CharacterSpacing : OPTIONAL IfcSizeSelect;
 END_ENTITY;
 
 ENTITY IfcTextureCoordinate
  ABSTRACT SUPERTYPE OF (ONEOF
 	(IfcTextureCoordinateGenerator
 	,IfcTextureMap));
-	Texture : IfcSurfaceStyleWithTextures;
+ INVERSE
+	AnnotatedSurface : SET [1:1] OF IfcAnnotationSurface FOR TextureCoordinates;
 END_ENTITY;
 
 ENTITY IfcTextureCoordinateGenerator
@@ -7458,7 +7926,15 @@ END_ENTITY;
 
 ENTITY IfcTextureMap
  SUBTYPE OF (IfcTextureCoordinate);
-	VertexBasedTextures : OPTIONAL SET [1:?] OF IfcVertexBasedTextureMap;
+	TextureMaps : SET [1:?] OF IfcVertexBasedTextureMap;
+ WHERE
+	WR11 : SIZEOF([
+               'IFC2X3.IFCSHELLBASEDSURFACEMODEL',
+               'IFC2X3.IFCFACEBASEDSURFACEMODEL',
+               'IFC2X3.IFCFACETEDBREP',
+               'IFC2X3.IFCFACETEDBREPWITHVOIDS'] 
+              * TYPEOF(SELF\IfcTextureCoordinate.AnnotatedSurface[1].Item)
+               ) >= 1;
 END_ENTITY;
 
 ENTITY IfcTextureVertex;
@@ -7522,10 +7998,10 @@ ENTITY IfcTopologicalRepresentationItem
 END_ENTITY;
 
 ENTITY IfcTopologyRepresentation
- SUBTYPE OF (IfcRepresentation);
+ SUBTYPE OF (IfcShapeModel);
  WHERE
 	WR21 : SIZEOF(QUERY(temp <* SELF\IfcRepresentation.Items | 
-               NOT('IFC2X2_FINAL.IFCTOPOLOGICALREPRESENTATIONITEM' IN TYPEOF(temp))
+               NOT('IFC2X3.IFCTOPOLOGICALREPRESENTATIONITEM' IN TYPEOF(temp))
              )) = 0;
 	WR22 : EXISTS(SELF\IfcRepresentation.RepresentationType);
 	WR23 : IfcTopologyRepresentationTypes(SELF\IfcRepresentation.RepresentationType, SELF\IfcRepresentation.Items);
@@ -7566,12 +8042,15 @@ ENTITY IfcTrimmedCurve
  WHERE
 	WR41 : (HIINDEX(Trim1) = 1) OR (TYPEOF(Trim1[1]) <> TYPEOF(Trim1[2]));
 	WR42 : (HIINDEX(Trim2) = 1) OR (TYPEOF(Trim2[1]) <> TYPEOF(Trim2[2]));
-	WR43 : NOT('IFC2X2_FINAL.IFCBOUNDEDCURVE' IN TYPEOF(BasisCurve));
+	WR43 : NOT('IFC2X3.IFCBOUNDEDCURVE' IN TYPEOF(BasisCurve));
 END_ENTITY;
 
 ENTITY IfcTubeBundleType
  SUBTYPE OF (IfcEnergyConversionDeviceType);
 	PredefinedType : IfcTubeBundleTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcTubeBundleTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcTubeBundleTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcTwoDirectionRepeatFactor
@@ -7582,9 +8061,9 @@ END_ENTITY;
 ENTITY IfcTypeObject
  SUPERTYPE OF (ONEOF
 	(IfcTypeProduct))
- SUBTYPE OF (IfcPropertyDefinition);
+ SUBTYPE OF (IfcObjectDefinition);
 	ApplicableOccurrence : OPTIONAL IfcLabel;
-	HasPropertySets : OPTIONAL LIST [1:?] OF UNIQUE IfcPropertySetDefinition;
+	HasPropertySets : OPTIONAL SET [1:?] OF IfcPropertySetDefinition;
  INVERSE
 	ObjectTypeOf : SET [0:1] OF IfcRelDefinesByType FOR RelatingType;
  WHERE
@@ -7602,7 +8081,7 @@ ENTITY IfcTypeProduct
  WHERE
 	WR41 : NOT(EXISTS(SELF\IfcTypeObject.ObjectTypeOf[1])) OR
              (SIZEOF(QUERY(temp <* SELF\IfcTypeObject.ObjectTypeOf[1].RelatedObjects |
-               NOT('IFC2X2_FINAL.IFCPRODUCT' IN TYPEOF(temp)))
+               NOT('IFC2X3.IFCPRODUCT' IN TYPEOF(temp)))
              ) = 0);
 END_ENTITY;
 
@@ -7615,24 +8094,32 @@ ENTITY IfcUShapeProfileDef
 	FilletRadius : OPTIONAL IfcPositiveLengthMeasure;
 	EdgeRadius : OPTIONAL IfcPositiveLengthMeasure;
 	FlangeSlope : OPTIONAL IfcPlaneAngleMeasure;
-	CentreOfGravityInX : IfcPositiveLengthMeasure;
+	CentreOfGravityInX : OPTIONAL IfcPositiveLengthMeasure;
  WHERE
-	WR1 : FlangeThickness < (Depth / 2);
-	WR2 : WebThickness < FlangeWidth;
+	WR21 : FlangeThickness < (Depth / 2.);
+	WR22 : WebThickness < FlangeWidth;
 END_ENTITY;
 
 ENTITY IfcUnitAssignment;
 	Units : SET [1:?] OF IfcUnit;
+ WHERE
+	WR01 : IfcCorrectUnitAssignment(Units);
 END_ENTITY;
 
 ENTITY IfcUnitaryEquipmentType
  SUBTYPE OF (IfcEnergyConversionDeviceType);
 	PredefinedType : IfcUnitaryEquipmentTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcUnitaryEquipmentTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcUnitaryEquipmentTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcValveType
  SUBTYPE OF (IfcFlowControllerType);
 	PredefinedType : IfcValveTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcValveTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcValveTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcVector
@@ -7652,8 +8139,8 @@ ENTITY IfcVertex
 END_ENTITY;
 
 ENTITY IfcVertexBasedTextureMap;
-	TextureVertices : LIST [1:?] OF IfcTextureVertex;
-	VertexBasedGeometry : IfcPolyLoop;
+	TextureVertices : LIST [3:?] OF IfcTextureVertex;
+	TexturePoints : LIST [3:?] OF IfcCartesianPoint;
 END_ENTITY;
 
 ENTITY IfcVertexLoop
@@ -7669,6 +8156,9 @@ END_ENTITY;
 ENTITY IfcVibrationIsolatorType
  SUBTYPE OF (IfcDiscreteAccessoryType);
 	PredefinedType : IfcVibrationIsolatorTypeEnum;
+ WHERE
+	WR1 : (PredefinedType <> IfcVibrationIsolatorTypeEnum.USERDEFINED) OR
+            ((PredefinedType = IfcVibrationIsolatorTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcElementType.ElementType));
 END_ENTITY;
 
 ENTITY IfcVirtualElement
@@ -7685,17 +8175,17 @@ ENTITY IfcWall
 	(IfcWallStandardCase))
  SUBTYPE OF (IfcBuildingElement);
  WHERE
-	WR1 : SIZEOF (QUERY(temp <* SELF\IfcObject.HasAssociations |
-              'IFC2X2_FINAL.IFCRELASSOCIATESMATERIAL' IN TYPEOF(temp)
+	WR1 : SIZEOF (QUERY(temp <* SELF\IfcObjectDefinition.HasAssociations |
+              'IFC2X3.IFCRELASSOCIATESMATERIAL' IN TYPEOF(temp)
               )) <= 1;
 END_ENTITY;
 
 ENTITY IfcWallStandardCase
  SUBTYPE OF (IfcWall);
  WHERE
-	WR1 : SIZEOF (QUERY(temp <* USEDIN(SELF, 'IFC2X2_FINAL.IFCRELASSOCIATES.RELATEDOBJECTS') |
-                          ('IFC2X2_FINAL.IFCRELASSOCIATESMATERIAL' IN TYPEOF(temp)) AND
-                          ('IFC2X2_FINAL.IFCMATERIALLAYERSETUSAGE' IN TYPEOF(temp.RelatingMaterial))
+	WR1 : SIZEOF (QUERY(temp <* USEDIN(SELF, 'IFC2X3.IFCRELASSOCIATES.RELATEDOBJECTS') |
+                          ('IFC2X3.IFCRELASSOCIATESMATERIAL' IN TYPEOF(temp)) AND
+                          ('IFC2X3.IFCMATERIALLAYERSETUSAGE' IN TYPEOF(temp.RelatingMaterial))
                           )) = 1;
 END_ENTITY;
 
@@ -7740,8 +8230,11 @@ ENTITY IfcWindowLiningProperties
 	SecondMullionOffset : OPTIONAL IfcNormalisedRatioMeasure;
 	ShapeAspectStyle : OPTIONAL IfcShapeAspect;
  WHERE
-	WR1 : (EXISTS(LiningDepth) AND EXISTS(LiningThickness)) XOR
-            (NOT(EXISTS(LiningDepth)) AND NOT(EXISTS(LiningThickness)));
+	WR31 : NOT(NOT(EXISTS(LiningDepth)) AND EXISTS(LiningThickness));
+	WR32 : NOT(NOT(EXISTS(FirstTransomOffset)) AND EXISTS(SecondTransomOffset));
+	WR33 : NOT(NOT(EXISTS(FirstMullionOffset)) AND EXISTS(SecondMullionOffset));
+	WR34 : EXISTS(SELF\IfcPropertySetDefinition.DefinesType[1]) AND 
+             ('IFC2X3.IFCWINDOWSTYLE' IN TYPEOF(SELF\IfcPropertySetDefinition.DefinesType[1]));
 END_ENTITY;
 
 ENTITY IfcWindowPanelProperties
@@ -7798,23 +8291,23 @@ ENTITY IfcZShapeProfileDef
 	FilletRadius : OPTIONAL IfcPositiveLengthMeasure;
 	EdgeRadius : OPTIONAL IfcPositiveLengthMeasure;
  WHERE
-	WR1 : FlangeThickness < (Depth / 2);
+	WR21 : FlangeThickness < (Depth / 2.);
 END_ENTITY;
 
 ENTITY IfcZone
  SUBTYPE OF (IfcGroup);
  WHERE
-	WR1 : SIZEOF (QUERY (temp <* SELF\IfcGroup.IsGroupedBy.RelatedObjects |  NOT(('IFC2X2_FINAL.IFCZONE' IN TYPEOF(temp)) OR ('IFC2X2_FINAL.IFCSPACE' IN TYPEOF(temp))) )) = 0;
+	WR1 : SIZEOF (QUERY (temp <* SELF\IfcGroup.IsGroupedBy.RelatedObjects |  NOT(('IFC2X3.IFCZONE' IN TYPEOF(temp)) OR ('IFC2X3.IFCSPACE' IN TYPEOF(temp))) )) = 0;
 END_ENTITY;
 
 FUNCTION IfcAddToBeginOfList
 	(AScalar : GENERIC;
-     AList   : LIST OF GENERIC)
-	: LIST[1:?] OF GENERIC;
-  
-    LOCAL
-      Result : LIST OF GENERIC := [];
-    END_LOCAL;
+       AList   : LIST OF GENERIC:AL)
+	: LIST[1:?] OF GENERIC:AL;
+    
+      LOCAL
+        Result : LIST OF GENERIC:AL := [];
+      END_LOCAL;
   
     IF NOT(EXISTS(AScalar)) THEN
       Result := AList;
@@ -7899,7 +8392,7 @@ FUNCTION IfcBuildAxes
   END_LOCAL;
     D1 := NVL(IfcNormalise(Axis), IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcDirection([0.0,0.0,1.0]));
     D2 := IfcFirstProjAxis(D1, RefDirection);
-    RETURN ([D2, IfcNormalise(IfcCrossProduct(D1,D2)).Orientation, D1]);
+    RETURN ([D2, IfcNormalise(IfcCrossProduct(D1,D2))\IfcVector.Orientation, D1]);
 END_FUNCTION;
 
 FUNCTION IfcCorrectDimensions
@@ -8058,20 +8551,70 @@ FUNCTION IfcCorrectDimensions
   END_CASE;
 END_FUNCTION;
 
+FUNCTION IfcCorrectFillAreaStyle
+	(Styles : SET[1:?] OF IfcFillStyleSelect)
+	: LOGICAL;
+  
+  LOCAL
+     Hatching : INTEGER := 0;
+     Tiles    : INTEGER := 0;
+     Colour   : INTEGER := 0;
+     External : INTEGER := 0;
+  END_LOCAL;
+  
+  
+  External := SIZEOF(QUERY(Style <* Styles |
+    'IFC2X3.IFCEXTERNALLYDEFINEDHATCHSTYLE' IN
+     TYPEOF(Style)));
+  
+  Hatching  := SIZEOF(QUERY(Style <* Styles |
+    'IFC2X3.IFCFILLAREASTYLEHATCHING' IN
+     TYPEOF(Style)));
+  
+  Tiles     := SIZEOF(QUERY(Style <* Styles |
+    'IFC2X3.IFCFILLAREASTYLETILES' IN
+     TYPEOF(Style)));
+  
+  Colour    := SIZEOF(QUERY(Style <* Styles |
+    'IFC2X3.IFCCOLOUR' IN
+     TYPEOF(Style)));
+  
+  
+  IF (External > 1) THEN
+    RETURN (FALSE);
+  END_IF;
+  
+  
+  IF ((External = 1) AND ((Hatching > 0) OR (Tiles > 0) OR (Colour > 0))) THEN
+    RETURN (FALSE);
+  END_IF;
+  
+  
+  IF (Colour > 1) THEN
+    RETURN (FALSE);
+  END_IF;
+  
+  IF ((Hatching > 0) AND (Tiles >0)) THEN
+    RETURN (FALSE);
+  END_IF;
+  
+  RETURN(TRUE);
+END_FUNCTION;
+
 FUNCTION IfcCorrectLocalPlacement
 	(AxisPlacement:IfcAxis2Placement; 
      RelPlacement : IfcObjectPlacement)
 	: LOGICAL;
   
     IF (EXISTS(RelPlacement)) THEN
-      IF ('IFC2X2_FINAL.IFCGRIDPLACEMENT' IN TYPEOF(RelPlacement)) THEN
+      IF ('IFC2X3.IFCGRIDPLACEMENT' IN TYPEOF(RelPlacement)) THEN
         RETURN(?);
       END_IF;
-      IF ('IFC2X2_FINAL.IFCLOCALPLACEMENT' IN TYPEOF(RelPlacement)) THEN
-        IF ('IFC2X2_FINAL.IFCAXIS2PLACEMENT2D' IN TYPEOF(AxisPlacement)) THEN
+      IF ('IFC2X3.IFCLOCALPLACEMENT' IN TYPEOF(RelPlacement)) THEN
+        IF ('IFC2X3.IFCAXIS2PLACEMENT2D' IN TYPEOF(AxisPlacement)) THEN
           RETURN(TRUE);
         END_IF;
-        IF ('IFC2X2_FINAL.IFCAXIS2PLACEMENT3D' IN TYPEOF(AxisPlacement)) THEN
+        IF ('IFC2X3.IFCAXIS2PLACEMENT3D' IN TYPEOF(AxisPlacement)) THEN
           IF (RelPlacement.RelativePlacement.Dim = 3) THEN
             RETURN(TRUE);
           ELSE
@@ -8086,56 +8629,84 @@ FUNCTION IfcCorrectLocalPlacement
 END_FUNCTION;
 
 FUNCTION IfcCorrectObjectAssignment
-	(Constraint: IfcObjectTypeEnum; Objects : SET[1:?] OF IfcObject)
+	(Constraint: IfcObjectTypeEnum; Objects : SET[1:?] OF IfcObjectDefinition)
 	: LOGICAL;
     
   LOCAL
     Count : INTEGER := 0;
   END_LOCAL;
   
-    IF NOT(EXISTS(Constraint)) THEN 
-      RETURN(?);
-    END_IF;
+      IF NOT(EXISTS(Constraint)) THEN 
+        RETURN(TRUE);
+      END_IF;
+    
+      CASE Constraint OF
+        IfcObjectTypeEnum.NOTDEFINED : RETURN(TRUE);
+        IfcObjectTypeEnum.PRODUCT :
+          BEGIN
+            Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X3.IFCPRODUCT' IN TYPEOF(temp))));
+            RETURN(Count = 0);
+          END;
+        IfcObjectTypeEnum.PROCESS :
+          BEGIN
+            Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X3.IFCPROCESS' IN TYPEOF(temp))));
+            RETURN(Count = 0);
+          END;
+        IfcObjectTypeEnum.CONTROL :
+          BEGIN
+            Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X3.IFCCONTROL' IN TYPEOF(temp))));
+            RETURN(Count = 0);
+          END;
+        IfcObjectTypeEnum.RESOURCE :
+          BEGIN
+            Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X3.IFCRESOURCE' IN TYPEOF(temp))));
+            RETURN(Count = 0);
+          END;
+        IfcObjectTypeEnum.ACTOR :
+          BEGIN
+            Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X3.IFCACTOR' IN TYPEOF(temp))));
+            RETURN(Count = 0);
+          END;
+        IfcObjectTypeEnum.GROUP :
+          BEGIN
+            Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X3.IFCGROUP' IN TYPEOF(temp))));
+            RETURN(Count = 0);
+          END;
+        IfcObjectTypeEnum.PROJECT :
+          BEGIN
+            Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X3.IFCPROJECT' IN TYPEOF(temp))));
+            RETURN(Count = 0);
+          END;
+        OTHERWISE : RETURN(?);
+      END_CASE;
+END_FUNCTION;
+
+FUNCTION IfcCorrectUnitAssignment
+	(Units : SET [1:?] OF IfcUnit)
+	: LOGICAL;
   
-    CASE Constraint OF
-      IfcObjectTypeEnum.NOTDEFINED : RETURN(TRUE);
-      IfcObjectTypeEnum.PRODUCT :
-        BEGIN
-          Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X2_FINAL.IFCPRODUCT' IN TYPEOF(temp))));
-          RETURN(Count = 0);
-        END;
-      IfcObjectTypeEnum.PROCESS :
-        BEGIN
-          Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X2_FINAL.IFCPROCESS' IN TYPEOF(temp))));
-          RETURN(Count = 0);
-        END;
-      IfcObjectTypeEnum.CONTROL :
-        BEGIN
-          Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X2_FINAL.IFCCONTROL' IN TYPEOF(temp))));
-          RETURN(Count = 0);
-        END;
-      IfcObjectTypeEnum.RESOURCE :
-        BEGIN
-          Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X2_FINAL.IFCRESOURCE' IN TYPEOF(temp))));
-          RETURN(Count = 0);
-        END;
-      IfcObjectTypeEnum.ACTOR :
-        BEGIN
-          Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X2_FINAL.IFCACTOR' IN TYPEOF(temp))));
-          RETURN(Count = 0);
-        END;
-      IfcObjectTypeEnum.GROUP :
-        BEGIN
-          Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X2_FINAL.IFCGROUP' IN TYPEOF(temp))));
-          RETURN(Count = 0);
-        END;
-      IfcObjectTypeEnum.PROJECT :
-        BEGIN
-          Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X2_FINAL.IFCPROJECT' IN TYPEOF(temp))));
-          RETURN(Count = 0);
-        END;
-      OTHERWISE : RETURN(?);
-    END_CASE;
+    LOCAL
+      NamedUnitNumber    : INTEGER := 0;
+      DerivedUnitNumber  : INTEGER := 0;
+      MonetaryUnitNumber : INTEGER := 0;
+      NamedUnitNames     : SET OF IfcUnitEnum := [];
+      DerivedUnitNames   : SET OF IfcDerivedUnitEnum := [];
+    END_LOCAL;
+  
+    NamedUnitNumber    := SIZEOF(QUERY(temp <* Units | ('IFC2X3.IFCNAMEDUNIT' IN TYPEOF(temp)) AND NOT(temp\IfcNamedUnit.UnitType = IfcUnitEnum.USERDEFINED)));
+    DerivedUnitNumber  := SIZEOF(QUERY(temp <* Units | ('IFC2X3.IFCDERIVEDUNIT' IN TYPEOF(temp)) AND NOT(temp\IfcDerivedUnit.UnitType = IfcDerivedUnitEnum.USERDEFINED)));
+    MonetaryUnitNumber := SIZEOF(QUERY(temp <* Units |  'IFC2X3.IFCMONETARYUNIT' IN TYPEOF(temp)));
+  
+    REPEAT i := 1 TO SIZEOF(Units);
+      IF (('IFC2X3.IFCNAMEDUNIT' IN TYPEOF(Units[i])) AND NOT(Units[i]\IfcNamedUnit.UnitType = IfcUnitEnum.USERDEFINED)) THEN
+          NamedUnitNames := NamedUnitNames + Units[i]\IfcNamedUnit.UnitType;
+      END_IF;
+      IF (('IFC2X3.IFCDERIVEDUNIT' IN TYPEOF(Units[i])) AND NOT(Units[i]\IfcDerivedUnit.UnitType = IfcDerivedUnitEnum.USERDEFINED)) THEN
+          DerivedUnitNames := DerivedUnitNames + Units[i]\IfcDerivedUnit.UnitType;
+      END_IF;
+    END_REPEAT;
+  
+    RETURN((SIZEOF(NamedUnitNames) = NamedUnitNumber) AND (SIZEOF(DerivedUnitNames) = DerivedUnitNumber) AND (MonetaryUnitNumber <= 1));
 END_FUNCTION;
 
 FUNCTION IfcCrossProduct
@@ -8174,28 +8745,28 @@ FUNCTION IfcCurveDim
 	(Curve : IfcCurve)
 	: IfcDimensionCount;
   
-    IF ('IFC2X2_FINAL.IFCLINE' IN TYPEOF(Curve))
-      THEN RETURN(Curve.Pnt.Dim);
+    IF ('IFC2X3.IFCLINE' IN TYPEOF(Curve))
+      THEN RETURN(Curve\IfcLine.Pnt.Dim);
     END_IF;
-    IF ('IFC2X2_FINAL.IFCCONIC' IN TYPEOF(Curve))
-      THEN RETURN(Curve.Position.Dim);
+    IF ('IFC2X3.IFCCONIC' IN TYPEOF(Curve))
+      THEN RETURN(Curve\IfcConic.Position.Dim);
     END_IF;
-    IF ('IFC2X2_FINAL.IFCPOLYLINE' IN TYPEOF(Curve))
-      THEN RETURN(Curve.Points[1].Dim);
+    IF ('IFC2X3.IFCPOLYLINE' IN TYPEOF(Curve))
+      THEN RETURN(Curve\IfcPolyline.Points[1].Dim);
     END_IF;
-    IF ('IFC2X2_FINAL.IFCTRIMMEDCURVE' IN TYPEOF(Curve))
-      THEN RETURN(IfcCurveDim(Curve.BasisCurve));
+    IF ('IFC2X3.IFCTRIMMEDCURVE' IN TYPEOF(Curve))
+      THEN RETURN(IfcCurveDim(Curve\IfcTrimmedCurve.BasisCurve));
     END_IF;
-    IF ('IFC2X2_FINAL.IFCCOMPOSITECURVE' IN TYPEOF(Curve))
-      THEN RETURN(Curve.Segments[1].Dim);
+    IF ('IFC2X3.IFCCOMPOSITECURVE' IN TYPEOF(Curve))
+      THEN RETURN(Curve\IfcCompositeCurve.Segments[1].Dim);
     END_IF;
-    IF ('IFC2X2_FINAL.IFCBSPLINECURVE' IN TYPEOF(Curve))
-      THEN RETURN(Curve.ControlPointsList[1].Dim);
+    IF ('IFC2X3.IFCBSPLINECURVE' IN TYPEOF(Curve))
+      THEN RETURN(Curve\IfcBSplineCurve.ControlPointsList[1].Dim);
     END_IF;
-    IF ('IFC2X2_FINAL.IFCOFFSETCURVE2D' IN TYPEOF(Curve))
+    IF ('IFC2X3.IFCOFFSETCURVE2D' IN TYPEOF(Curve))
       THEN RETURN(2); 
     END_IF;
-    IF ('IFC2X2_FINAL.IFCOFFSETCURVE3D' IN TYPEOF(Curve))
+    IF ('IFC2X3.IFCOFFSETCURVE3D' IN TYPEOF(Curve))
       THEN RETURN(3);
     END_IF;
   RETURN (?);
@@ -8218,41 +8789,36 @@ FUNCTION IfcCurveWeightsPositive
 END_FUNCTION;
 
 FUNCTION IfcDeriveDimensionalExponents
-	(x : IfcUnit)
+	(UnitElements : SET [1:?] Of IfcDerivedUnitElement)
 	: IfcDimensionalExponents;  
-    LOCAL
+      LOCAL
       Result : IfcDimensionalExponents :=
-               IfcDimensionalExponents(0, 0, 0, 0, 0, 0, 0);  
-    END_LOCAL;
-    IF 'IFC2X2_FINAL.IFCDERIVEDUNIT' IN TYPEOF(x) THEN
-      REPEAT i := LOINDEX(x.Elements) TO HIINDEX(x.Elements);
-        Result.LengthExponent :=        Result.LengthExponent +
-          (x.Elements[i].Exponent *
-           x.Elements[i].Unit.Dimensions.LengthExponent);
-        Result.MassExponent :=        Result.MassExponent  +
-          (x.Elements[i].Exponent *
-           x.Elements[i].Unit.Dimensions.MassExponent);
-        Result.TimeExponent :=        Result.TimeExponent +
-          (x.Elements[i].Exponent *
-           x.Elements[i].Unit.Dimensions.TimeExponent);
-        Result.ElectricCurrentExponent :=        Result.ElectricCurrentExponent +
-          (x.Elements[i].Exponent *
-           x.Elements[i].Unit.Dimensions.ElectricCurrentExponent);
-        Result.ThermodynamicTemperatureExponent :=
-          Result.ThermodynamicTemperatureExponent +
-          (x.Elements[i].Exponent *
-           x.Elements[i].Unit.Dimensions.ThermodynamicTemperatureExponent);
-        Result.AmountOfSubstanceExponent :=
-          Result.AmountOfSubstanceExponent +        (x.Elements[i].Exponent *
-           x.Elements[i].Unit.Dimensions.AmountOfSubstanceExponent);
-        Result.LuminousIntensityExponent :=
-          Result.LuminousIntensityExponent +        (x.Elements[i].Exponent *
-           x.Elements[i].Unit.Dimensions.LuminousIntensityExponent);
+              IfcDimensionalExponents(0, 0, 0, 0, 0, 0, 0);  
+      END_LOCAL;
+      REPEAT i := LOINDEX(UnitElements) TO HIINDEX(UnitElements);
+          Result.LengthExponent := Result.LengthExponent +
+            (UnitElements[i].Exponent *
+             UnitElements[i].Unit.Dimensions.LengthExponent);
+          Result.MassExponent := Result.MassExponent  +
+            (UnitElements[i].Exponent *
+             UnitElements[i].Unit.Dimensions.MassExponent);
+          Result.TimeExponent := Result.TimeExponent +
+            (UnitElements[i].Exponent *
+             UnitElements[i].Unit.Dimensions.TimeExponent);
+          Result.ElectricCurrentExponent := Result.ElectricCurrentExponent +
+            (UnitElements[i].Exponent *
+             UnitElements[i].Unit.Dimensions.ElectricCurrentExponent);
+          Result.ThermodynamicTemperatureExponent := Result.ThermodynamicTemperatureExponent +
+            (UnitElements[i].Exponent *
+             UnitElements[i].Unit.Dimensions.ThermodynamicTemperatureExponent);
+          Result.AmountOfSubstanceExponent := Result.AmountOfSubstanceExponent +
+            (UnitElements[i].Exponent *
+             UnitElements[i].Unit.Dimensions.AmountOfSubstanceExponent);
+          Result.LuminousIntensityExponent := Result.LuminousIntensityExponent +
+            (UnitElements[i].Exponent *
+             UnitElements[i].Unit.Dimensions.LuminousIntensityExponent);
       END_REPEAT;  
-    ELSE 
-      Result := x.Dimensions;  
-    END_IF;  
-  RETURN (Result);
+      RETURN (Result);
 END_FUNCTION;
 
 FUNCTION IfcDimensionsForSiUnit
@@ -8454,42 +9020,6 @@ FUNCTION IfcMlsTotalThickness
     RETURN (Max);
 END_FUNCTION;
 
-FUNCTION IfcNoOfLayers
-	(Element : IfcElement )
-	: INTEGER;
-      
-      LOCAL
-        Association : BAG OF IfcRelAssociates := [];
-        MaterialAssociation : SET OF IfcRelAssociatesMaterial := [];
-      END_LOCAL;
-      
-      Association := USEDIN(Element, 'IFC2X2_FINAL.IFCRELASSOCIATES.RELATEDOBJECTS');
-   
-      IF SIZEOF (Association) > 0 THEN
-        REPEAT i := 1 TO HIINDEX(Association);
-          IF ('IFC2X2_FINAL.IFCRELASSOCIATESMATERIAL' IN TYPEOF(Association[i])) THEN 
-            MaterialAssociation := MaterialAssociation + Association[i];
-          END_IF;
-        END_REPEAT;
-      END_IF;
-      
-      IF (SIZEOF(MaterialAssociation) <> 1) THEN
-        RETURN (?);
-      ELSE
-        IF 'IFC2X2_FINAL.IFCMATERIAL' IN TYPEOF(MaterialAssociation[1].RelatingMaterial) THEN
-           RETURN (1);
-        END_IF;
-        IF 'IFC2X2_FINAL.IFCMATERIALLAYERSETUSAGE' IN TYPEOF(MaterialAssociation[1].RelatingMaterial) THEN
-           RETURN (SIZEOF(MaterialAssociation[1].RelatingMaterial.ForLayerSet.MaterialLayers));
-        END_IF;
-        IF 'IFC2X2_FINAL.IFCMATERIALLIST' IN TYPEOF(MaterialAssociation[1].RelatingMaterial) THEN
-           RETURN (?);
-        END_IF;
-      END_IF;
-    
-      RETURN (?);
-END_FUNCTION;
-
 FUNCTION IfcNormalise
 	(Arg : IfcVectorOrDirection)
 	: IfcVectorOrDirection;
@@ -8509,10 +9039,11 @@ FUNCTION IfcNormalise
       RETURN (?);
     ELSE
       Ndim := Arg.Dim;
-      IF 'IFC2X2_FINAL.IFCVECTOR' IN TYPEOF(Arg) THEN
+      IF 'IFC2X3.IFCVECTOR' IN TYPEOF(Arg) THEN
         BEGIN
-          Vec := Arg;
-          V := Arg.Orientation;
+  	V.DirectionRatios := Arg\IfcVector.Orientation.DirectionRatios;
+          Vec.Magnitude := Arg\IfcVector.Magnitude;
+  	Vec.Orientation := V;
           IF Arg.Magnitude = 0.0 THEN
             RETURN(?);
           ELSE
@@ -8520,7 +9051,7 @@ FUNCTION IfcNormalise
           END_IF;
         END;
       ELSE
-        V := Arg;
+        V.DirectionRatios := Arg.DirectionRatios;
       END_IF;
       Mag := 0.0;
         REPEAT i := 1 TO Ndim;
@@ -8531,7 +9062,7 @@ FUNCTION IfcNormalise
         REPEAT i := 1 TO Ndim;
           V.DirectionRatios[i] := V.DirectionRatios[i]/Mag;
         END_REPEAT;
-        IF 'IFC2X2_FINAL.IFCVECTOR' IN TYPEOF(arg) THEN
+        IF 'IFC2X3.IFCVECTOR' IN TYPEOF(arg) THEN
           Vec.Orientation := V;
           Result := Vec;
         ELSE
@@ -8585,52 +9116,79 @@ END_FUNCTION;
 FUNCTION IfcSameCartesianPoint
 	(cp1, cp2 : IfcCartesianPoint; Epsilon : REAL)
 	: LOGICAL;
+    
+    LOCAL
+      cp1x : REAL := cp1.Coordinates[1];
+      cp1y : REAL := cp1.Coordinates[2];
+      cp1z : REAL := 0;
+      cp2x : REAL := cp2.Coordinates[1];
+      cp2y : REAL := cp2.Coordinates[2];
+      cp2z : REAL := 0;
+    END_LOCAL;
   
-    RETURN (IfcSameValue(cp1.Coordinates[1],cp2.Coordinates[1],Epsilon) AND
-            IfcSameValue(cp1.Coordinates[2],cp2.Coordinates[2],Epsilon) AND
-            IfcSameValue(NVL(cp1.Coordinates[3],0.0),NVL(cp2.Coordinates[3],0.0),Epsilon));
+    IF (SIZEOF(cp1.Coordinates) > 2) THEN
+      cp1z := cp1.Coordinates[3];
+    END_IF;
+  
+    IF (SIZEOF(cp2.Coordinates) > 2) THEN
+      cp2z := cp2.Coordinates[3];
+    END_IF;
+  
+    RETURN (IfcSameValue(cp1x,cp2x,Epsilon) AND
+            IfcSameValue(cp1y,cp2y,Epsilon) AND
+            IfcSameValue(cp1z,cp2z,Epsilon));
 END_FUNCTION;
 
 FUNCTION IfcSameDirection
 	(dir1, dir2 : IfcDirection; Epsilon : REAL)
 	: LOGICAL;
+    LOCAL
+      dir1x : REAL := dir1.DirectionRatios[1];
+      dir1y : REAL := dir1.DirectionRatios[2];
+      dir1z : REAL := 0;
+      dir2x : REAL := dir2.DirectionRatios[1];
+      dir2y : REAL := dir2.DirectionRatios[2];
+      dir2z : REAL := 0;
+    END_LOCAL;
   
-    RETURN (IfcSameValue(dir1.DirectionRatios[1],dir2.DirectionRatios[1],Epsilon) AND
-            IfcSameValue(dir1.DirectionRatios[2],dir2.DirectionRatios[2],Epsilon) AND
-            IfcSameValue(NVL(dir1.DirectionRatios[3],0.0),NVL(dir2.DirectionRatios[3],0.0),Epsilon));
+    IF (SIZEOF(dir1.DirectionRatios) > 2) THEN
+      dir1z := dir1.DirectionRatios[3];
+    END_IF;
+  
+    IF (SIZEOF(dir2.DirectionRatios) > 2) THEN
+      dir2z := dir2.DirectionRatios[3];
+    END_IF;
+    
+    RETURN (IfcSameValue(dir1x,dir2x,Epsilon) AND
+            IfcSameValue(dir1y,dir2y,Epsilon) AND
+            IfcSameValue(dir1z,dir2z,Epsilon));
 END_FUNCTION;
 
 FUNCTION IfcSameValidPrecision
 	(Epsilon1, Epsilon2 : REAL)
 	: LOGICAL;
-  LOCAL
-    ValidEps1, ValidEps2 : REAL;
-    DefaultEps           : REAL := 0.00000001;
-    DerivationOfEps      : REAL := 1.001;
-    UpperEps             : REAL := 1.0;
-  END_LOCAL;
-  
-  
-  
-  
-  
-  
-    ValidEps1 := NVL(Epsilon1, DefaultEps);
-    ValidEps2 := NVL(Epsilon2, DefaultEps);
-    RETURN ((0.0 < ValidEps1) AND (ValidEps1 <= DerivationOfEps * ValidEps2) AND (ValidEps2 <= DerivationOfEps * ValidEps1) AND (ValidEps2 < UpperEps));
+    LOCAL
+      ValidEps1, ValidEps2 : REAL;
+      DefaultEps           : REAL := 0.000001;
+      DerivationOfEps      : REAL := 1.001;
+      UpperEps             : REAL := 1.0;
+    END_LOCAL;
+    
+      ValidEps1 := NVL(Epsilon1, DefaultEps);
+      ValidEps2 := NVL(Epsilon2, DefaultEps);
+      RETURN ((0.0 < ValidEps1) AND (ValidEps1 <= (DerivationOfEps * ValidEps2)) AND 
+              (ValidEps2 <= (DerivationOfEps * ValidEps1)) AND (ValidEps2 < UpperEps));
 END_FUNCTION;
 
 FUNCTION IfcSameValue
 	(Value1, Value2 : REAL; Epsilon : REAL)
 	: LOGICAL;
-  LOCAL
-    ValidEps : REAL;
-  END_LOCAL;
-  
-  
-  
-  
-    ValidEps := NVL(Epsilon, 0.00000001);
+    LOCAL
+      ValidEps    : REAL;
+      DefaultEps  : REAL := 0.000001;
+    END_LOCAL;
+    
+    ValidEps := NVL(Epsilon, DefaultEps);
     RETURN ((Value1 + ValidEps > Value2) AND (Value1 < Value2 + ValidEps));
 END_FUNCTION;
 
@@ -8646,9 +9204,9 @@ FUNCTION IfcScalarTimesVector
     IF NOT EXISTS (Scalar) OR NOT EXISTS (Vec) THEN
       RETURN (?) ;
     ELSE
-      IF 'IFC2X2_FINAL.IFCVECTOR' IN TYPEOF (Vec) THEN
-        V := Vec.Orientation;
-        Mag := Scalar * Vec.Magnitude;
+      IF 'IFC2X3.IFCVECTOR' IN TYPEOF (Vec) THEN
+        V := Vec\IfcVector.Orientation;
+        Mag := Scalar * Vec\IfcVector.Magnitude;
       ELSE
         V := Vec;
         Mag := Scalar;
@@ -8697,26 +9255,39 @@ FUNCTION IfcShapeRepresentationTypes
       CASE RepType OF 
       'Curve2D' :
         BEGIN 
-          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X2_FINAL.IFCCURVE' IN TYPEOF(temp)) 
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCCURVE' IN TYPEOF(temp)) 
                    AND (temp.Dim = 2)));
+        END;
+      'Annotation2D' :
+        BEGIN
+          Count := SIZEOF(QUERY(temp <* Items | (
+                    SIZEOF(TYPEOF(temp) * [
+                     'IFC2X3.IFCPOINT',
+                     'IFC2X3.IFCCURVE',
+                     'IFC2X3.IFCGEOMETRICCURVESET',
+                     'IFC2X3.IFCANNOTATIONFILLAREA',
+                     'IFC2X3.IFCDEFINEDSYMBOL',
+                     'IFC2X3.IFCTEXTLITERAL',
+                     'IFC2X3.IFCDRAUGHTINGCALLOUT']) = 1)
+                   ));
         END;
       'GeometricSet' : 
         BEGIN 
-          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X2_FINAL.IFCGEOMETRICSET' IN TYPEOF(temp))
-                   OR ('IFC2X2_FINAL.IFCPOINT' IN TYPEOF(temp))
-                   OR ('IFC2X2_FINAL.IFCCURVE' IN TYPEOF(temp))
-                   OR ('IFC2X2_FINAL.IFCSURFACE' IN TYPEOF(temp))));
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCGEOMETRICSET' IN TYPEOF(temp))
+                   OR ('IFC2X3.IFCPOINT' IN TYPEOF(temp))
+                   OR ('IFC2X3.IFCCURVE' IN TYPEOF(temp))
+                   OR ('IFC2X3.IFCSURFACE' IN TYPEOF(temp))));
         END;
       'GeometricCurveSet' :
         BEGIN
-          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X2_FINAL.IFCGEOMETRICCURVESET' IN TYPEOF(temp))
-                   OR ('IFC2X2_FINAL.IFCGEOMETRICSET' IN TYPEOF(temp))
-                   OR ('IFC2X2_FINAL.IFCPOINT' IN TYPEOF(temp))
-                   OR ('IFC2X2_FINAL.IFCCURVE' IN TYPEOF(temp))));
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCGEOMETRICCURVESET' IN TYPEOF(temp))
+                   OR ('IFC2X3.IFCGEOMETRICSET' IN TYPEOF(temp))
+                   OR ('IFC2X3.IFCPOINT' IN TYPEOF(temp))
+                   OR ('IFC2X3.IFCCURVE' IN TYPEOF(temp))));
            REPEAT i:=1 TO HIINDEX(Items);  
-             IF ('IFC2X2_FINAL.IFCGEOMETRICSET' IN TYPEOF(Items[i]))
+             IF ('IFC2X3.IFCGEOMETRICSET' IN TYPEOF(Items[i]))
              THEN
-               IF (SIZEOF(QUERY(temp <* Items[i]\IfcGeometricSet.Elements | 'IFC2X2_FINAL.IFCSURFACE' IN TYPEOF(temp))) > 0)
+               IF (SIZEOF(QUERY(temp <* Items[i]\IfcGeometricSet.Elements | 'IFC2X3.IFCSURFACE' IN TYPEOF(temp))) > 0)
                THEN
                  Count := Count - 1;
                END_IF;
@@ -8726,41 +9297,41 @@ FUNCTION IfcShapeRepresentationTypes
       'SurfaceModel' :
         BEGIN
           Count := SIZEOF(QUERY(temp <* Items | SIZEOF([
-                     'IFC2X2_FINAL.IFCSHELLBASEDSURFACEMODEL',
-                     'IFC2X2_FINAL.IFCFACEBASEDSURFACEMODEL',
-                     'IFC2X2_FINAL.IFCFACETEDBREP',
-                     'IFC2X2_FINAL.IFCFACETEDBREPWITHVOIDS'] * TYPEOF(temp)) >= 1
+                     'IFC2X3.IFCSHELLBASEDSURFACEMODEL',
+                     'IFC2X3.IFCFACEBASEDSURFACEMODEL',
+                     'IFC2X3.IFCFACETEDBREP',
+                     'IFC2X3.IFCFACETEDBREPWITHVOIDS'] * TYPEOF(temp)) >= 1
                    ));      
         END;
       'SolidModel' :
         BEGIN
-          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X2_FINAL.IFCSOLIDMODEL' IN TYPEOF(temp))));            
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCSOLIDMODEL' IN TYPEOF(temp))));            
         END;
       'SweptSolid' :
         BEGIN
-          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X2_FINAL.IFCSWEPTAREASOLID' IN TYPEOF(temp))));            
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCSWEPTAREASOLID' IN TYPEOF(temp))));            
         END;
       'CSG' :
         BEGIN
-          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X2_FINAL.IFCBOOLEANRESULT' IN TYPEOF(temp))));            
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCBOOLEANRESULT' IN TYPEOF(temp))));            
         END;
       'Clipping' :
         BEGIN
-          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X2_FINAL.IFCBOOLEANCLIPPINGRESULT' IN TYPEOF(temp))));            
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCBOOLEANCLIPPINGRESULT' IN TYPEOF(temp))));            
         END;
       'AdvancedSweptSolid' :
         BEGIN
-          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X2_FINAL.IFCSURFACECURVESWEPTAREASOLID' IN TYPEOF(temp))
-                   OR ('IFC2X2_FINAL.IFCSWEPTDISKSOLID' IN TYPEOF(temp))));      
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCSURFACECURVESWEPTAREASOLID' IN TYPEOF(temp))
+                   OR ('IFC2X3.IFCSWEPTDISKSOLID' IN TYPEOF(temp))));      
         END;
       'Brep' :
         BEGIN
-          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X2_FINAL.IFCFACETEDBREP' IN TYPEOF(temp))
-                   OR ('IFC2X2_FINAL.IFCFACETEDBREPWITHVOIDS' IN TYPEOF(temp))));      
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCFACETEDBREP' IN TYPEOF(temp))
+                   OR ('IFC2X3.IFCFACETEDBREPWITHVOIDS' IN TYPEOF(temp))));      
         END;
       'BoundingBox' :
         BEGIN
-          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X2_FINAL.IFCBOUNDINGBOX' IN TYPEOF(temp))));
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCBOUNDINGBOX' IN TYPEOF(temp))));
           IF (SIZEOF(Items) > 1)
           THEN
             Count := 0;
@@ -8768,15 +9339,11 @@ FUNCTION IfcShapeRepresentationTypes
         END;
       'SectionedSpine' :
         BEGIN
-          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X2_FINAL.IFCSECTIONEDSPINE' IN TYPEOF(temp))));      
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCSECTIONEDSPINE' IN TYPEOF(temp))));      
         END;
       'MappedRepresentation' :
         BEGIN
-          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X2_FINAL.IFCMAPPEDITEM' IN TYPEOF(temp)))); 
-          IF (SIZEOF(Items) > 1)
-          THEN
-            Count := 0;
-          END_IF;   
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCMAPPEDITEM' IN TYPEOF(temp))));  
         END;
        OTHERWISE : RETURN(?);
       END_CASE;
@@ -8795,28 +9362,28 @@ FUNCTION IfcTopologyRepresentationTypes
       'Vertex' :
         BEGIN 
           Count := SIZEOF(QUERY(temp <* Items | 
-                    ('IFC2X2_FINAL.IFCVERTEX' IN TYPEOF(temp))));
+                    ('IFC2X3.IFCVERTEX' IN TYPEOF(temp))));
         END;
       'Edge' : 
         BEGIN 
           Count := SIZEOF(QUERY(temp <* Items | 
-                    ('IFC2X2_FINAL.IFCEDGE' IN TYPEOF(temp))));
+                    ('IFC2X3.IFCEDGE' IN TYPEOF(temp))));
         END;
       'Path' : 
         BEGIN 
           Count := SIZEOF(QUERY(temp <* Items | 
-                    ('IFC2X2_FINAL.IFCPATH' IN TYPEOF(temp))));
+                    ('IFC2X3.IFCPATH' IN TYPEOF(temp))));
         END;
       'Face' : 
         BEGIN 
           Count := SIZEOF(QUERY(temp <* Items | 
-                    ('IFC2X2_FINAL.IFCFACE' IN TYPEOF(temp))));
+                    ('IFC2X3.IFCFACE' IN TYPEOF(temp))));
         END;
       'Shell' :
         BEGIN
           Count := SIZEOF(QUERY(temp <* Items | 
-                    ('IFC2X2_FINAL.IFCOPENSHELL' IN TYPEOF(temp))
-                      OR ('IFC2X2_FINAL.IFCCLOSEDSHELL' IN TYPEOF(temp))));
+                    ('IFC2X3.IFCOPENSHELL' IN TYPEOF(temp))
+                      OR ('IFC2X3.IFCCLOSEDSHELL' IN TYPEOF(temp))));
         END;
       'Undefined': RETURN(TRUE);
        OTHERWISE : RETURN(?);
@@ -8885,16 +9452,16 @@ FUNCTION IfcVectorDifference
       RETURN (?) ;
     ELSE
       BEGIN
-        IF 'IFC2X2_FINAL.IFCVECTOR' IN TYPEOF(Arg1) THEN
-          Mag1 := Arg1.Magnitude;
-          Vec1 := Arg1.Orientation;
+        IF 'IFC2X3.IFCVECTOR' IN TYPEOF(Arg1) THEN
+          Mag1 := Arg1\IfcVector.Magnitude;
+          Vec1 := Arg1\IfcVector.Orientation;
         ELSE
           Mag1 := 1.0;
           Vec1 := Arg1;
         END_IF;
-        IF 'IFC2X2_FINAL.IFCVECTOR' IN TYPEOF(Arg2) THEN
-          Mag2 := Arg2.Magnitude;
-          Vec2 := Arg2.Orientation;
+        IF 'IFC2X3.IFCVECTOR' IN TYPEOF(Arg2) THEN
+          Mag2 := Arg2\IfcVector.Magnitude;
+          Vec2 := Arg2\IfcVector.Orientation;
         ELSE
           Mag2 := 1.0;
           Vec2 := Arg2;
@@ -8903,16 +9470,13 @@ FUNCTION IfcVectorDifference
         Vec2 := IfcNormalise (Vec2);
         Ndim := SIZEOF(Vec1.DirectionRatios);
         Mag  := 0.0;
-        IF (Ndim = 2) THEN
-          Res := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcDirection([0.,0.]);
-        ELSE
-          Res := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcDirection([0.,0.,0.]);
-        END_IF;
-        Res.DirectionRatios := [0.0:Ndim];
+        Res  := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcDirection([0.0:Ndim]);
+  
         REPEAT i := 1 TO Ndim;
-          Res.DirectionRatios[i] := Mag1*Vec1.DirectionRatios[i] + Mag2*Vec2.DirectionRatios[i];
+          Res.DirectionRatios[i] := Mag1*Vec1.DirectionRatios[i] - Mag2*Vec2.DirectionRatios[i];
           Mag := Mag + (Res.DirectionRatios[i]*Res.DirectionRatios[i]);
         END_REPEAT;
+  
         IF (Mag > 0.0 ) THEN
           Result := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcVector( Res, SQRT(Mag));
         ELSE
@@ -8937,16 +9501,16 @@ FUNCTION IfcVectorSum
       RETURN (?) ;
     ELSE
       BEGIN
-        IF 'IFC2X2_FINAL.IFCVECTOR' IN TYPEOF(Arg1) THEN
-          Mag1 := Arg1.Magnitude;
-          Vec1 := Arg1.Orientation;
+        IF 'IFC2X3.IFCVECTOR' IN TYPEOF(Arg1) THEN
+          Mag1 := Arg1\IfcVector.Magnitude;
+          Vec1 := Arg1\IfcVector.Orientation;
         ELSE
           Mag1 := 1.0;
           Vec1 := Arg1;
         END_IF;
-        IF 'IFC2X2_FINAL.IFCVECTOR' IN TYPEOF(Arg2) THEN
-          Mag2 := Arg2.Magnitude;
-          Vec2 := Arg2.Orientation;
+        IF 'IFC2X3.IFCVECTOR' IN TYPEOF(Arg2) THEN
+          Mag2 := Arg2\IfcVector.Magnitude;
+          Vec2 := Arg2\IfcVector.Orientation;
         ELSE
           Mag2 := 1.0;
           Vec2 := Arg2;
@@ -8955,12 +9519,13 @@ FUNCTION IfcVectorSum
         Vec2 := IfcNormalise (Vec2);
         Ndim := SIZEOF(Vec1.DirectionRatios);
         Mag  := 0.0;
-        Res  := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcDirection([]);
+        Res  := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcDirection([0.0:Ndim]);
+  
         REPEAT i := 1 TO Ndim;
-          Res.DirectionRatios[i] := Mag1*Vec1.DirectionRatios[i] +
-                                       Mag2*Vec2.DirectionRatios[i];
+          Res.DirectionRatios[i] := Mag1*Vec1.DirectionRatios[i] + Mag2*Vec2.DirectionRatios[i];
           Mag := Mag + (Res.DirectionRatios[i]*Res.DirectionRatios[i]);
         END_REPEAT;
+  
         IF (Mag > 0.0 ) THEN
           Result := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcVector( Res, SQRT(Mag));
         ELSE
@@ -8970,33 +9535,6 @@ FUNCTION IfcVectorSum
     END_IF;
     RETURN (Result);
 END_FUNCTION;
-
-RULE IfcPlacementNotShared FOR 
-	(IfcObjectPlacement);
-      LOCAL
-    
-    IsPlacementShared : LOGICAL := FALSE;
-    
-  END_LOCAL;
-    
-  IF (SIZEOF(IfcObjectPlacement) > 0) THEN
-    
-    REPEAT i := LOINDEX(IfcObjectPlacement)   TO HIINDEX(IfcObjectPlacement);
-    
-      IF (SIZEOF(USEDIN(IfcObjectPlacement[i],   'IFC2X2_FINAL.IFCPRODUCT.OBJECTPLACEMENT')) > 1) THEN
-    
-        IsPlacementShared := TRUE;
-    
-      END_IF;
-    
-    END_REPEAT;
-    
-  END_IF;
-    
-
-    WHERE
-      WR1 : IsPlacementShared = FALSE;
-END_RULE;
 
 RULE IfcRepresentationContextSameWCS FOR 
 	(IfcGeometricRepresentationContext);
@@ -9013,6 +9551,9 @@ RULE IfcRepresentationContextSameWCS FOR
                         OR (NOT(IfcSameAxis2Placement(IfcGeometricRepresentationContext[1].WorldCoordinateSystem,
                                                       IfcGeometricRepresentationContext[i].WorldCoordinateSystem,
                                                       IfcGeometricRepresentationContext[1].Precision)));
+            IF (IsDifferent = TRUE) THEN
+              ESCAPE;
+            END_IF;
           END_IF;
         END_REPEAT;
       END_IF;
