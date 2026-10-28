@@ -36,7 +36,7 @@ namespace RevitIFCTools
       {
          "IFC2x2_add1",
          "IFC2X3_TC1",
-         "IFC4_ADD2",
+         "IFC4",
          "IFC4x3"
       };
 
@@ -199,7 +199,7 @@ namespace RevitIFCTools
             string fNameToProcess = Path.Combine(dirName, outFNameParts[0] + "_PredefPset.cs");
             if (File.Exists(fNameToProcess))
                File.Delete(fNameToProcess);
-            StreamWriter outF = new StreamWriter(fNameToProcess);
+            StreamWriter outF = new StreamWriter(fNameToProcess, false, ProcessPsetDefinition.GeneratedFileEncoding);
             // Group ID 1 and 2 are reserved
             int offset = 3;
             offset = WriteGeneratedCode(outF, procPsetDef, penumFileName, "Ifc", groupParamDict, offset);
@@ -208,14 +208,14 @@ namespace RevitIFCTools
             fNameToProcess = Path.Combine(dirName, outFNameParts[0] + "_PsetDef.cs");
             if (File.Exists(fNameToProcess))
                File.Delete(fNameToProcess);
-            outF = new StreamWriter(fNameToProcess);
+            outF = new StreamWriter(fNameToProcess, false, ProcessPsetDefinition.GeneratedFileEncoding);
             offset = WriteGeneratedCode(outF, procPsetDef, penumFileName, "Pset", groupParamDict, offset);
 
             // Do it for the predefined propserty sets
             fNameToProcess = Path.Combine(dirName, outFNameParts[0] + "_QsetDef.cs");
             if (File.Exists(fNameToProcess))
                File.Delete(fNameToProcess);
-            outF = new StreamWriter(fNameToProcess);
+            outF = new StreamWriter(fNameToProcess, false, ProcessPsetDefinition.GeneratedFileEncoding);
             offset = WriteGeneratedCode(outF, procPsetDef, penumFileName, "Qto", groupParamDict, offset);
 
             // Close the Enum files
@@ -490,7 +490,7 @@ namespace RevitIFCTools
 
                if (vspecPDef.IfcVersion.StartsWith("IFC2X2", StringComparison.CurrentCultureIgnoreCase))
                {
-                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x2 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersionAsString, \"" + psetName + "\"))");
                   outF.WriteLine("         {");
                   //foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
                   //{
@@ -507,7 +507,7 @@ namespace RevitIFCTools
                else if (vspecPDef.IfcVersion.StartsWith("IFC2X3", StringComparison.CurrentCultureIgnoreCase)
                   || vspecPDef.IfcVersion.Equals("IFC2X3_TC1", StringComparison.CurrentCultureIgnoreCase))
                {
-                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs2x3 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersionAsString, \"" + psetName + "\"))");
                   outF.WriteLine("         {");
                   if (varName.StartsWith("Qto", StringComparison.InvariantCultureIgnoreCase))
                   {
@@ -529,7 +529,7 @@ namespace RevitIFCTools
                }
                else if (vspecPDef.SchemaFileVersion.Equals("IFC4_ADD1", StringComparison.CurrentCultureIgnoreCase))
                {
-                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD1 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4_ADD1 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersionAsString, \"" + psetName + "\"))");
                   outF.WriteLine("         {");
                   //foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
                   //{
@@ -545,7 +545,7 @@ namespace RevitIFCTools
                }
                else if (vspecPDef.SchemaFileVersion.Equals("IFC4_ADD2", StringComparison.CurrentCultureIgnoreCase))
                {
-                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersionAsString, \"" + psetName + "\"))");
                   outF.WriteLine("         {");
                   //foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
                   //{
@@ -561,7 +561,7 @@ namespace RevitIFCTools
                }
                else if (vspecPDef.SchemaFileVersion.Equals("IFC4", StringComparison.CurrentCultureIgnoreCase))
                {
-                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersionAsString, \"" + psetName + "\"))");
                   outF.WriteLine("         {");
                   //foreach (string applEnt in vspecPDef.PropertySetDef.ApplicableClasses)
                   //{
@@ -580,7 +580,7 @@ namespace RevitIFCTools
 
 )
                {
-                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersion.ToString().ToUpper(), \"" + psetName + "\"))");
+                  outF.WriteLine("         if (ExporterCacheManager.ExportOptionsCache.ExportAs4x3 && certifiedEntityAndPsetList." + certificationCheckName + "(ExporterCacheManager.ExportOptionsCache.FileVersionAsString, \"" + psetName + "\"))");
                   outF.WriteLine("         {");
                }
                else
@@ -602,6 +602,10 @@ namespace RevitIFCTools
                      outF.WriteLine("            {0}.ObjectType = \"{1}\";", varName, vspecPDef.PropertySetDef.ApplicableType);
                   foreach (string predefinedType in vspecPDef.PropertySetDef.PredefinedTypes)
                      outF.WriteLine("            {0}.PredefinedTypes.Add(\"{1}\");", varName, predefinedType);
+
+                  string templateType = MapTemplateType(vspecPDef.PropertySetDef.TemplateType);
+                  if (templateType != null)
+                     outF.WriteLine("            {0}.TemplateType = PropertySetTemplateType.{1};", varName, templateType);
                }
 
                // Process each property
@@ -718,6 +722,33 @@ namespace RevitIFCTools
          }
 
          return psdFolders;
+      }
+
+      /// <summary>
+      /// Maps the schema's IfcPropertySetTemplate.TemplateType token onto the exporter's
+      /// PropertySetTemplateType member name, or null when the schema does not declare one
+      /// (IFC2x2 and IFC2X3, which have no IfcPropertySetTemplate).
+      /// </summary>
+      private string MapTemplateType(string templateType)
+      {
+         if (string.IsNullOrEmpty(templateType))
+            return null;
+
+         switch (templateType.Trim().ToUpperInvariant())
+         {
+            case "PSET_TYPEDRIVENONLY": return "PsetTypeDrivenOnly";
+            case "PSET_TYPEDRIVENOVERRIDE": return "PsetTypeDrivenOverride";
+            case "PSET_OCCURRENCEDRIVEN": return "PsetOccurrenceDriven";
+            case "PSET_PERFORMANCEDRIVEN": return "PsetPerformanceDriven";
+            case "PSET_MATERIALDRIVEN": return "PsetMaterialDriven";
+            case "PSET_PROFILEDRIVEN": return "PsetProfileDriven";
+            case "QTO_TYPEDRIVENONLY": return "QtoTypeDrivenOnly";
+            case "QTO_TYPEDRIVENOVERRIDE": return "QtoTypeDrivenOverride";
+            case "QTO_OCCURRENCEDRIVEN": return "QtoOccurrenceDriven";
+         }
+
+         logF.WriteLine("%Warning - Unrecognized template type: " + templateType);
+         return null;
       }
 
       private static int GetSchemaFolderSortIndex(string folderName)

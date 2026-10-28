@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.IO;
 using System.Xml.Linq;
@@ -70,6 +71,11 @@ namespace RevitIFCTools
       private const string PSET_XML_PATTERN = "Pset_*.xml";
       private const string QTO_HTM_PATTERN = "Qto_*.htm";
       private const string QTO_XML_PATTERN = "Qto_*.xml";
+
+      /// <summary>
+      /// The generated files are checked in with a byte-order mark, so keep writing one.
+      /// </summary>
+      public static readonly Encoding GeneratedFileEncoding = new UTF8Encoding(true);
       
       IDictionary<string, StreamWriter> enumFileDict;
       IDictionary<string, IList<string>> enumDict;
@@ -193,7 +199,7 @@ namespace RevitIFCTools
                                  Path.GetFileNameWithoutExtension(outputFile) + version + "Enum.cs");
             if (File.Exists(fileName))
                File.Delete(fileName);
-            fileToWrite = new StreamWriter(fileName);
+            fileToWrite = new StreamWriter(fileName, false, GeneratedFileEncoding);
             enumFileDict.Add(version, fileToWrite);
 
             fileToWrite.WriteLine("using System;");
@@ -953,6 +959,9 @@ namespace RevitIFCTools
 
          if (doc.Element(ns + psetOrQtoSet[ItemsInPsetQtoDefs.PropertySetOrQtoSetDef].ToString()).Attribute("ifdguid") != null)
             pset.IfdGuid = doc.Element(ns + psetOrQtoSet[ItemsInPsetQtoDefs.PropertySetOrQtoSetDef].ToString()).Attribute("ifdguid").Value;
+
+         if (doc.Element(ns + psetOrQtoSet[ItemsInPsetQtoDefs.PropertySetOrQtoSetDef].ToString()).Attribute("templatetype") != null)
+            pset.TemplateType = doc.Element(ns + psetOrQtoSet[ItemsInPsetQtoDefs.PropertySetOrQtoSetDef].ToString()).Attribute("templatetype").Value;
          // Get applicable classes
          IEnumerable<XElement> applicableClasses = from el in doc.Descendants(ns + "ClassName") select el;
          IList<string> applClassesList = new List<string>();
