@@ -15,6 +15,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 using UIFramework;
+using Autodesk.Revit.DB.ExternalData;
 
 namespace BIM.IFC.Export.UI
 {
@@ -553,12 +554,14 @@ namespace BIM.IFC.Export.UI
 
          NonBuiltInParametersCache = new();
 
-         FilteredElementCollector collectorParam = new FilteredElementCollector(IFCCommandOverrideApplication.TheDocument);
+         Document document = IFCCommandOverrideApplication.TheDocument;
+
+         FilteredElementCollector collectorParam = new FilteredElementCollector(document);
          FilteredElementCollector parameterFilter = collectorParam.OfClass(typeof(ParameterElement));
 
-         FilteredElementCollector collectorGlobalParam = new FilteredElementCollector(IFCCommandOverrideApplication.TheDocument);
+         FilteredElementCollector collectorGlobalParam = new FilteredElementCollector(document);
          FilteredElementCollector globalParameterFilter = collectorGlobalParam.OfClass(typeof(GlobalParameter));
-         if ((globalParameterFilter?.ToElementIds()?.Count ?? 0) > 0)
+         if (globalParameterFilter?.ToElementIds()?.Count is > 0)
             parameterFilter = parameterFilter.Excluding(globalParameterFilter.ToElementIds());
 
          foreach (var filteredElement in parameterFilter)
@@ -577,10 +580,16 @@ namespace BIM.IFC.Export.UI
                dataTypeName = LabelUtils.GetLabelForSpec(dataTypeId);
 
             ForgeTypeId groupTypeId = paramDefinition?.GetGroupTypeId();
-            if (groupTypeId?.Empty() ?? true)
-               continue;
+            string groupName = null;
+            if (parameterElement is ExtendedParameterElement extendedParameterElement)
+            {
+               groupName = document.GetElement(extendedParameterElement.LinkId)?.Name;
+            }
+            else if (groupTypeId != null)
+            {
+               groupName = LabelUtils.GetLabelForGroup(groupTypeId);
+            }
 
-            string groupName = LabelUtils.GetLabelForGroup(groupTypeId);
             if (string.IsNullOrEmpty(groupName))
                continue;
 
