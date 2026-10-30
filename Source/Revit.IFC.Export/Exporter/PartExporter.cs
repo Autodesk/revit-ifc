@@ -386,15 +386,21 @@ namespace Revit.IFC.Export.Exporter
                {
                   // This part needs explanation:
                   // The geometry of the Part is against the Project base, while the host element already contains all the IFC transforms relative to its container
-                  // To "correct" the placement so that the Part is correctly relative to the host, we need to inverse transform the Part to the host's placement 
-                  IFCAnyHandle hostHandle = ExporterCacheManager.ElementToHandleCache.Find(hostElement.Id);
-                  if (!IFCAnyHandleUtil.IsNullOrHasNoValue(hostHandle))
+                  // To "correct" the placement so that the Part is correctly relative to the host, we need to inverse transform the Part to the host's placement.
+                  // This is only done when the caller doesn't know the placement of the host: a caller that passes one in has a PlacementSetter
+                  // active for it, and that already makes ExporterIFC map the Part geometry into the host's coordinate system while the body is
+                  // written, so transforming the geometry here as well would apply the host placement a second time.
+                  if (IFCAnyHandleUtil.IsNullOrHasNoValue(originalPlacement))
                   {
-                     originalPlacement ??= IFCAnyHandleUtil.GetObjectPlacement(hostHandle);
-                     hostTrf = ExporterUtil.GetTransformFromLocalPlacementHnd(originalPlacement, true);
+                     IFCAnyHandle hostHandle = ExporterCacheManager.ElementToHandleCache.Find(hostElement.Id);
+                     if (!IFCAnyHandleUtil.IsNullOrHasNoValue(hostHandle))
+                     {
+                        originalPlacement = IFCAnyHandleUtil.GetObjectPlacement(hostHandle);
+                        hostTrf = ExporterUtil.GetTransformFromLocalPlacementHnd(originalPlacement, true);
 
-                     geometryElement = SolidMeshGeometryInfo.GetTransformedGeometry(geometryElement, hostTrf.Inverse,
-                        ExporterCacheManager.AllocatedGeometryObjectCache);
+                        geometryElement = SolidMeshGeometryInfo.GetTransformedGeometry(geometryElement, hostTrf.Inverse,
+                           ExporterCacheManager.AllocatedGeometryObjectCache);
+                     }
                   }
                   
                   // The host placement setter has registered the transform. Since the part geometry is transformed relative to the host, 

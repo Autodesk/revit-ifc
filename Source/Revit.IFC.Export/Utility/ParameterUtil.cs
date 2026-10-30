@@ -246,12 +246,18 @@ namespace Revit.IFC.Export.Utility
          return parameter != null ? (double?)propertyValue : null;
       }
 
-      public static double? GetDoubleValueFromElement(Element element, ForgeTypeId group, string propertyName)
+      /// <summary>
+      /// A special purpose function that specifically looks in the Geometry group type for a property.
+      /// </summary>
+      /// <param name="element">The element.</param>
+      /// <param name="propertyName">The name of the property.</param>
+      /// <returns>The value, if found, or null otherwise.</returns>
+      public static double? GetGeometryDoubleValueFromElement(Element element, string propertyName)
       {
          if (string.IsNullOrEmpty(propertyName) || element == null)
             return null;
 
-         EvaluatedParameter parameter = GetParameterFromNameAndGroup(element.Id, group, propertyName, element is ElementType);
+         EvaluatedParameter parameter = GetGeometryParameterFromName(element.Id, propertyName, element is ElementType);
          if (parameter == null)
             return null;
 
@@ -820,18 +826,17 @@ namespace Revit.IFC.Export.Utility
       }
 
       /// <summary>
-      /// Gets the parameter by name from an element for a specific parameter group.
+      /// Gets the parameter by name from an element, looking only in the Geometry parameter group.
       /// </summary>
       /// <param name="elementId">The element id.</param>
-      /// <param name="groupTypeId">The parameter group.</param>
       /// <param name="propertyName">The property name.</param>
-      /// <returns>The Parameter.</returns>
-      internal static EvaluatedParameter GetParameterFromNameAndGroup(ElementId elementId, ForgeTypeId groupTypeId, 
-         string propertyName, bool isType)
+      /// <param name="isType">True if the element is an element type.</param>
+      /// <returns>The parameter, or null if not found.</returns>
+      internal static EvaluatedParameter GetGeometryParameterFromName(ElementId elementId, string propertyName, bool isType)
       {
          // Should we use CanExportParameter here?
          ParameterElementCache combinedCache = GetCachedParametersForElement(elementId, isType);
-         combinedCache.TryGetValue(propertyName, groupTypeId.TypeId, out (EvaluatedParameter, ElementId) info);
+         combinedCache.TryGetValue(propertyName, GroupTypeId.Geometry, out (EvaluatedParameter, ElementId) info);
          return info.Item1;
       }
 

@@ -1407,19 +1407,24 @@ namespace Revit.IFC.Import.Data
       }
 
       /// <summary>
-      /// Extracts a zip file.
+      /// Extracts the IFC file contained in a zip file.
       /// </summary>
       /// <param name="archiveFilenameIn">The zip file.</param>
       /// <param name="password">The password. null if no password.</param>
       /// <param name="outFolder">The output folder.</param>
       /// <returns>The extracted file path.</returns>
+      /// <remarks>Entry names are supplied by whoever authored the archive, so each one is reduced to a bare
+      /// file name and the resulting path is re-checked against outFolder before anything is written.  Both
+      /// steps are needed: ".." segments and rooted entry names would otherwise escape outFolder.</remarks>
       static string ExtractZipFile(string archiveFilenameIn, string password, string outFolder)
       {
+         string outFolderFull = Path.GetFullPath(outFolder).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+
+         FileStream fs = null;
          ZipFile zf = null;
-         String fullZipToPath = null;
          try
          {
-            FileStream fs = File.OpenRead(archiveFilenameIn);
+            fs = File.OpenRead(archiveFilenameIn);
             zf = new ZipFile(fs);
             if (!String.IsNullOrEmpty(password))
             {
@@ -1431,29 +1436,33 @@ namespace Revit.IFC.Import.Data
                {
                   continue;			// Ignore directories
                }
-               string entryFileName = zipEntry.Name;
-               // to remove the folder from the entry:- entryFileName = Path.GetFileName(entryFileName);
-               // Optionally match entrynames against a selection list here to skip as desired.
-               // The unpacked length is available in the zipEntry.Size property.
 
-               byte[] buffer = new byte[4096];		// 4K is optimum
-               Stream zipStream = zf.GetInputStream(zipEntry);
+               string entryFileName = Path.GetFileName(zipEntry.Name);
 
-               // Manipulate the output filename here as desired.
-               fullZipToPath = Path.Combine(outFolder, entryFileName);
-               string directoryName = Path.GetDirectoryName(fullZipToPath);
-               if (directoryName.Length > 0)
-                  Directory.CreateDirectory(directoryName);
+               // ".ifczip" is deliberately not accepted here: the extracted file is handed back to
+               // CreateIFCFile, which dispatches on extension, so a nested archive would recurse.
+               string entryExtension = Path.GetExtension(entryFileName);
+               if (!entryExtension.Equals(".ifc", StringComparison.OrdinalIgnoreCase) &&
+                   !entryExtension.Equals(".ifcxml", StringComparison.OrdinalIgnoreCase))
+                  continue;
+
+               string fullZipToPath = Path.GetFullPath(Path.Combine(outFolderFull, entryFileName));
+               if (!fullZipToPath.StartsWith(outFolderFull, StringComparison.OrdinalIgnoreCase))
+                  throw new InvalidDataException("Zip entry '" + zipEntry.Name + "' resolves outside of the extraction folder.");
+
+               Directory.CreateDirectory(outFolderFull);
 
                // Unzip file in buffered chunks. This is just as fast as unpacking to a buffer the full size
                // of the file, but does not waste memory.
                // The "using" will close the stream even if an exception occurs.
+               byte[] buffer = new byte[4096];		// 4K is optimum
+               using (Stream zipStream = zf.GetInputStream(zipEntry))
                using (FileStream streamWriter = File.Create(fullZipToPath))
                {
                   StreamUtils.Copy(zipStream, streamWriter, buffer);
                }
 
-               break; //we expect only one IFC file
+               return fullZipToPath; //we expect only one IFC file
             }
          }
          finally
@@ -1463,9 +1472,13 @@ namespace Revit.IFC.Import.Data
                zf.IsStreamOwner = true; // Makes close also shut the underlying stream
                zf.Close(); // Ensure we release resources
             }
+            else if (fs != null)
+            {
+               fs.Dispose(); // The ZipFile constructor threw, so nothing else owns the stream
+            }
          }
 
-         return fullZipToPath;
+         throw new InvalidDataException("No IFC file found in '" + archiveFilenameIn + "'.");
       }
 
       /// <summary>
