@@ -114,20 +114,63 @@ namespace Revit.IFC.Export.Utility
 
          foreach (IList<ParameterElementInfo> parameterIds in ParameterIdCache.Values)
          {
-            foreach (ParameterElementInfo info in parameterIds)
-            {
-               // We will only take the first parameter with a value.  If no parameter has a value, we will ignore it.
-               // TODO: In the future, if we want to export parameters without values, we will need to put a placeholder here.
-               EvaluatedParameter value = GetEvaluatedParameter(info);
-               if (value?.HasValue == true)
-               {
-                  parameterValues[info.ElementId] = value;
-                  break;
-               }
-            }
+            // TODO: In the future, if we want to export parameters without values, we will need to put a placeholder here.
+            (EvaluatedParameter parameter, ElementId parameterId) = FindParameterToExport(parameterIds, null, out _);
+            if (parameter != null)
+               parameterValues[parameterId] = parameter;
          }
 
          return parameterValues.Values;
+      }
+
+      /// <summary>
+      /// Whether an evaluated parameter holds a value that can produce a property.
+      /// </summary>
+      /// <param name="parameter">The evaluated parameter, which must have a value.</param>
+      /// <returns>False for a parameter that is set to an empty string or to an invalid element id.</returns>
+      private static bool HasUsableValue(EvaluatedParameter parameter)
+      {
+         return parameter.Value switch
+         {
+            StringParameterValue stringValue => !string.IsNullOrEmpty(stringValue.Value),
+            ElementIdParameterValue elementIdValue => !MathUtil.IsInvalidElementId(elementIdValue.Value),
+            _ => true
+         };
+      }
+
+      /// <summary>
+      /// Choose which of the parameters that share a name should be used for the export.
+      /// </summary>
+      /// <param name="parameterInfos">The parameters sharing a name.</param>
+      /// <param name="groupId">The optional group the parameter has to belong to.</param>
+      /// <param name="lastEvaluated">The last parameter that was evaluated, regardless of its value.</param>
+      /// <returns>The parameter to use, or (null, null) if none of them has a value.</returns>
+      /// <remarks>Revit allows an element to have several parameters with the same name, while IFC can
+      /// export only one property for that name.  A parameter set to an empty string or to an invalid
+      /// element id reports that it has a value but yields no property, so it must not hide a same-named
+      /// parameter that does carry data.</remarks>
+      private (EvaluatedParameter, ElementId) FindParameterToExport(IList<ParameterElementInfo> parameterInfos,
+         ForgeTypeId groupId, out (EvaluatedParameter, ElementId) lastEvaluated)
+      {
+         lastEvaluated = (null, null);
+         (EvaluatedParameter, ElementId) withoutUsableValue = (null, null);
+
+         foreach (ParameterElementInfo info in parameterInfos)
+         {
+            if (groupId != null && groupId != info.Details.GroupTypeId)
+               continue;
+
+            lastEvaluated = (GetEvaluatedParameter(info), info.ElementId);
+            if (lastEvaluated.Item1?.HasValue != true)
+               continue;
+
+            if (HasUsableValue(lastEvaluated.Item1))
+               return lastEvaluated;
+
+            withoutUsableValue = (withoutUsableValue.Item1 == null) ? lastEvaluated : withoutUsableValue;
+         }
+
+         return withoutUsableValue;
       }
 
       /// <summary>
@@ -137,7 +180,7 @@ namespace Revit.IFC.Export.Utility
       /// <param name="groupId">The optional group ID of the parameter.</param>
       /// <param name="value">The evaluated parameter.</param>
       /// <returns>True if the parameter was found and has a value; otherwise, false.</returns>
-      public bool TryGetValue(string parameterName, string groupId, out (EvaluatedParameter, ElementId) value)
+      public bool TryGetValue(string parameterName, ForgeTypeId groupId, out (EvaluatedParameter, ElementId) value)
       {
          value = (null, null);
 
@@ -145,18 +188,13 @@ namespace Revit.IFC.Export.Utility
          if (!ParameterIdCache.TryGetValue(parameterKey, out IList<ParameterElementInfo> parameterIds))
             return false;
 
-         // We will populate the value parameter with the first EvaluatedParameter in the list that has a
-         // value, or null.
-         foreach (ParameterElementInfo info in parameterIds)
-         {
-            if (groupId != null && groupId.CompareTo(info.Details.GroupTypeIdAsString) != 0)
-               continue;
+         // We will populate the value parameter with the EvaluatedParameter in the list that has a
+         // value, preferring one whose value can actually be exported, or null.
+         value = FindParameterToExport(parameterIds, groupId, out (EvaluatedParameter, ElementId) lastEvaluated);
+         if (value.Item1 != null)
+            return true;
 
-            value = (GetEvaluatedParameter(info), info.ElementId);
-            if (value.Item1?.HasValue == true)
-               return true;
-         }
-
+         value = lastEvaluated;
          return false;
       }
 

@@ -129,7 +129,7 @@ namespace BIM.IFC.Export.UI
          set
          {
             m_Document = value;
-            TheBindings = value?.ParameterBindings;
+            TheBindings = (value?.IsFamilyDocument ?? true) ? null : value.ParameterBindings;
          }
       }
 

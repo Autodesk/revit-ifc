@@ -18,6 +18,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.IFC;
 using Revit.IFC.Common.Utility;
@@ -40,9 +41,30 @@ namespace Revit.IFC.Import.Data
       /// <summary>
       /// The total transform.
       /// </summary>
+      /// <remarks>
+      /// The PlacementRelTo chain is walked iteratively rather than recursively.  A malformed file
+      /// can nest IfcLocalPlacements deeply enough to exhaust the stack, and a StackOverflowException
+      /// can not be caught, so recursing here would terminate Revit instead of failing the import.
+      /// </remarks>
       public Transform TotalTransform
       {
-         get { return RelativeTo != null ? RelativeTo.TotalTransform.Multiply(RelativeTransform) : RelativeTransform; }
+         get
+         {
+            // Preserve the aliasing that callers depend on: with no parent placement the stored
+            // RelativeTransform is returned, not a copy of it.
+            if (RelativeTo == null)
+               return RelativeTransform;
+
+            IList<IFCLocation> placementChain = GetPlacementChain();
+
+            // TotalTransform is RelativeTransform(outermost) * ... * RelativeTransform(this).
+            int outermost = placementChain.Count - 1;
+            Transform totalTransform = placementChain[outermost].RelativeTransform;
+            for (int ii = outermost - 1; ii >= 0; ii--)
+               totalTransform = totalTransform.Multiply(placementChain[ii].RelativeTransform);
+
+            return totalTransform;
+         }
       }
 
       /// <summary>
@@ -56,6 +78,36 @@ namespace Revit.IFC.Import.Data
             totalTransform.Origin += (Importer.TheHybridInfo?.LargeCoordinateOriginOffset ?? XYZ.Zero);
             return totalTransform;
          }
+      }
+
+      /// <summary>
+      /// Collects this IFCLocation and its PlacementRelTo ancestors, innermost first.
+      /// </summary>
+      /// <returns>The placement chain, always containing at least this IFCLocation.</returns>
+      /// <remarks>
+      /// ProcessLocalPlacement refuses to store a cyclic chain, so the visited check here is a
+      /// safety net for locations assembled by other means.  It stops the walk instead of looping.
+      /// </remarks>
+      private IList<IFCLocation> GetPlacementChain()
+      {
+         // IFCEntity does not override Equals, so these collections compare by reference, which is
+         // what identifies a placement that has already been visited.
+         HashSet<IFCLocation> visited = new HashSet<IFCLocation>();
+         IList<IFCLocation> placementChain = new List<IFCLocation>();
+
+         for (IFCLocation current = this; current != null; current = current.RelativeTo)
+         {
+            if (!visited.Add(current))
+            {
+               Importer.TheLog.LogWarning(current.Id,
+                  "Cyclic PlacementRelTo chain detected in IfcObjectPlacement; placement traversal stopped.", true);
+               break;
+            }
+
+            placementChain.Add(current);
+         }
+
+         return placementChain;
       }
 
       /// <summary>
@@ -240,14 +292,54 @@ namespace Revit.IFC.Import.Data
 
          if (!IFCAnyHandleUtil.IsNullOrHasNoValue(placementRelTo))
          {
-            RelativeTo = ProcessIFCObjectPlacement(placementRelTo);
-            // If the location that this is relative to is relative to the site location, then
-            // so is this.  This relies on RelativeToSite for the IfcSite local placement to be
-            // set to true before any other entities are processed.
-            RelativeToSite = RelativeTo.RelativeToSite;
+            IFCLocation placementRelToLocation = ProcessIFCObjectPlacement(placementRelTo);
+
+            // A malformed file can point PlacementRelTo at an entity that is not an IfcObjectPlacement,
+            // in which case the entity map hands back an entity of a different type.
+            if (placementRelToLocation == null)
+            {
+               Importer.TheLog.LogError(placementRelTo.StepId,
+                  "PlacementRelTo does not refer to an IfcObjectPlacement; this placement is treated as if it had no PlacementRelTo.", false);
+            }
+            // A malformed file can define a cyclic PlacementRelTo chain, e.g. #41 relative to #43
+            // and #43 relative to #41.  Storing it would make any walk of RelativeTo non-terminating.
+            else if (WouldCloseCycle(placementRelToLocation))
+            {
+               Importer.TheLog.LogWarning(Id,
+                  "Cyclic PlacementRelTo chain detected in IfcObjectPlacement; this placement is treated as if it had no PlacementRelTo.", false);
+            }
+            else
+            {
+               RelativeTo = placementRelToLocation;
+               // If the location that this is relative to is relative to the site location, then
+               // so is this.  This relies on RelativeToSite for the IfcSite local placement to be
+               // set to true before any other entities are processed.
+               RelativeToSite = RelativeTo.RelativeToSite;
+            }
          }
 
          RelativeTransform = ProcessIFCAxis2Placement(relativePlacement);
+      }
+
+      /// <summary>
+      /// Determines whether making this IFCLocation relative to a candidate location would create a
+      /// cycle in the PlacementRelTo chain.
+      /// </summary>
+      /// <param name="placementRelToLocation">The location this would become relative to.</param>
+      /// <returns>True if the candidate already depends on this IFCLocation, false otherwise.</returns>
+      /// <remarks>
+      /// The walk terminates because every assignment of RelativeTo passes through this check, so no
+      /// stored chain contains a cycle.
+      /// </remarks>
+      private bool WouldCloseCycle(IFCLocation placementRelToLocation)
+      {
+         for (IFCLocation ancestor = placementRelToLocation; ancestor != null; ancestor = ancestor.RelativeTo)
+         {
+            if (ReferenceEquals(ancestor, this))
+               return true;
+         }
+
+         return false;
       }
 
       protected void ProcessGridPlacement(IFCAnyHandle gridPlacement)

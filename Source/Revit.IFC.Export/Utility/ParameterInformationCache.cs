@@ -18,6 +18,7 @@
 //
 
 using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.ExternalData;
 using Autodesk.Revit.Exceptions;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -61,7 +62,8 @@ namespace Revit.IFC.Export.Utility
                }
                else if (BuiltInParameter != BuiltInParameter.INVALID)
                {
-                  field = ParameterUtils.GetDefinition(GroupTypeId);
+                  ForgeTypeId parameterTypeId = BuiltInParameterTypeId;
+                  field = ParameterUtils.GetDefinition(parameterTypeId);
                }
                else
                {
@@ -69,6 +71,16 @@ namespace Revit.IFC.Export.Utility
                }
             }
 
+            return field;
+         }
+      } = null;
+
+      private ForgeTypeId BuiltInParameterTypeId
+      {
+         get
+         {
+            // This is private so we don't have to check BuiltInParameter.
+            field ??= ParameterUtils.GetParameterTypeId(BuiltInParameter);
             return field;
          }
       } = null;
@@ -86,7 +98,8 @@ namespace Revit.IFC.Export.Utility
                }
                else if (BuiltInParameter != BuiltInParameter.INVALID)
                {
-                  field = ParameterUtils.GetParameterTypeId(BuiltInParameter);
+                  ForgeTypeId parameterTypeId = BuiltInParameterTypeId;
+                  field = ParameterUtils.GetBuiltInParameterGroupTypeId(parameterTypeId);
                }
                else
                {
@@ -97,24 +110,25 @@ namespace Revit.IFC.Export.Utility
          }
       } = null;
 
-      public string GroupTypeIdAsString 
+      /// <summary>
+      /// The name of the group used to collect this parameter into a property set.
+      /// </summary>
+      /// <remarks>For an extended property, this is the name of the element the extended parameter
+      /// is linked to.  Otherwise, it is the user-visible label of the parameter group, which is
+      /// "Other" for an empty group type id.</remarks>
+      public string GroupName 
       { 
          get
          {
             if (field == null)
             {
-               if (ParameterElement != null)
+               if (ParameterElement is ExtendedParameterElement extendedParameterElement)
                {
-                  field = GroupTypeId?.TypeId ?? string.Empty;
-               }
-               else if (BuiltInParameter != BuiltInParameter.INVALID)
-               {
-                  if ((GroupTypeId?.Empty() ?? true) == false)
-                     field = ParameterUtils.GetBuiltInParameterGroupTypeId(GroupTypeId)?.TypeId ?? string.Empty;
+                  field = extendedParameterElement.Document.GetElement(extendedParameterElement.LinkId)?.Name ?? string.Empty;
                }
                else
                {
-                  field = string.Empty;
+                  field = GroupTypeId != null ? LabelUtils.GetLabelForGroup(GroupTypeId) : string.Empty;
                }
             }
             return field;

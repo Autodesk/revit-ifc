@@ -28,6 +28,7 @@ using Revit.IFC.Common.Utility;
 using Revit.IFC.Common.Enums;
 using Autodesk.Revit.DB.Mechanical;
 using System.Linq;
+using AExceptions = Autodesk.Revit.Exceptions;
 
 namespace Revit.IFC.Export.Exporter
 {
@@ -365,6 +366,147 @@ namespace Revit.IFC.Export.Exporter
          return boundaryLoops;
       }
 
+      private static IEnumerable<XYZ> GetSolidBoundaryPoints(IList<Solid> solids)
+      {
+         return solids.SelectMany(solid => solid.Edges.Cast<Edge>())
+            .SelectMany(edge => edge.Tessellate());
+      }
+
+      private static IEnumerable<XYZ> GetCurveLoopPoints(IList<CurveLoop> curveLoops)
+      {
+         return curveLoops.SelectMany(curveLoop => curveLoop)
+            .SelectMany(curve => curve.Tessellate());
+      }
+
+      /// <summary>
+      /// Gets the range that the given points occupy in the plane of a wall's extrusion profile.
+      /// </summary>
+      /// <param name="points">The points, in model coordinates.</param>
+      /// <param name="wallLCS">The wall's local coordinate system.</param>
+      /// <param name="extrusionDir">The extrusion direction.</param>
+      /// <param name="min">The lower corner of the range.</param>
+      /// <param name="max">The upper corner of the range.</param>
+      /// <returns>True if there was at least one point.</returns>
+      private static bool TryGetProfilePlaneRange(IEnumerable<XYZ> points, Transform wallLCS,
+         XYZ extrusionDir, out UV min, out UV max)
+      {
+         min = null;
+         max = null;
+
+         foreach (XYZ point in points)
+         {
+            UV uv = GeometryUtil.ProjectPointToXYPlaneOfLCS(wallLCS, extrusionDir, point);
+            if (uv == null)
+               continue;
+
+            min = (min == null) ? uv : new UV(Math.Min(min.U, uv.U), Math.Min(min.V, uv.V));
+            max = (max == null) ? uv : new UV(Math.Max(max.U, uv.U), Math.Max(max.V, uv.V));
+         }
+
+         return (min != null);
+      }
+
+      /// <summary>
+      /// Gets the range that the wall's geometry occupies in the plane of its extrusion profile.
+      /// </summary>
+      /// <param name="solids">The solids making up the wall.</param>
+      /// <param name="wallLCS">The wall's local coordinate system.</param>
+      /// <param name="extrusionDir">The extrusion direction.</param>
+      /// <param name="min">The lower corner of the range.</param>
+      /// <param name="max">The upper corner of the range.</param>
+      /// <returns>False if the range can't be determined, in which case no profile can be ruled
+      /// out.</returns>
+      private static bool TryGetWallProfilePlaneRange(IList<Solid> solids, Transform wallLCS,
+         XYZ extrusionDir, out UV min, out UV max)
+      {
+         min = null;
+         max = null;
+
+         if ((solids?.Count ?? 0) == 0)
+            return false;
+
+         // Projecting onto the profile plane is only meaningful if the extrusion crosses it.
+         if (MathUtil.IsAlmostZero(extrusionDir.DotProduct(wallLCS.BasisZ)))
+            return false;
+
+         return TryGetProfilePlaneRange(GetSolidBoundaryPoints(solids), wallLCS, extrusionDir,
+            out min, out max);
+      }
+
+      /// <summary>
+      /// Checks whether the range occupied by the wall's geometry fits within the extrusion of the
+      /// given profile.
+      /// </summary>
+      /// <param name="wallMin">The lower corner of the wall's range in the profile plane.</param>
+      /// <param name="wallMax">The upper corner of the wall's range in the profile plane.</param>
+      /// <param name="boundaryLoops">The candidate extrusion profile.</param>
+      /// <param name="wallLCS">The wall's local coordinate system.</param>
+      /// <param name="extrusionDir">The extrusion direction.</param>
+      /// <returns>False only if part of the wall is known to fall outside of the profile.</returns>
+      /// <remarks>
+      /// The openings and clippings that are applied to the extrusion afterwards can only take
+      /// material away, so anything that falls outside of the profile is lost.  A profile that
+      /// contains the wall necessarily contains the wall's footprint range as well, which makes a
+      /// range that isn't contained a reliable sign that material would be lost.  The converse does
+      /// not hold, so this errs on the side of accepting the profile.
+      /// </remarks>
+      private static bool WallRangeFitsInProfile(UV wallMin, UV wallMax, IList<CurveLoop> boundaryLoops,
+         Transform wallLCS, XYZ extrusionDir)
+      {
+         if ((boundaryLoops?.Count ?? 0) == 0)
+            return true;
+
+         if (!TryGetProfilePlaneRange(GetCurveLoopPoints(boundaryLoops), wallLCS, extrusionDir,
+            out UV profileMin, out UV profileMax))
+            return true;
+
+         double tolerance = ExporterCacheManager.Document.Application.VertexTolerance;
+         return (wallMin.U > profileMin.U - tolerance) && (wallMin.V > profileMin.V - tolerance) &&
+            (wallMax.U < profileMax.U + tolerance) && (wallMax.V < profileMax.V + tolerance);
+      }
+
+      /// <summary>
+      /// Gets the loops bounding the base of the extrusion that holds the wall's geometry, which is
+      /// the smallest profile whose extrusion along the given direction contains the entire wall.
+      /// </summary>
+      /// <param name="solids">The solids making up the wall.</param>
+      /// <param name="wallLCS">The wall's local coordinate system.</param>
+      /// <param name="extrusionDir">The extrusion direction.</param>
+      /// <returns>The loops, in the Z = 0 plane of the wall's local coordinate system, or null if
+      /// the extrusion base can't be determined or can only be approximated.</returns>
+      private static IList<CurveLoop> GetExtrusionBaseLoops(IList<Solid> solids, Transform wallLCS,
+         XYZ extrusionDir)
+      {
+         // The ExtrusionAnalyzer works on a single solid.
+         if ((solids?.Count ?? 0) != 1)
+            return null;
+
+         try
+         {
+            Plane analyzerPlane = GeometryUtil.CreatePlaneByXYVectorsContainingPoint(wallLCS.BasisX,
+               wallLCS.BasisY, wallLCS.Origin);
+            ExtrusionAnalyzer analyzer = ExtrusionAnalyzer.Create(solids[0], analyzerPlane, extrusionDir);
+
+            // The extrusion base lies in the plane given to the analyzer, which is the plane the
+            // wall body is extruded from, so it needs no offset.
+            IList<CurveLoop> baseLoops = GeometryUtil.GetFaceBoundaries(analyzer.GetExtrusionBase(),
+               null, out IList<GeometryUtil.FaceBoundaryType> boundaryTypes);
+
+            // Approximating the boundary would change the shape of the wall, so don't accept one.
+            if (boundaryTypes.Contains(GeometryUtil.FaceBoundaryType.Complex))
+               return null;
+
+            return baseLoops;
+         }
+         catch (Exception ex) when (ex is AExceptions.ArgumentException or AExceptions.ArgumentNullException or
+            AExceptions.ArgumentsInconsistentException or AExceptions.InvalidOperationException)
+         {
+            ExporterCacheManager.Document?.Application?.WriteJournalComment(
+               "IFC warning: wall extrusion base analysis failed - " + ex.Message, true);
+            return null;
+         }
+      }
+
       private static bool WallHasGeometryToExport(Wall wallElement,
           IList<Solid> solids,
           IList<Mesh> meshes,
@@ -573,6 +715,26 @@ namespace Revit.IFC.Export.Exporter
 
             if (boundaryLoops == null || boundaryLoops.Count == 0 || unscaledFootprintArea > ExporterIFCUtils.ComputeAreaOfCurveLoops(boundaryLoops))
                boundaryLoops = originalBoundaryLoops;
+
+            // The openings and clippings applied to the extrusion below can only take material
+            // away, so anything that falls outside of the profile is lost.  A wall's axis is not
+            // always extended to cover the material that a join with another wall adds at its ends,
+            // and the wall's own faces aren't always usable either, so fall back to the base of the
+            // extrusion that holds the wall when the chosen profile can't hold the whole wall.
+            if (TryGetWallProfilePlaneRange(solids, wallLCS, extrusionDir, out UV wallMin, out UV wallMax) &&
+               !WallRangeFitsInProfile(wallMin, wallMax, boundaryLoops, wallLCS, extrusionDir))
+            {
+               IList<CurveLoop> extrusionBaseLoops = GetExtrusionBaseLoops(solids, wallLCS, extrusionDir);
+               if (((extrusionBaseLoops?.Count ?? 0) != 0) &&
+                  WallRangeFitsInProfile(wallMin, wallMax, extrusionBaseLoops, wallLCS, extrusionDir))
+               {
+                  boundaryLoops = extrusionBaseLoops;
+
+                  // The quantities reported to the caller describe the body that gets exported.
+                  scaledFootprintArea = UnitUtil.ScaleArea(
+                     ExporterIFCUtils.ComputeAreaOfCurveLoops(boundaryLoops));
+               }
+            }
          }
 
          // origin gets scaled later.

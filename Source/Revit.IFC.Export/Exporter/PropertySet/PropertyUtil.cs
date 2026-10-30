@@ -2744,11 +2744,11 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          {
             foreach (ParameterElementInfo info in parameters)
             {
-               string groupTypeId = info.Details.GroupTypeIdAsString;
-               if (!parametersByGroup.TryGetValue(groupTypeId, out ParameterElementCache currentCache))
+               string groupName = info.Details.GroupName;
+               if (!parametersByGroup.TryGetValue(groupName, out ParameterElementCache currentCache))
                {
                   currentCache = new(elemId);
-                  parametersByGroup.Add(groupTypeId, currentCache);
+                  parametersByGroup.Add(groupName, currentCache);
                }
                currentCache.AddParameter(info.Name, info.ElementId, info.Details, info.HostExtendedPropertyLinkId);
             }
@@ -2757,8 +2757,7 @@ namespace Revit.IFC.Export.Exporter.PropertySet
          SortedDictionary<string, (string, HashSet<IFCAnyHandle>)> propertySets = [];
          foreach (KeyValuePair<string, ParameterElementCache> parameterElementGroup in parametersByGroup)
          {
-            ForgeTypeId parameterGroup = new ForgeTypeId(parameterElementGroup.Key);
-            string groupName = LabelUtils.GetLabelForGroup(parameterGroup);
+            string groupName = parameterElementGroup.Key;
 
             // Skip property groups excluded from export
             if (parameterTemplate != null &&
